@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoRewind – Recyclons ensemble, agissons maintenant 🌿</title>
+  <meta name="description" content="EcoRewind est la communauté citoyenne dédiée au recyclage et aux gestes écologiques en Tunisie. Rejoignez des milliers de citoyens engagés." />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+  <style>
+    :root {
+      --c-bg:       #050f0a;
+      --c-surface:  #0d1f15;
+      --c-card:     #0f2518;
+      --c-border:   rgba(52,211,153,.14);
+      --c-green:    #34d399;
+      --c-teal:     #2dd4bf;
+      --c-lime:     #a3e635;
+      --c-accent:   #10b981;
+      --c-text:     #e2f5ec;
+      --c-muted:    #7aab92;
+      --radius-lg:  24px;
+      --radius-xl:  36px;
+      --shadow-glow: 0 0 40px rgba(52,211,153,.18);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--c-bg);
+      color: var(--c-text);
+      overflow-x: hidden;
+    }
+
+    /* ─── PARTICLES BG ───────────────────────────────────────── */
+    #particles-canvas {
+      position: fixed; inset: 0;
+      z-index: 0; pointer-events: none;
+      opacity: .45;
+    }
+
+    /* ─── NAV ────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 60px;
+      background: rgba(5,15,10,.82);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px; font-weight: 800;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-logo .leaf { font-size: 28px; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--c-muted); text-decoration: none;
+      font-size: 15px; font-weight: 500;
+      transition: color .25s;
+    }
+    .nav-links a:hover { color: var(--c-green); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      color: #050f0a; font-weight: 700; font-size: 14px;
+      padding: 10px 24px; border-radius: 50px;
+      text-decoration: none; transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 4px 18px rgba(52,211,153,.3);
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(52,211,153,.45); }
+
+    /* ─── HERO ───────────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 90vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(52,211,153,.12);
+      border: 1px solid rgba(52,211,153,.3);
+      color: var(--c-green);
+      padding: 8px 20px; border-radius: 50px;
+      font-size: 13px; font-weight: 600; letter-spacing: .5px;
+      margin-bottom: 28px;
+      animation: fadeSlideDown .7s ease both;
+    }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(40px, 7vw, 88px);
+      font-weight: 900; line-height: 1.08;
+      margin-bottom: 26px;
+      animation: fadeSlideDown .7s .1s ease both;
+    }
+    .hero h1 .gtext {
+      background: linear-gradient(135deg, var(--c-green) 0%, var(--c-teal) 50%, var(--c-lime) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: var(--c-muted); max-width: 620px;
+      line-height: 1.7; margin-bottom: 44px;
+      animation: fadeSlideDown .7s .2s ease both;
+    }
+    .hero-btns {
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+      animation: fadeSlideDown .7s .3s ease both;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      color: #050f0a; font-weight: 700; font-size: 16px;
+      padding: 16px 36px; border-radius: 50px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: transform .25s, box-shadow .25s;
+      box-shadow: 0 6px 24px rgba(52,211,153,.35);
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(52,211,153,.5); }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid rgba(52,211,153,.4);
+      color: var(--c-green); font-weight: 600; font-size: 16px;
+      padding: 14px 34px; border-radius: 50px;
+      text-decoration: none; cursor: pointer;
+      transition: all .25s;
+    }
+    .btn-outline:hover { border-color: var(--c-green); background: rgba(52,211,153,.08); }
+
+    /* Stats strip in hero */
+    .hero-stats {
+      display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
+      margin-top: 64px;
+      animation: fadeSlideDown .7s .4s ease both;
+    }
+    .stat-item { text-align: center; }
+    .stat-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 40px; font-weight: 900;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 13px; color: var(--c-muted); margin-top: 4px; font-weight: 500; }
+
+    /* ─── SECTION WRAPPER ────────────────────────────────────── */
+    section { position: relative; z-index: 1; padding: 100px 24px; }
+    .section-container { max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.25);
+      color: var(--c-green); padding: 6px 18px; border-radius: 50px;
+      font-size: 12px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 800; line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      color: var(--c-muted); font-size: 17px;
+      max-width: 560px; line-height: 1.7; margin-bottom: 60px;
+    }
+
+    /* ─── FEATURES ───────────────────────────────────────────── */
+    #features { background: linear-gradient(180deg, var(--c-bg) 0%, var(--c-surface) 100%); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--c-card);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg);
+      padding: 36px 30px;
+      transition: transform .3s, box-shadow .3s, border-color .3s;
+      cursor: default;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-glow);
+      border-color: rgba(52,211,153,.35);
+    }
+    .feature-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(52,211,153,.2), rgba(45,212,191,.15));
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      font-size: 26px;
+    }
+    .feature-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px; font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .feature-desc { color: var(--c-muted); font-size: 14px; line-height: 1.7; }
+
+    /* ─── HOW IT WORKS ───────────────────────────────────────── */
+    #how { background: var(--c-bg); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute; top: 40px; left: 10%; right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--c-green) 30%, var(--c-teal) 70%, transparent);
+    }
+    .step { text-align: center; padding: 20px 16px; }
+    .step-num {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px; font-weight: 900; color: #050f0a;
+      position: relative; z-index: 2;
+      box-shadow: 0 0 24px rgba(52,211,153,.4);
+    }
+    .step-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .step-desc { color: var(--c-muted); font-size: 14px; line-height: 1.6; }
+
+    /* ─── TESTIMONIALS ───────────────────────────────────────── */
+    #testimonials {
+      background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-bg) 100%);
+    }
+    .testimonials-header { text-align: center; }
+    .testimonials-header .section-sub { margin-left: auto; margin-right: auto; }
+
+    /* Loading state */
+    .testimonials-loading {
+      text-align: center; padding: 60px 0;
+      color: var(--c-muted);
+    }
+    .loader-ring {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(52,211,153,.2);
+      border-top-color: var(--c-green);
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    /* Empty state */
+    .testimonials-empty {
+      text-align: center; padding: 60px;
+      background: var(--c-card); border-radius: var(--radius-lg);
+      border: 1px solid var(--c-border);
+    }
+    .testimonials-empty .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .testimonials-empty p { color: var(--c-muted); font-size: 16px; }
+
+    /* Grid of cards */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 4px;
+    }
+    .testimonial-card {
+      background: var(--c-card);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      position: relative;
+      transition: transform .3s, box-shadow .3s, border-color .3s;
+      animation: fadeSlideUp .5s ease both;
+    }
+    .testimonial-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-glow);
+      border-color: rgba(52,211,153,.3);
+    }
+    .testimonial-card.featured {
+      border-color: rgba(52,211,153,.45);
+      background: linear-gradient(135deg, rgba(52,211,153,.06) 0%, var(--c-card) 60%);
+    }
+    .featured-badge {
+      position: absolute; top: 20px; right: 20px;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      color: #050f0a; font-size: 10px; font-weight: 800;
+      padding: 4px 12px; border-radius: 50px;
+      letter-spacing: .5px; text-transform: uppercase;
+    }
+    .testimonial-quote {
+      font-size: 48px; line-height: 1; margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-family: Georgia, serif;
+    }
+    .testimonial-text {
+      color: var(--c-text); font-size: 15px;
+      line-height: 1.75; margin-bottom: 24px;
+      font-style: italic;
+    }
+    .testimonial-footer {
+      display: flex; align-items: center; gap: 14px;
+      border-top: 1px solid var(--c-border);
+      padding-top: 18px;
+    }
+    .testimonial-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(52,211,153,.3);
+      flex-shrink: 0;
+    }
+    .testimonial-avatar-placeholder {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px; font-weight: 700; color: #050f0a;
+      flex-shrink: 0;
+      border: 2px solid rgba(52,211,153,.3);
+    }
+    .testimonial-user-name {
+      font-weight: 700; font-size: 15px;
+      color: var(--c-text); margin-bottom: 4px;
+    }
+    .testimonial-stars { display: flex; gap: 2px; }
+    .star { color: #fbbf24; font-size: 14px; }
+    .star.empty { color: rgba(251,191,36,.25); }
+
+    /* Error state */
+    .testimonials-error {
+      text-align: center; padding: 40px;
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: var(--radius-lg);
+      color: #f87171;
+    }
+
+    /* ─── SUBMIT FORM ────────────────────────────────────────── */
+    #submit-testimonial {
+      background: var(--c-bg);
+    }
+    .form-card {
+      background: var(--c-card);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-xl);
+      padding: 56px 60px;
+      max-width: 760px; margin: 0 auto;
+      box-shadow: var(--shadow-glow);
+    }
+    @media (max-width: 640px) {
+      .form-card { padding: 36px 24px; }
+    }
+    .form-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px; font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .form-sub { color: var(--c-muted); margin-bottom: 36px; font-size: 15px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--c-green); margin-bottom: 8px;
+      letter-spacing: .3px; text-transform: uppercase;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%; background: rgba(52,211,153,.05);
+      border: 1px solid var(--c-border); color: var(--c-text);
+      padding: 14px 18px; border-radius: 14px;
+      font-family: 'Inter', sans-serif; font-size: 15px;
+      transition: border-color .25s, box-shadow .25s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: rgba(52,211,153,.5);
+      box-shadow: 0 0 0 3px rgba(52,211,153,.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 130px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width:  560px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* Star rating input */
+    .star-rating-input {
+      display: flex; gap: 8px;
+    }
+    .star-rating-input span {
+      font-size: 32px; cursor: pointer;
+      color: rgba(251,191,36,.25);
+      transition: color .15s, transform .15s;
+    }
+    .star-rating-input span:hover,
+    .star-rating-input span.active { color: #fbbf24; }
+    .star-rating-input span:hover { transform: scale(1.2); }
+
+    .form-submit {
+      width: 100%; margin-top: 12px;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      color: #050f0a; font-weight: 700; font-size: 16px;
+      padding: 16px; border-radius: 14px;
+      border: none; cursor: pointer;
+      transition: opacity .25s, transform .25s;
+    }
+    .form-submit:hover { opacity: .9; transform: translateY(-2px); }
+    .form-submit:disabled { opacity: .5; cursor: not-allowed; }
+    .form-message {
+      margin-top: 16px; padding: 14px 18px;
+      border-radius: 12px; font-size: 14px;
+      display: none;
+    }
+    .form-message.success {
+      background: rgba(52,211,153,.12);
+      border: 1px solid rgba(52,211,153,.3);
+      color: var(--c-green);
+      display: block;
+    }
+    .form-message.error {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.25);
+      color: #f87171;
+      display: block;
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1;
+      background: var(--c-surface);
+      border-top: 1px solid var(--c-border);
+      padding: 50px 60px 36px;
+    }
+    .footer-grid {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px; margin-bottom: 40px;
+    }
+    @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr; } }
+    .footer-brand .brand-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px; font-weight: 800;
+      background: linear-gradient(135deg, var(--c-green), var(--c-teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .footer-brand p { color: var(--c-muted); font-size: 14px; line-height: 1.7; max-width: 280px; }
+    .footer-col h4 { font-size: 14px; font-weight: 700; color: var(--c-green); margin-bottom: 16px; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 10px; }
+    .footer-col a { color: var(--c-muted); text-decoration: none; font-size: 14px; transition: color .2s; }
+    .footer-col a:hover { color: var(--c-green); }
+    .footer-bottom {
+      max-width: 1200px; margin: 0 auto;
+      border-top: 1px solid var(--c-border);
+      padding-top: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-bottom p { color: var(--c-muted); font-size: 13px; }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────────── */
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Animation delay helpers for testimonials stagger */
+    .testimonial-card:nth-child(1)  { animation-delay: .05s; }
+    .testimonial-card:nth-child(2)  { animation-delay: .10s; }
+    .testimonial-card:nth-child(3)  { animation-delay: .15s; }
+    .testimonial-card:nth-child(4)  { animation-delay: .20s; }
+    .testimonial-card:nth-child(5)  { animation-delay: .25s; }
+    .testimonial-card:nth-child(6)  { animation-delay: .30s; }
+    .testimonial-card:nth-child(7)  { animation-delay: .35s; }
+    .testimonial-card:nth-child(8)  { animation-delay: .40s; }
+    .testimonial-card:nth-child(9)  { animation-delay: .45s; }
+    .testimonial-card:nth-child(10) { animation-delay: .50s; }
+    .testimonial-card:nth-child(11) { animation-delay: .55s; }
+    .testimonial-card:nth-child(12) { animation-delay: .60s; }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(36px); transition: opacity .7s, transform .7s; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Responsive nav */
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Ambient particles -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ─── NAV ──────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">
+    <span class="leaf">🌿</span>
+    EcoRewind
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#how">Comment ça marche</a></li>
+    <li><a href="#testimonials">Témoignages</a></li>
+    <li><a href="#submit-testimonial">Donner un avis</a></li>
+  </ul>
+  <a href="#submit-testimonial" class="nav-cta">Rejoindre la communauté 🌱</a>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────────────────────── -->
+<section class="hero" id="home">
+  <div class="hero-badge">
+    <span class="material-icons-round" style="font-size:14px;">eco</span>
+    Plateforme citoyenne #1 en Tunisie
+  </div>
+  <h1>Recyclons ensemble,<br><span class="gtext">agissons maintenant</span></h1>
+  <p class="hero-sub">
+    EcoRewind connecte les citoyens engagés pour partager leurs gestes écologiques,
+    trouver des points de collecte et construire un avenir plus vert.
+  </p>
+  <div class="hero-btns">
+    <a href="#testimonials" class="btn-primary">Voir les témoignages 💬</a>
+    <a href="#how" class="btn-outline">Comment ça marche</a>
+  </div>
+  <div class="hero-stats" id="hero-stats">
+    <div class="stat-item">
+      <div class="stat-number" id="stat-users">—</div>
+      <div class="stat-label">Citoyens engagés</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" id="stat-posts">—</div>
+      <div class="stat-label">Gestes partagés</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" id="stat-co2">—</div>
+      <div class="stat-label">kg CO₂ économisé</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" id="stat-points">—</div>
+      <div class="stat-label">Points de collecte</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ──────────────────────────────────────────────── -->
+<section id="features">
+  <div class="section-container">
+    <div class="reveal">
+      <div class="section-label">
+        <span class="material-icons-round" style="font-size:14px;">stars</span>
+        Fonctionnalités
+      </div>
+      <h2 class="section-title">Tout ce dont vous avez besoin<br>pour agir pour la planète</h2>
+      <p class="section-sub">Une plateforme complète pensée pour les citoyens qui veulent faire la différence.</p>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <div class="feature-icon">📸</div>
+        <div class="feature-title">Partagez vos gestes</div>
+        <div class="feature-desc">Publiez photos et descriptions de vos actions écologiques. Notre IA vérifie automatiquement que le contenu est bien lié à l'environnement.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <div class="feature-title">Carte des points de collecte</div>
+        <div class="feature-desc">Trouvez le point de collecte le plus proche pour trier vos déchets (plastique, verre, papier, électronique…).</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">Modération IA</div>
+        <div class="feature-desc">Un système d'intelligence artificielle analyse chaque publication pour garantir une communauté saine et exclusivement dédiée à l'écologie.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📲</div>
+        <div class="feature-title">QR Code citoyen</div>
+        <div class="feature-desc">Chaque membre dispose d'un QR code unique permettant de valider ses gestes lors des événements communautaires.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">Communauté bienveillante</div>
+        <div class="feature-desc">Commentez, aimez et encouragez les gestes des autres citoyens. Construisons ensemble une culture du recyclage.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Impact mesuré</div>
+        <div class="feature-desc">Visualisez l'impact collectif : kg de CO₂ économisé, tonnes de déchets triés, arbres équivalents plantés.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ──────────────────────────────────────────── -->
+<section id="how">
+  <div class="section-container" style="text-align:center;">
+    <div class="reveal">
+      <div class="section-label" style="display:inline-flex;">
+        <span class="material-icons-round" style="font-size:14px;">linear_scale</span>
+        Comment ça marche
+      </div>
+      <h2 class="section-title">Simple, rapide, efficace</h2>
+      <p class="section-sub" style="margin:0 auto 60px;">En 4 étapes, devenez un acteur du changement dans votre quartier.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Créez votre compte</div>
+        <div class="step-desc">Inscription rapide avec email, Google ou Facebook.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Publiez votre geste</div>
+        <div class="step-desc">Photo + description de votre action éco-responsable.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Validation IA & Admin</div>
+        <div class="step-desc">Notre IA + équipe admin vérifient et valident la publication.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Inspirez la communauté</div>
+        <div class="step-desc">Votre geste est visible par toute la communauté EcoRewind !</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ──────────────────────────────────────────── -->
+<section id="testimonials">
+  <div class="section-container">
+    <div class="testimonials-header reveal">
+      <div class="section-label" style="display:inline-flex;">
+        <span class="material-icons-round" style="font-size:14px;">format_quote</span>
+        Témoignages citoyens
+      </div>
+      <h2 class="section-title">Ce que disent nos membres</h2>
+      <p class="section-sub">
+        Ces avis ont été soumis par de vrais utilisateurs et <strong>validés par notre équipe d'administration</strong>.
+        Leurs expériences parlent mieux que tout.
+      </p>
+    </div>
+
+    <!-- Dynamic container -->
+    <div id="testimonials-container">
+      <div class="testimonials-loading">
+        <div class="loader-ring"></div>
+        <p>Chargement des témoignages…</p>
+      </div>
+    </div>
+
+    <!-- View all button (shown if there are many) -->
+    <div id="load-more-wrap" style="text-align:center; margin-top:40px; display:none;">
+      <button id="load-more-btn" class="btn-outline" onclick="loadMoreTestimonials()">
+        Voir plus de témoignages
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SUBMIT FORM ── ────────────────────────────────────────── -->
+<section id="submit-testimonial">
+  <div class="section-container">
+    <div class="form-card reveal">
+      <div class="section-label" style="display:inline-flex; margin-bottom:16px;">
+        <span class="material-icons-round" style="font-size:14px;">edit_note</span>
+        Votre avis
+      </div>
+      <h2 class="form-title">Partagez votre expérience 🌿</h2>
+      <p class="form-sub">
+        Votre témoignage sera examiné par notre équipe avant d'être affiché. Merci pour votre contribution !
+      </p>
+
+      <form id="testimonial-form" onsubmit="submitTestimonial(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-name">Votre prénom</label>
+            <input type="text" id="form-name" placeholder="ex : Sarra B." required maxlength="80" />
+          </div>
+          <div class="form-group">
+            <label for="form-email">Email (pour la connexion)</label>
+            <input type="email" id="form-email" placeholder="votre@email.com" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="form-password">Mot de passe</label>
+          <input type="password" id="form-password" placeholder="••••••••" required />
+        </div>
+        <div class="form-group">
+          <label>Note globale</label>
+          <div class="star-rating-input" id="star-input">
+            <span data-v="1" onclick="setRating(1)">★</span>
+            <span data-v="2" onclick="setRating(2)">★</span>
+            <span data-v="3" onclick="setRating(3)">★</span>
+            <span data-v="4" onclick="setRating(4)">★</span>
+            <span data-v="5" onclick="setRating(5)" class="active">★</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="form-content">Votre témoignage</label>
+          <textarea id="form-content" placeholder="Partagez votre expérience avec EcoRewind…" required minlength="20" maxlength="600"></textarea>
+        </div>
+        <button type="submit" class="form-submit" id="form-submit-btn">
+          Envoyer mon témoignage →
+        </button>
+        <div class="form-message" id="form-message"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="brand-name">🌿 EcoRewind</div>
+      <p>La plateforme communautaire citoyenne dédiée au recyclage et aux gestes écologiques en Tunisie.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Plateforme</h4>
+      <ul>
+        <li><a href="#features">Fonctionnalités</a></li>
+        <li><a href="#how">Comment ça marche</a></li>
+        <li><a href="#testimonials">Témoignages</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="mailto:contact@ecorewind.tn">contact@ecorewind.tn</a></li>
+        <li><a href="#">Politique de confidentialité</a></li>
+        <li><a href="#">Conditions d'utilisation</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 EcoRewind — Tous droits réservés 🌿</p>
+    <p>Fait avec 💚 pour la planète</p>
+  </div>
+</footer>
+
+
+<!-- ─── SCRIPTS ───────────────────────────────────────────────── -->
+<script>
+  // ── CONFIG ──────────────────────────────────────────────────────
+  const API_BASE = 'http://localhost:8000';
+
+  // ── PARTICLES ───────────────────────────────────────────────────
+  (function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+    const N = 55;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    for (let i = 0; i < N; i++) {
+      particles.push({
+        x: rand(0, window.innerWidth),  y: rand(0, window.innerHeight),
+        r: rand(1, 3.5),
+        vx: rand(-0.25, 0.25), vy: rand(-0.35, -0.08),
+        alpha: rand(0.2, 0.7),
+        color: Math.random() > .5 ? '#34d399' : '#2dd4bf',
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
+      });
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  // ── SCROLL REVEAL ───────────────────────────────────────────────
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // ── LIVE STATS ──────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API_BASE}/stats`);
+      if (!res.ok) return;
+      const d = await res.json();
+      animateCount('stat-users',  d.total_users  || 0);
+      animateCount('stat-posts',  d.total_posts  || 0);
+      animateCount('stat-co2',    Math.round(d.co2_saved_kg || 0));
+      animateCount('stat-points', d.total_collection_points || 0);
+    } catch (_) {}
+  }
+
+  function animateCount(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 60));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current.toLocaleString('fr-FR');
+      if (current >= target) clearInterval(timer);
+    }, 24);
+  }
+
+  // ── TESTIMONIALS ─────────────────────────────────────────────────
+  let allLoaded = [];
+
+  function buildStars(rating) {
+    return Array.from({ length: 5 }, (_, i) =>
+      `<span class="star${i < rating ? '' : ' empty'}">★</span>`
+    ).join('');
+  }
+
+  function buildAvatar(t) {
+    if (t.user_avatar_url) {
+      return `<img src="${API_BASE}${t.user_avatar_url}" alt="${t.user_name}"
+               class="testimonial-avatar"
+               onerror="this.parentNode.innerHTML=buildAvatarPlaceholder('${t.user_name}')" />`;
+    }
+    return buildAvatarPlaceholder(t.user_name);
+  }
+
+  function buildAvatarPlaceholder(name) {
+    const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `<div class="testimonial-avatar-placeholder">${initials}</div>`;
+  }
+
+  function renderCard(t) {
+    const featuredBadge = t.is_featured
+      ? `<span class="featured-badge">⭐ Mis en avant</span>` : '';
+    return `
+      <div class="testimonial-card${t.is_featured ? ' featured' : ''}">
+        ${featuredBadge}
+        <div class="testimonial-quote">"</div>
+        <p class="testimonial-text">${escapeHtml(t.content)}</p>
+        <div class="testimonial-footer">
+          ${buildAvatar(t)}
+          <div>
+            <div class="testimonial-user-name">${escapeHtml(t.user_name)}</div>
+            <div class="testimonial-stars">${buildStars(t.rating)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function loadTestimonials() {
+    const container = document.getElementById('testimonials-container');
+    try {
+      const res = await fetch(`${API_BASE}/testimonials/landing?limit=12`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      allLoaded = await res.json();
+
+      if (allLoaded.length === 0) {
+        container.innerHTML = `
+          <div class="testimonials-empty">
+            <div class="empty-icon">💬</div>
+            <p>Aucun témoignage validé pour l'instant.<br>Soyez le premier à partager votre expérience !</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="testimonials-grid" id="testimonials-grid">
+        ${allLoaded.map(renderCard).join('')}
+      </div>`;
+
+      // Re-observe newly added cards for reveal
+      document.querySelectorAll('.testimonial-card').forEach((el, i) => {
+        el.style.animationDelay = `${i * 0.06}s`;
+      });
+
+    } catch (err) {
+      console.error('Testimonials load error:', err);
+      container.innerHTML = `
+        <div class="testimonials-error">
+          <span class="material-icons-round">wifi_off</span>
+          <p style="margin-top:12px;">Impossible de charger les témoignages.<br>
+          Assurez-vous que le serveur est démarré sur <code>localhost:8000</code>.</p>
+        </div>`;
+    }
+  }
+
+  // ── STAR RATING INPUT ──────────────────────────────────────────
+  let selectedRating = 5;
+
+  function setRating(val) {
+    selectedRating = val;
+    document.querySelectorAll('#star-input span').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.v) <= val);
+    });
+  }
+
+  // ── SUBMIT TESTIMONIAL ─────────────────────────────────────────
+  async function submitTestimonial(e) {
+    e.preventDefault();
+    const btn = document.getElementById('form-submit-btn');
+    const msg = document.getElementById('form-message');
+    const email = document.getElementById('form-email').value.trim();
+    const password = document.getElementById('form-password').value;
+    const content = document.getElementById('form-content').value.trim();
+
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+    msg.className = 'form-message';
+    msg.style.display = 'none';
+
+    try {
+      // 1. Authenticate
+      const loginForm = new URLSearchParams();
+      loginForm.append('username', email);
+      loginForm.append('password', password);
+
+      const loginRes = await fetch(`${API_BASE}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: loginForm.toString(),
+      });
+
+      if (!loginRes.ok) {
+        const errData = await loginRes.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Email ou mot de passe incorrect.');
+      }
+
+      const { access_token } = await loginRes.json();
+
+      // 2. Submit testimonial
+      const submitRes = await fetch(`${API_BASE}/testimonials`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({ content, rating: selectedRating }),
+      });
+
+      if (!submitRes.ok) {
+        const errData = await submitRes.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Erreur lors de l\'envoi.');
+      }
+
+      msg.className = 'form-message success';
+      msg.innerHTML = '✅ Merci ! Votre témoignage a été soumis et sera affiché après validation par notre équipe.';
+      document.getElementById('testimonial-form').reset();
+      setRating(5);
+
+    } catch (err) {
+      msg.className = 'form-message error';
+      msg.textContent = '❌ ' + (err.message || 'Une erreur est survenue.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Envoyer mon témoignage →';
+    }
+  }
+
+  // ── INIT ───────────────────────────────────────────────────────
+  loadStats();
+  loadTestimonials();
+</script>
+</body>
+</html>

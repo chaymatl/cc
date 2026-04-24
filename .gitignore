@@ -1,0 +1,92 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (keep settings, ignore workspace-specific files)
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Backend Security — NEVER commit these
+backend/.env
+backend/__pycache__/
+backend/venv/
+backend/uploads/
+*.pth
+backend/moderation_ai/data/image_dataset/
+backend/moderation_ai/models/vocab.pkl
+
+# Databases — never version binary DB files
+*.db
+backend/sql_app.db
+backend/test.db
+sql_app.db
+
+# Temporary analysis / build / debug output files
+analysis*.txt
+dart_analyze*.txt
+build_error*.txt
+run_output*.txt
+run_verbose*.txt
+pub_get_output*.txt
+doctor_output*.txt
+keyhash_output*.txt
+sha1_result*.txt
+android/gradle_error.txt
+
+# Backend test outputs
+backend/test_results.txt
+backend/users_list.txt
+
+# Generated HTML previews
+*_preview.html
+theme_preview.html
+guide_*.html
+
+# PowerShell / batch installer scripts (dev-only, not app code)
+installer_*.ps1
+installer_*.bat
+telecharger_*.ps1
+ouvrir_*.bat
+creer_utilisateur.ps1
+show_errors.ps1
+
+# Python one-off test scripts
+backend/test_login.py
+backend/test_backend_endpoints.py
+backend/list_users.py
