@@ -29,16 +29,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   late final bool _isLoggedIn;
   bool _hasShownAuthPrompt = false;
 
+  // GlobalKeys pour accéder aux states des tabs et appeler refresh()
+  final GlobalKey<ProfileTabState> _profileKey = GlobalKey<ProfileTabState>();
+
   @override
   void initState() {
     super.initState();
     _isLoggedIn = AuthState.currentUser != null;
     final role = AuthState.currentUser?.role ?? UserRole.user;
     _pages = _initializePages(role);
-    // Clamp initialTab to valid range
     _currentIndex = widget.initialTab.clamp(0, _pages.length - 1);
 
-    // Afficher le dialogue auth après l'ouverture de la page
     if (!_isLoggedIn) {
       _hasShownAuthPrompt = true;
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -49,8 +50,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
   }
 
+  /// Appelé quand on change d'onglet — rafraîchit le profil si nécessaire
+  void _onTabSelected(int index) {
+    setState(() => _currentIndex = index);
+    // Rafraîchir le score quand on arrive sur l'onglet Profil
+    _profileKey.currentState?.refreshScore();
+  }
+
   List<Widget> _initializePages(UserRole role) {
-    // If user is not logged in, show pages without Profile
     if (!_isLoggedIn) {
       return [
         const FeedTab(key: ValueKey('feed')),
@@ -67,21 +74,21 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           const MultimediaTab(key: ValueKey('multimedia')),
           const RewardsTab(key: ValueKey('rewards')),
           const MapTab(key: ValueKey('map')),
-          const ProfileTab(key: ValueKey('profile')),
+          ProfileTab(key: _profileKey),
         ];
       case UserRole.collector:
-        return [const CollectorTab(key: ValueKey('collector')), const ProfileTab(key: ValueKey('profile'))];
+        return [const CollectorTab(key: ValueKey('collector')), ProfileTab(key: _profileKey)];
       case UserRole.intercommunality:
         return [
           const IntercommunalityTab(key: ValueKey('intercommunality')),
-          const ProfileTab(key: ValueKey('profile'))
+          ProfileTab(key: _profileKey),
         ];
       case UserRole.educator:
-        return [const EducatorTab(key: ValueKey('educator')), const ProfileTab(key: ValueKey('profile'))];
+        return [const EducatorTab(key: ValueKey('educator')), ProfileTab(key: _profileKey)];
       case UserRole.pointManager:
-        return [const PointManagerTab(key: ValueKey('pointmanager')), const ProfileTab(key: ValueKey('profile'))];
+        return [const PointManagerTab(key: ValueKey('pointmanager')), ProfileTab(key: _profileKey)];
       default:
-        return [const FeedTab(key: ValueKey('feed')), const ProfileTab(key: ValueKey('profile'))];
+        return [const FeedTab(key: ValueKey('feed')), ProfileTab(key: _profileKey)];
     }
   }
 
@@ -145,9 +152,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             child: NavigationBar(
               selectedIndex: _currentIndex,
               onDestinationSelected: (index) {
-                // Toujours changer d'onglet d'abord (la page s'ouvre)
-                setState(() => _currentIndex = index);
-                // Puis afficher le dialogue auth si pas connecté (1 seule fois)
+                _onTabSelected(index);
                 if (!_isLoggedIn && !_hasShownAuthPrompt) {
                   _hasShownAuthPrompt = true;
                   Future.delayed(const Duration(milliseconds: 400), () {

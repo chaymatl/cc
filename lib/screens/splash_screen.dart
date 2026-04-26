@@ -85,7 +85,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         name: userData['full_name'] ?? 'Utilisateur',
         email: userData['email'],
         role: role,
+        globalScore: (userData['global_score'] as num?)?.toDouble() ?? 0.0,
         avatarUrl: userData['avatar_url'] ?? 'https://i.pravatar.cc/300?u=${userData['email']}',
+        qrCode: userData['qr_code'] ?? '',
       );
 
       Navigator.pushReplacementNamed(context, '/home');

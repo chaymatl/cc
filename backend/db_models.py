@@ -26,6 +26,7 @@ class User(Base):
     reset_token = Column(String, unique=True, index=True, nullable=True)
     token_expires = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)  # URL de la photo de profil
+    global_score = Column(Float, default=0.0)  # Score global de l'utilisateur
 
     posts = relationship("Post", back_populates="author")
     saved_posts = relationship("SavedPost", back_populates="user")

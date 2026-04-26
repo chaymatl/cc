@@ -8,7 +8,8 @@ import '../../theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../models/post_model.dart';
 import '../../widgets/safe_network_image.dart';
-import '../../constants.dart';
+import '../../services/auth_service.dart';
+import 'notifications_screen.dart';
 
 class HomeDashboardTab extends StatefulWidget {
   final Function(int) onNavigate;
@@ -21,6 +22,7 @@ class HomeDashboardTab extends StatefulWidget {
 
 class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerProviderStateMixin {
   late AnimationController _counterCtrl;
+  final AuthService _authService = AuthService();
 
   // Stats dynamiques
   double _co2 = 0;
@@ -39,6 +41,34 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       if (mounted) setState(() {});
     });
     _fetchStats();
+    _refreshUserScore();
+  }
+
+  /// Synchronise le globalScore depuis le backend
+  Future<void> _refreshUserScore() async {
+    if (!AuthState.isLoggedIn) return;
+    try {
+      final userData = await _authService.fetchUserProfile();
+      if (userData != null && mounted) {
+        final u = AuthState.currentUser;
+        if (u != null) {
+          final newScore = (userData['global_score'] as num?)?.toDouble() ?? u.globalScore;
+          if (newScore != u.globalScore) {
+            AuthState.currentUser = User(
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              points: u.points,
+              globalScore: newScore,
+              avatarUrl: u.avatarUrl,
+              qrCode: u.qrCode,
+            );
+            setState(() {});
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchStats() async {
@@ -135,7 +165,12 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       ),
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+            );
+          },
           icon: Badge(
             backgroundColor: AppTheme.primaryGreen,
             label: Text(
@@ -308,7 +343,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '${user?.points ?? 0}',
+                                '${user?.globalScore.toStringAsFixed(1) ?? '0.0'}',
                                 style: GoogleFonts.outfit(
                                   color: Colors.white,
                                   fontSize: 32,
@@ -470,7 +505,13 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                 'Fil Citoyen',
                 Icons.people_alt_rounded,
                 const Color(0xFF8B5CF6),
-                1,
+                0, // feed is index 0
+              ),
+              _buildActionCard(
+                'Boutique',
+                Icons.shopping_bag_rounded,
+                const Color(0xFFEF4444),
+                2, // rewards is index 2
               ),
             ],
           ),
@@ -491,10 +532,9 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
         if (title.contains('Scanner')) {
           Navigator.pushNamed(context, '/scanner');
         } else if (title.contains('Apprendre')) {
-          Navigator.pushNamed(context, '/multimedia');
-        } else {
-          widget.onNavigate(targetTab);
+          Navigator.pushNamed(context, '/multimedia'); // not used in tab route directly by string, handled by onNavigate
         }
+        widget.onNavigate(targetTab);
       },
       child: Container(
         padding: const EdgeInsets.all(18),

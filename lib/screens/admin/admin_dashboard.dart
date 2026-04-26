@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../theme/app_theme.dart';
+import 'add_sorting_center_screen.dart';
 import '../../services/auth_service.dart';
 import '../client/profile_tab.dart';
 import 'user_management_screen.dart';
@@ -734,9 +735,38 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
               Text('RÉSEAU DE COLLECTE (${_points.length})',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 12, color: AppTheme.textMuted)),
               ElevatedButton.icon(
-                onPressed: () => _showAddEditDialog(),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddSortingCenterScreen()),
+                  );
+                  if (result != null && result is Map) {
+                    final prefs = await SharedPreferences.getInstance();
+                    final jwt = prefs.getString('jwt_token');
+                    
+                    final location = result['location']; // LatLng
+                    final latStr = location.latitude.toString();
+                    final lngStr = location.longitude.toString();
+                    
+                    final body = json.encode({
+                      'name': result['name'],
+                      'lat': latStr,
+                      'lng': lngStr,
+                      'types': (result['types'] as List).join(', '),
+                      'hours': result['hours'],
+                      'status': result['status'],
+                    });
+                    
+                    await http.post(
+                      Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
+                      headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'}, 
+                      body: body
+                    );
+                    _loadPoints();
+                  }
+                },
                 icon: const Icon(Icons.add_location_alt_rounded, size: 18),
-                label: const Text('AJOUTER'),
+                label: const Text('AJOUTER (CARTE)'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               ),
             ],

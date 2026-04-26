@@ -798,38 +798,58 @@ class _MarketingLandingScreenState extends State<MarketingLandingScreen> with Ti
 
                 const SizedBox(height: 28),
 
-                // Glassmorphism social proof bar
+                // Glassmorphism stats and social proof
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.15)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 24, offset: const Offset(0, 8)),
+                    ],
                   ),
-                  child: Row(children: [
-                    SizedBox(width: 80, height: 32, child: Stack(
-                      children: List.generate(3, (index) => Positioned(
-                        left: index * 22.0,
-                        child: Container(
-                          width: 32, height: 32,
-                          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
-                          child: ClipOval(child: SafeNetworkImage(
-                            'https://i.pravatar.cc/150?u=user${index + 10}',
-                            fit: BoxFit.cover, placeholder: Container(color: Colors.grey.shade700),
-                          )),
-                        ),
-                      )),
-                    )),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('+850 éco-citoyens actifs', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildHeroStat('12K+', 'Membres', AppTheme.primaryGreen),
+                          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2)),
+                          _buildHeroStat('5000+', 'Kilos Triés', AppTheme.accentTeal),
+                          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2)),
+                          _buildHeroStat('500+', 'Cadeaux', AppTheme.secondaryGold),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(height: 1, color: Colors.white.withOpacity(0.1)),
+                      const SizedBox(height: 16),
                       Row(children: [
-                        ...List.generate(5, (i) => Icon(Icons.star_rounded, color: const Color(0xFFFBBF24), size: 14)),
-                        const SizedBox(width: 6),
-                        Text('4.9/5', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+                        SizedBox(width: 80, height: 32, child: Stack(
+                          children: List.generate(3, (index) => Positioned(
+                            left: index * 22.0,
+                            child: Container(
+                              width: 32, height: 32,
+                              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                              child: ClipOval(child: SafeNetworkImage(
+                                'https://i.pravatar.cc/150?u=user${index + 10}',
+                                fit: BoxFit.cover, placeholder: Container(color: Colors.grey.shade700),
+                              )),
+                            ),
+                          )),
+                        )),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('+850 éco-citoyens actifs', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                          Row(children: [
+                            ...List.generate(5, (i) => Icon(Icons.star_rounded, color: const Color(0xFFFBBF24), size: 14)),
+                            const SizedBox(width: 6),
+                            Text('4.9/5', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+                          ]),
+                        ])),
                       ]),
-                    ])),
-                  ]),
+                    ],
+                  ),
                 ).animate().fadeIn(delay: 800.ms),
               ],
             ),
@@ -847,6 +867,31 @@ class _MarketingLandingScreenState extends State<MarketingLandingScreen> with Ti
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeroStat(String value, String label, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.outfit(
+            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 

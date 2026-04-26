@@ -17,10 +17,10 @@ class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
 
   @override
-  State<ProfileTab> createState() => _ProfileTabState();
+  State<ProfileTab> createState() => ProfileTabState();
 }
 
-class _ProfileTabState extends State<ProfileTab> {
+class ProfileTabState extends State<ProfileTab> {
   bool _pushNotifications = true;
   bool _mfaEnabled = false;
   final AuthService _authService = AuthService();
@@ -34,6 +34,35 @@ class _ProfileTabState extends State<ProfileTab> {
     super.initState();
     _loadUnreadCount();
     _loadMyStats();
+    refreshScore(); // Charge le score au premier montage
+  }
+
+  /// Méthode publique appelée par le shell quand on arrive sur cet onglet
+  Future<void> refreshScore() async {
+    if (!AuthState.isLoggedIn) return;
+    try {
+      final userData = await _authService.fetchUserProfile();
+      if (userData != null && mounted) {
+        final u = AuthState.currentUser;
+        if (u != null) {
+          final newScore = (userData['global_score'] as num?)?.toDouble() ?? u.globalScore;
+          if (newScore != u.globalScore) {
+            AuthState.currentUser = User(
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              points: u.points,
+              globalScore: newScore,
+              avatarUrl: u.avatarUrl,
+              qrCode: u.qrCode,
+            );
+          }
+          // Toujours rafraîchir l'UI même si le score n'a pas changé
+          if (mounted) setState(() {});
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadMyStats() async {
@@ -167,6 +196,7 @@ class _ProfileTabState extends State<ProfileTab> {
               email: user.email,
               role: user.role,
               points: user.points,
+              globalScore: user.globalScore,
               avatarUrl: uploadedUrl,
               qrCode: user.qrCode,
             );
@@ -541,6 +571,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final postsCount = (_myStats['posts_count'] as num?)?.toInt() ?? 0;
     final likesReceived = (_myStats['likes_received'] as num?)?.toInt() ?? 0;
     final commentsCount = (_myStats['comments_count'] as num?)?.toInt() ?? 0;
+    final globalScore = AuthState.currentUser?.globalScore ?? 0.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -549,14 +580,43 @@ class _ProfileTabState extends State<ProfileTab> {
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         boxShadow: AppTheme.premiumShadow,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildStatItem('POSTS', '$postsCount', Icons.photo_library_rounded),
-          _buildDivider(),
-          _buildStatItem('LIKES', '$likesReceived', Icons.favorite_rounded),
-          _buildDivider(),
-          _buildStatItem('COMMENTAIRES', '$commentsCount', Icons.chat_bubble_rounded),
+          // Score global en haut
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppTheme.primaryGreen.withOpacity(0.08), AppTheme.accentTeal.withOpacity(0.05)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.15)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.emoji_events_rounded, color: AppTheme.primaryGreen, size: 24),
+                const SizedBox(width: 12),
+                Text('SCORE GLOBAL', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.textMuted, letterSpacing: 1)),
+                const SizedBox(width: 12),
+                Text(globalScore.toStringAsFixed(1), style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen)),
+                const SizedBox(width: 4),
+                Text('pts', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMuted)),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('POSTS', '$postsCount', Icons.photo_library_rounded),
+              _buildDivider(),
+              _buildStatItem('LIKES', '$likesReceived', Icons.favorite_rounded),
+              _buildDivider(),
+              _buildStatItem('COMMENTAIRES', '$commentsCount', Icons.chat_bubble_rounded),
+            ],
+          ),
         ],
       ),
     );

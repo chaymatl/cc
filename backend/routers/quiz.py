@@ -158,6 +158,57 @@ async def create_quiz_from_pdf(
         raise HTTPException(status_code=500, detail=f"Erreur IA Gemini : {str(e)[:200]}")
 
 
+@router.post("/{quiz_id}/retry")
+async def retry_quiz_extraction(
+    quiz_id: int,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
+    """Re-tenter l'extraction Gemini pour un quiz en erreur."""
+    quiz = db.query(db_models.Quiz).filter(
+        db_models.Quiz.id == quiz_id,
+        db_models.Quiz.educator_id == current_user.id,
+    ).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz non trouvé")
+    if quiz.status == "ready":
+        return {"message": "Ce quiz est déjà prêt.", "quiz": _format_quiz(quiz)}
+
+    pdf_path = os.path.join(UPLOADS_DIR, "quizzes", quiz.pdf_filename)
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="Fichier PDF introuvable.")
+
+    try:
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+
+        from services.gemini_quiz import extract_quiz_from_pdf
+        result = extract_quiz_from_pdf(pdf_bytes)
+
+        questions = result.get("questions", [])
+        quiz.title = result.get("title", quiz.title)
+        quiz.questions_json = json.dumps(questions, ensure_ascii=False)
+        quiz.answer_key_json = json.dumps(
+            [{"number": q.get("number"), "correct_answer": q.get("correct_answer"),
+              "explanation": q.get("explanation", "")} for q in questions],
+            ensure_ascii=False,
+        )
+        quiz.total_questions = len(questions)
+        quiz.status = "ready"
+        quiz.error_message = None
+        db.commit()
+        db.refresh(quiz)
+
+        return {
+            "message": f"Quiz re-traité avec succès ! {len(questions)} questions extraites.",
+            "quiz": _format_quiz(quiz),
+        }
+    except Exception as e:
+        quiz.error_message = str(e)[:500]
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Erreur IA Gemini : {str(e)[:200]}")
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  CITOYEN : Voir tous les quiz disponibles
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -253,6 +304,21 @@ async def submit_quiz_answers(
     if not quiz or quiz.status != "ready":
         raise HTTPException(status_code=404, detail="Quiz non trouvé ou pas encore prêt")
 
+    # Vérifier si l'utilisateur a déjà soumis ce quiz
+    existing = (
+        db.query(db_models.QuizSubmission)
+        .filter(
+            db_models.QuizSubmission.quiz_id == quiz_id,
+            db_models.QuizSubmission.student_id == current_user.id,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Vous avez déjà complété ce quiz avec un score de {existing.score}/10. Chaque quiz ne peut être passé qu'une seule fois."
+        )
+
     # Charger les questions
     questions = json.loads(quiz.questions_json) if quiz.questions_json else []
     if not questions:
@@ -276,6 +342,15 @@ async def submit_quiz_answers(
             graded_at=datetime.utcnow(),
         )
         db.add(submission)
+
+        # Ajouter le score au score global de l'utilisateur
+        score = round(grading.get("score", 0), 1)
+        if score > 0:
+            if current_user.global_score is None:
+                current_user.global_score = 0.0
+            current_user.global_score += score
+            db.add(current_user)
+
         db.commit()
         db.refresh(submission)
 
@@ -283,6 +358,7 @@ async def submit_quiz_answers(
             "message": "Quiz corrigé par l'IA !",
             "submission": _format_submission(submission),
             "grading": grading,
+            "global_score": current_user.global_score or 0.0,
         }
 
     except Exception as e:
@@ -339,6 +415,15 @@ async def submit_quiz_pdf(
             graded_at=datetime.utcnow(),
         )
         db.add(submission)
+
+        # Ajouter le score au score global de l'utilisateur
+        score = round(grading.get("score", 0), 1)
+        if score > 0:
+            if current_user.global_score is None:
+                current_user.global_score = 0.0
+            current_user.global_score += score
+            db.add(current_user)
+
         db.commit()
         db.refresh(submission)
 
@@ -346,6 +431,7 @@ async def submit_quiz_pdf(
             "message": "Copie corrigée par l'IA !",
             "submission": _format_submission(submission),
             "grading": grading,
+            "global_score": current_user.global_score or 0.0,
         }
 
     except Exception as e:

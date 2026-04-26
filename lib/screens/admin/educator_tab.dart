@@ -416,6 +416,11 @@ class _EducatorTabState extends State<EducatorTab> {
     final total = quiz['total_questions'] ?? 0;
     final subs = quiz['submissions_count'] ?? 0;
     final isReady = status == 'ready';
+    final isError = status == 'error';
+    final errorMsg = quiz['error_message'] ?? '';
+
+    Color statusColor = isReady ? AppTheme.primaryGreen : isError ? Colors.red : Colors.orange;
+    String statusLabel = isReady ? 'PRÊT' : isError ? 'ERREUR' : 'EN COURS';
 
     return GestureDetector(
       onTap: isReady ? () => _viewQuizResults(Map<String, dynamic>.from(quiz)) : null,
@@ -426,54 +431,124 @@ class _EducatorTabState extends State<EducatorTab> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppTheme.tightShadow,
-          border: Border(left: BorderSide(color: isReady ? AppTheme.primaryGreen : Colors.orange, width: 4)),
+          border: Border(left: BorderSide(color: statusColor, width: 4)),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: (isReady ? Colors.purple : Colors.orange).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isReady ? Icons.quiz_rounded : Icons.hourglass_top_rounded,
-                color: isReady ? Colors.purple : Colors.orange,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(quiz['title'] ?? 'Quiz', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Row(children: [
-                  const Icon(Icons.help_outline, size: 13, color: AppTheme.textMuted),
-                  const SizedBox(width: 4),
-                  Text('$total questions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.people_outline, size: 13, color: AppTheme.textMuted),
-                  const SizedBox(width: 4),
-                  Text('$subs soumissions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-                ]),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    isReady ? Icons.quiz_rounded : isError ? Icons.error_outline_rounded : Icons.hourglass_top_rounded,
+                    color: statusColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(quiz['title'] ?? 'Quiz', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.help_outline, size: 13, color: AppTheme.textMuted),
+                      const SizedBox(width: 4),
+                      Text('$total questions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.people_outline, size: 13, color: AppTheme.textMuted),
+                      const SizedBox(width: 4),
+                      Text('$subs soumissions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+                    ]),
+                  ],
+                )),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                  ),
+                ),
               ],
-            )),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: (isReady ? AppTheme.primaryGreen : Colors.orange).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                isReady ? 'PRÊT' : 'EN COURS',
-                style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: isReady ? AppTheme.primaryGreen : Colors.orange),
-              ),
             ),
+            // Bouton Réessayer pour les quiz en erreur
+            if (isError) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    if (errorMsg.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          errorMsg.length > 100 ? '${errorMsg.substring(0, 100)}...' : errorMsg,
+                          style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade700),
+                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _retryQuiz(quiz['id']),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: Text('RÉESSAYER L\'EXTRACTION IA', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     ).animate().fadeIn().slideX(begin: 0.05);
+  }
+
+  Future<void> _retryQuiz(int quizId) async {
+    setState(() => _isUploading = true);
+    final res = await _authService.retryQuiz(quizId);
+    setState(() => _isUploading = false);
+
+    if (res['success'] == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(res['message'] ?? 'Quiz re-traité avec succès !', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+        ]),
+        backgroundColor: AppTheme.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ));
+      _loadQuizzes();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res['message'] ?? 'Erreur lors du retry'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
   }
 
   Widget _buildAwarenessSessions(BuildContext context) {

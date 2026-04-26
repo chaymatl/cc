@@ -82,6 +82,7 @@ async def get_me(current_user: db_models.User = Depends(get_current_user)):
         "avatar_url": getattr(current_user, "avatar_url", None) or "",
         "qr_code": current_user.qr_code,
         "points": getattr(current_user, "points", 0),
+        "global_score": getattr(current_user, "global_score", 0.0) or 0.0,
     }
 
 

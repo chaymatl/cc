@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:ui';
 import '../../theme/app_theme.dart';
 import '../../widgets/premium_widgets.dart';
 
@@ -22,6 +23,8 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
   final MapController _mapController = MapController();
   LatLng _selectedLocation = const LatLng(36.8065, 10.1815); // Tunis
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _typesController = TextEditingController();
+  final TextEditingController _hoursController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   String _selectedStatus = 'Disponible';
   bool _isFetchingLocation = false;
@@ -39,6 +42,8 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
   void dispose() {
     _debounce?.cancel();
     _nameController.dispose();
+    _typesController.dispose();
+    _hoursController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -100,7 +105,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     setState(() => _isSearching = true);
     try {
       final response = await http.get(
-        Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=$query&limit=5'),
+        Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=$query&limit=5&countrycodes=tn'),
         headers: {'User-Agent': 'EcoRewindApp/1.0'},
       );
 
@@ -154,6 +159,8 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     );
     Navigator.pop(context, {
       'name': _nameController.text,
+      'types': _typesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+      'hours': _hoursController.text,
       'status': _selectedStatus,
       'location': _selectedLocation,
     });
@@ -209,6 +216,10 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             options: MapOptions(
               initialCenter: _selectedLocation,
               initialZoom: 13,
+              minZoom: 5,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(const LatLng(30.0, 7.0), const LatLng(37.6, 11.6)),
+              ),
               onTap: _onMapTap,
             ),
             children: [
@@ -242,67 +253,81 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
               padding: const EdgeInsets.fromLTRB(16, 70, 16, 0),
               child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.5)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher une adresse...',
-                        prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryGreen),
-                        suffixIcon: _isSearching
-                            ? const Padding(
-                                padding: EdgeInsets.all(12.0),
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen),
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: _onSearchChanged,
+                          decoration: InputDecoration(
+                            hintText: 'Rechercher une adresse...',
+                            prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryGreen),
+                            suffixIcon: _isSearching
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12.0),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   if (_searchResults.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      constraints: const BoxConstraints(maxHeight: 250),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          constraints: const BoxConstraints(maxHeight: 250),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.5)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: _searchResults.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final result = _searchResults[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on_outlined, color: AppTheme.textMuted),
-                            title: Text(
-                              result['display_name'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(fontSize: 13),
-                            ),
-                            onTap: () => _selectSearchResult(result),
-                          );
-                        },
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: _searchResults.length,
+                            separatorBuilder: (context, index) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final result = _searchResults[index];
+                              return ListTile(
+                                leading: const Icon(Icons.location_on_outlined, color: AppTheme.textMuted),
+                                title: Text(
+                                  result['display_name'],
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 13),
+                                ),
+                                onTap: () => _selectSearchResult(result),
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -313,61 +338,104 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(32),
-                  topRight: Radius.circular(32),
-                ),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'DÉTAILS DU NOUVEAU CENTRE',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
-                        fontSize: 11,
-                        color: AppTheme.textMuted,
-                      ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(36), topRight: Radius.circular(36)),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(36),
+                      topRight: Radius.circular(36),
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        hintText: 'Nom du centre (ex: Tunis Nord)',
-                        prefixIcon: const Icon(Icons.edit_note_rounded, color: AppTheme.primaryGreen),
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
+                    border: Border(top: BorderSide(color: Colors.white.withOpacity(0.6), width: 1.5)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, -10))],
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(child: _buildStatusChip('Disponible', Colors.green)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildStatusChip('Saturé', Colors.red)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildStatusChip('Maintenance', Colors.orange)),
+                        Text(
+                          'DÉTAILS DU NOUVEAU CENTRE',
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                            fontSize: 11,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            hintText: 'Nom du centre (ex: Tunis Nord)',
+                            prefixIcon: const Icon(Icons.edit_note_rounded, color: AppTheme.primaryGreen),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _typesController,
+                                decoration: InputDecoration(
+                                  hintText: 'Types (ex: Plastique, Verre)',
+                                  prefixIcon: const Icon(Icons.recycling_rounded, color: AppTheme.primaryGreen),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _hoursController,
+                                decoration: InputDecoration(
+                                  hintText: 'Horaires (ex: 8h-18h)',
+                                  prefixIcon: const Icon(Icons.access_time_rounded, color: AppTheme.primaryGreen),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _buildStatusChip('Disponible', Colors.green)),
+                            const SizedBox(width: 8),
+                            Expanded(child: _buildStatusChip('Saturé', Colors.red)),
+                            const SizedBox(width: 8),
+                            Expanded(child: _buildStatusChip('Maintenance', Colors.orange)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        PremiumButton(
+                          text: 'CONFIRMER L\'AJOUT',
+                          onPressed: _saveNewCenter,
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    PremiumButton(
-                      text: 'CONFIRMER L\'AJOUT',
-                      onPressed: _saveNewCenter,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

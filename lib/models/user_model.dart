@@ -6,6 +6,7 @@ class User {
   final String email;
   final UserRole role;
   final int points;
+  final double globalScore;
   final String avatarUrl;
   final String qrCode;
 
@@ -15,6 +16,7 @@ class User {
     required this.email,
     required this.role,
     this.points = 0,
+    this.globalScore = 0.0,
     this.avatarUrl = '',
     this.qrCode = '',
   });
@@ -27,6 +29,7 @@ class User {
       email: data['email'] ?? '',
       role: _parseRole(data['role'] ?? 'user'),
       points: data['points'] ?? 0,
+      globalScore: (data['global_score'] ?? 0.0).toDouble(),
       avatarUrl: data['avatar_url'] ?? '',
       qrCode: data['qr_code'] ?? '',
     );

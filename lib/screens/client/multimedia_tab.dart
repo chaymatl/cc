@@ -23,6 +23,8 @@ class _MultimediaTabState extends State<MultimediaTab> {
   final AuthService _authService = AuthService();
   List<dynamic> _apiQuizzes = [];
   bool _quizzesLoaded = false;
+  // IDs des quiz déjà complétés par l'utilisateur
+  final Set<int> _completedQuizIds = {};
 
   @override
   void initState() {
@@ -32,13 +34,52 @@ class _MultimediaTabState extends State<MultimediaTab> {
 
   Future<void> _loadApiQuizzes() async {
     final quizzes = await _authService.fetchAvailableQuizzes();
-    if (mounted) setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
+    if (mounted) {
+      setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
+      // Vérifier lesquels ont déjà été complétés
+      _checkCompletedQuizzes(quizzes);
+    }
+  }
+
+  Future<void> _checkCompletedQuizzes(List<dynamic> quizzes) async {
+    for (final quiz in quizzes) {
+      final id = quiz['id'] as int?;
+      if (id == null) continue;
+      try {
+        final result = await _authService.fetchMyQuizResult(id);
+        if (result != null && mounted) {
+          setState(() => _completedQuizIds.add(id));
+        }
+      } catch (_) {}
+    }
   }
 
   void _openQuiz(Map<String, dynamic> quiz) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (_) => QuizPlayScreen(quiz: quiz),
-    ));
+    final id = quiz['id'] as int?;
+    if (id != null && _completedQuizIds.contains(id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white, size: 18),
+              SizedBox(width: 10),
+              Expanded(child: Text('Vous avez déjà complété ce quiz. Chaque quiz ne peut être passé qu\'une seule fois.')),
+            ],
+          ),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz)),
+    ).then((_) {
+      // Rafraîchir la liste après retour (le quiz vient peut-être d'être complété)
+      if (id != null) _checkCompletedQuizzes(_apiQuizzes);
+    });
   }
 
   // Base de données simulée contenant tous les items multimédias
@@ -273,6 +314,8 @@ class _MultimediaTabState extends State<MultimediaTab> {
     final filteredContent = _selectedCategory == 'Tout' 
         ? _allContent 
         : _allContent.where((c) => c['type'] == _selectedCategory).toList();
+    // Pour la grille statique, exclure les quiz (ils sont affichés dynamiquement via l'API)
+    final filteredNonQuiz = filteredContent.where((c) => c['type'] != 'Quiz').toList();
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
@@ -320,7 +363,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-          // Section Quiz IA dynamiques
+          // Section Quiz IA dynamiques (visible pour 'Tout' et 'Quiz')
           if ((_selectedCategory == 'Tout' || _selectedCategory == 'Quiz') && _apiQuizzes.isNotEmpty)
             SliverToBoxAdapter(
               child: Padding(
@@ -333,6 +376,15 @@ class _MultimediaTabState extends State<MultimediaTab> {
                         Icon(Icons.auto_awesome, size: 18, color: Colors.purple),
                         const SizedBox(width: 8),
                         Text('QUIZ IA DISPONIBLES', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: Colors.purple)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text('${_apiQuizzes.length} quiz', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.purple)),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -343,31 +395,69 @@ class _MultimediaTabState extends State<MultimediaTab> {
               ),
             ),
 
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.8,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = filteredContent[index];
-                  return Animate(
-                    key: ValueKey(item['title']),
-                    effects: const [FadeEffect(), ScaleEffect(begin: Offset(0.9, 0.9))],
-                    child: GestureDetector(
-                      onTap: () => _openContent(item),
-                      child: _buildCourseCard(item['title']!, item['meta']!, item['image']!, item['type']!),
-                    ),
-                  );
-                },
-                childCount: filteredContent.length,
+          // Message si aucun quiz IA disponible (uniquement quand filtre Quiz actif)
+          if (_selectedCategory == 'Quiz' && _apiQuizzes.isEmpty && _quizzesLoaded)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: AppTheme.tightShadow,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.quiz_rounded, size: 48, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      Text('Aucun quiz disponible', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                      const SizedBox(height: 8),
+                      Text('Les éducateurs n\'ont pas encore publié de quiz.\nRevenez bientôt !',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted, height: 1.5)),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+
+          // Loading indicator pour les quiz
+          if (_selectedCategory == 'Quiz' && !_quizzesLoaded)
+            const SliverToBoxAdapter(
+              child: Center(child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+              )),
+            ),
+
+          // Grille de contenu statique (Vidéos, Articles, Impact — PAS les Quiz statiques)
+          if (_selectedCategory != 'Quiz')
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  childAspectRatio: 0.8,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = filteredNonQuiz[index];
+                    return Animate(
+                      key: ValueKey(item['title']),
+                      effects: const [FadeEffect(), ScaleEffect(begin: Offset(0.9, 0.9))],
+                      child: GestureDetector(
+                        onTap: () => _openContent(item),
+                        child: _buildCourseCard(item['title']!, item['meta']!, item['image']!, item['type']!),
+                      ),
+                    );
+                  },
+                  childCount: filteredNonQuiz.length,
+                ),
+              ),
+            ),
           
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -613,6 +703,8 @@ class _MultimediaTabState extends State<MultimediaTab> {
     final title = quiz['title'] ?? 'Quiz';
     final totalQ = quiz['total_questions'] ?? 0;
     final desc = quiz['description'] ?? '';
+    final id = quiz['id'] as int?;
+    final isCompleted = id != null && _completedQuizIds.contains(id);
 
     return GestureDetector(
       onTap: () => _openQuiz(Map<String, dynamic>.from(quiz)),
@@ -620,31 +712,70 @@ class _MultimediaTabState extends State<MultimediaTab> {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.deepPurple.shade600]),
+          gradient: isCompleted
+              ? LinearGradient(colors: [Colors.green.shade500, Colors.teal.shade600])
+              : LinearGradient(colors: [Colors.purple.shade400, Colors.deepPurple.shade600]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+              color: (isCompleted ? Colors.green : Colors.purple).withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 28),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                isCompleted ? Icons.check_circle_rounded : Icons.quiz_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                const SizedBox(height: 4),
-                Text(desc.isNotEmpty ? desc : '$totalQ questions • Corrigé par IA',
-                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.75), fontSize: 12)),
-              ],
-            )),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    )),
+                  const SizedBox(height: 4),
+                  Text(
+                    isCompleted
+                        ? 'Quiz complété ✓  •  Score enregistré'
+                        : (desc.isNotEmpty ? desc : '$totalQ questions • Corrigé par IA'),
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withOpacity(0.75),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-              child: Text('JOUER', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                isCompleted ? 'TERMINÉ' : 'JOUER',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ],
         ),

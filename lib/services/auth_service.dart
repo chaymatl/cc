@@ -1049,6 +1049,25 @@ class AuthService {
     }
   }
 
+  /// Récupère le profil utilisateur actuel depuis /users/me (inclut global_score)
+  Future<Map<String, dynamic>?> fetchUserProfile() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
+      }
+      return null;
+    } catch (e) {
+      developer.log('Erreur fetchUserProfile: $e', name: 'AuthService');
+      return null;
+    }
+  }
+
 
   // ===========================================
   // ADMINISTRATION DES UTILISATEURS
@@ -1502,6 +1521,25 @@ class AuthService {
     }
   }
 
+  /// Re-tenter l'extraction Gemini pour un quiz en erreur
+  Future<Map<String, dynamic>> retryQuiz(int quizId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final response = await http.post(
+        Uri.parse('$baseUrl/quiz/$quizId/retry'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        return {'success': true, ...data};
+      }
+      return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
   /// Liste les quiz de l'éducateur connecté
   Future<List<dynamic>> fetchMyQuizzes() async {
     try {
@@ -1589,6 +1627,24 @@ class AuthService {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
       return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Récupère le résultat personnel de l'utilisateur pour un quiz donné (null = pas encore fait)
+  Future<Map<String, dynamic>?> fetchMyQuizResult(int quizId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+      final response = await http.get(
+        Uri.parse('$baseUrl/quiz/$quizId/my-result'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
+      }
+      return null; // 404 = pas encore soumis
     } catch (e) {
       return null;
     }
