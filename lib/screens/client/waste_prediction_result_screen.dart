@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../models/waste_record_model.dart';
 import '../../models/user_model.dart';
+import '../../widgets/web_back_button.dart';
 
 class WastePredictionResultScreen extends StatelessWidget {
   final WasteType predictedType;
@@ -25,10 +26,10 @@ class WastePredictionResultScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close, color: AppTheme.deepSlate, size: 28),
-        ),
+        )),
         title: Text(
           'Prédiction IA',
           style: GoogleFonts.outfit(

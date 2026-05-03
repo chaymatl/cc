@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/platform_ui.dart';
+import '../../theme/web_theme.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 
@@ -188,6 +190,69 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final progress = _filledFields / 6;
+
+    // ── Web : layout professionnel centré ────────────────────────────
+    if (PlatformUI.isWeb) {
+      return Scaffold(
+        backgroundColor: WebTheme.bgLight,
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Logo + Title
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [AppTheme.primaryGreen, AppTheme.accentTeal]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/ecorewind_logo.png',
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Center(child: Text('Créer un compte', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w700, color: AppTheme.deepSlate))),
+                  const SizedBox(height: 8),
+                  Center(child: Text('Rejoignez la communauté EcoRewind', style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted))),
+                  const SizedBox(height: 8),
+                  // Progress bar
+                  Row(children: [
+                    Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen)))),
+                    const SizedBox(width: 12),
+                    Text('$_filledFields/6', style: GoogleFonts.outfit(color: AppTheme.primaryGreen, fontSize: 13, fontWeight: FontWeight.bold)),
+                  ]),
+                  const SizedBox(height: 24),
+
+                  // Step content (reuse existing steps but with web styling applied via theme)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _currentStep == 0
+                        ? _buildWebFormStep()
+                        : _currentStep == 1
+                            ? _buildOTPStep()
+                            : _buildSuccessStep(),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Mobile : design Pinterest-like (existant) ───────────────────
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
@@ -297,6 +362,150 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           ]),
         );
       }),
+    );
+  }
+  // ── Web Form Step (professionnel, sobre) ──
+  Widget _buildWebFormStep() {
+    return Container(
+      key: const ValueKey('web_form_step'),
+      padding: const EdgeInsets.all(32),
+      decoration: WebTheme.cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_errorMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Row(children: [
+                Icon(Icons.error_outline, color: Colors.red.shade600, size: 18),
+                const SizedBox(width: 10),
+                Expanded(child: Text(_errorMessage!, style: GoogleFonts.inter(color: Colors.red.shade700, fontSize: 13))),
+              ]),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Name
+          Text('Nom complet', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _nameController,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: const InputDecoration(hintText: 'Votre nom', prefixIcon: Icon(Icons.person_outline_rounded, size: 18)),
+          ),
+          const SizedBox(height: 16),
+
+          // Email
+          Text('Email', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: const InputDecoration(hintText: 'votre@email.com', prefixIcon: Icon(Icons.alternate_email_rounded, size: 18)),
+          ),
+          const SizedBox(height: 8),
+          Center(child: Text('ou', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted))),
+          const SizedBox(height: 8),
+
+          // Phone
+          Text('Téléphone', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: const InputDecoration(hintText: '+216 XX XXX XXX', prefixIcon: Icon(Icons.phone_iphone_rounded, size: 18)),
+          ),
+          const SizedBox(height: 16),
+
+          // Date of birth
+          Text('Date de naissance', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _dobController,
+            readOnly: true,
+            onTap: () => _selectDate(context),
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: const InputDecoration(hintText: 'JJ/MM/AAAA', prefixIcon: Icon(Icons.calendar_today_rounded, size: 18)),
+          ),
+          const SizedBox(height: 16),
+
+          // Password
+          Text('Mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: InputDecoration(
+              hintText: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Confirm password
+          Text('Confirmer le mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _confirmPasswordController,
+            obscureText: _obscureConfirm,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            decoration: InputDecoration(
+              hintText: '••••••••',
+              prefixIcon: const Icon(Icons.lock_reset_rounded, size: 18),
+              suffixIcon: IconButton(
+                icon: Icon(_obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18),
+                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Terms
+          GestureDetector(
+            onTap: () => setState(() => _acceptTerms = !_acceptTerms),
+            child: Row(children: [
+              Checkbox(value: _acceptTerms, onChanged: (v) => setState(() => _acceptTerms = v ?? false), activeColor: AppTheme.primaryGreen),
+              Expanded(child: Text("J'accepte les conditions d'utilisation", style: GoogleFonts.inter(color: AppTheme.textMain, fontSize: 13))),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // Submit
+          SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _handleSignUp,
+              child: _isLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('Créer mon compte', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Déjà un compte ? ', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 14)),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                child: Text('Se connecter', style: GoogleFonts.inter(color: AppTheme.primaryGreen, fontWeight: FontWeight.w700, fontSize: 14)),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

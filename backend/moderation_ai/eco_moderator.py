@@ -88,6 +88,7 @@ class EcoCNNModerator(AIModerator):
         """
         Couche 0 (règles) + Couche 1 (Text CNN) fusionnées.
         Le score CNN prime sur le score règles si le modèle est disponible.
+        Les salutations courtes ne sont jamais pénalisées par le CNN.
         """
         result = super().analyze_text(text)   # Règles + Detoxify + XLM-RoBERTa
 
@@ -101,6 +102,18 @@ class EcoCNNModerator(AIModerator):
                 result["cnn_probs"] = probs
                 result["ml_used"]   = True
 
+                # ── Détection salutation (protection contre faux positif CNN) ─
+                # Les salutations courtes comme "Salam les amis", "Bonjour !"
+                # ne doivent jamais être classées off_topic par le CNN.
+                import re, unicodedata
+                _norm_t = unicodedata.normalize("NFKD", text.lower().strip())
+                _norm_t = "".join(c for c in _norm_t if not unicodedata.combining(c))
+                _tokens = set(re.findall(r'\b\w+\b', _norm_t))
+                _GREET = {"bonjour", "bonsoir", "salut", "salam", "hello",
+                          "hi", "hey", "marhaba", "ahlan", "coucou"}
+                _is_greeting = bool(_tokens & _GREET) and len(_tokens) <= 10
+                _profanity_sc = result.get("categories", {}).get("profanity", {}).get("score", 0.0)
+
                 # ── Ajustement du score final via CNN ─────────────────────────
                 if probs["toxic"] >= CNN_TOXIC_THRESHOLD:
                     # CNN détecte du contenu toxique → forcer score élevé
@@ -113,9 +126,13 @@ class EcoCNNModerator(AIModerator):
                     result["cnn_decision"] = "eco"
 
                 elif probs["off_topic"] >= CNN_OFFTOPIC_THRESHOLD:
-                    # CNN détecte du hors-sujet → pousser vers pending_review
-                    result["score"] = max(result["score"], SAFE_THRESHOLD + 0.05)
-                    result["cnn_decision"] = "off_topic"
+                    if _is_greeting and _profanity_sc == 0.0:
+                        # Salutation courte classée off_topic par le CNN → ignorer
+                        result["cnn_decision"] = "greeting"
+                    else:
+                        # Vrai hors-sujet → pousser vers pending_review
+                        result["score"] = max(result["score"], SAFE_THRESHOLD + 0.05)
+                        result["cnn_decision"] = "off_topic"
 
                 else:
                     result["cnn_decision"] = "uncertain"
@@ -191,9 +208,10 @@ class EcoCNNModerator(AIModerator):
         Corrige les faux positifs quand ResNet18 ou EcoTextCNN confirme
         un contenu éco-pertinent, annulant les pénalités de contexte.
 
-        Cas typique : "Bonjour !" + photo de nettoyage de plage
-          → parent : score=0.60 pending_review (pénalité texte+image sans contexte eco)
-          → ici      : score=0.10 published (ResNet18 confirme image éco → pénalités levées)
+        Règles métier :
+          Cas 1 : Image éco + salutation (bonjour, salam...) → PUBLISHED
+          Cas 2 : Image pollution/déchets + texte encourageant (conseils, sensibilisation) → PUBLISHED
+          Hors sujet (ni tri, ni propreté, ni sensibilisation pollution) → PENDING_REVIEW (admin)
         """
         import time
         t0 = time.time()
@@ -219,113 +237,255 @@ class EcoCNNModerator(AIModerator):
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
 
-        # ── Déterminer si le texte PROMEUT une action éco ────────────────────
-        # Pour primer sur une image off_topic (pollution, décharge...), le texte
-        # doit EXPLICITEMENT promouvoir une amélioration, réparation ou protection
-        # de l'environnement. Décrire simplement le problème ne suffit pas.
-        #   OK  : "Nettoyons cette plage !", "Recyclons ensemble"
-        #   NOK : "La pollution est terrible", "Quelle honte cette décharge"
-        from services.ai_moderator import _normalize as _norm
-        norm_text_full = _norm(text or "")
+        # ── Texte toxique confirmé : rejet automatique ───────────────────────
+        # Si le TextCNN classe le texte comme toxique ET que Detoxify confirme
+        # (toxicity > 0.5), le contenu est rejeté quel que soit l'image.
+        # Ex: "Vous êtes des connards et des salopes" → rejected
+        ml_toxicity = result.text_analysis.get("categories", {}).get("ml_toxicity", {})
+        detoxify_tox = ml_toxicity.get("toxicity", 0.0)
+        profanity_sc = result.text_analysis.get("categories", {}).get("profanity", {}).get("score", 0.0)
+        if (
+            (cnn_text_decision == "toxic" and toxic_txt >= CNN_TOXIC_THRESHOLD)
+            or (profanity_sc >= 0.70 and detoxify_tox > 0.4)
+            or (detoxify_tox > 0.7)
+        ):
+            result.score  = max(result.score, 0.80)
+            result.status = ModerationStatus.REJECTED.value
+            if "Contenu toxique auto-rejete" not in str(result.reasons):
+                result.reasons.append("Contenu toxique auto-rejete (profanite + IA)")
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
 
-        # Racines de verbes/noms d'ACTION éco (conjugaison-agnostique)
+        # ── Rescue salutation simple ──────────────────────────────────────
+        # Si le texte est une salutation courte et propre (pas de profanité,
+        # pas d'anti-env), on le publie directement quel que soit le score parent.
+        # Ex: "Salam les amis", "Bonjour !", "Hello", "Coucou tout le monde"
+        from services.ai_moderator import _normalize as _norm, _tokenize as _tok
+        norm_text_full = _norm(text or "")
+        text_tokens = set(_tok(text or ""))
+
+        _GREETINGS_SET = {
+            "bonjour", "bonsoir", "salut", "salam", "hello",
+            "hi", "hey", "marhaba", "ahlan", "coucou",
+        }
+        _has_greeting = bool(text_tokens & _GREETINGS_SET)
+        _text_clean = (
+            result.text_analysis.get("categories", {}).get("profanity", {}).get("score", 0.0) == 0.0
+            and result.text_analysis.get("categories", {}).get("anti_environmental", {}).get("score", 0.0) == 0.0
+        )
+        if _has_greeting and len(text_tokens) <= 10 and _text_clean and toxic_txt < CNN_TOXIC_THRESHOLD:
+            result.score  = min(result.score, 0.10)
+            result.status = ModerationStatus.PUBLISHED.value
+            result.reasons = [r for r in result.reasons if "précaution" not in r.lower()]
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
+
+        # --- Racines d'ACTION éco (nettoyage, recyclage, protection...) ---
         _ECO_ACTION_STEMS = [
             # Nettoyage / ramassage
-            "nettoy",      # nettoyer, nettoyage, nettoyons, nettoyee...
-            "ramass",      # ramasser, ramassage, ramassons...
-            "depollut",    # depollution, depolluer
-            "depollu",     # depolluer
+            "nettoy", "ramass", "depollut", "depollu",
             # Recyclage / tri
-            "recycl",      # recycler, recyclage, recyclons...
-            "trier", "trions", "tri selectif", "tri des",
-            "compost",     # composter, compostage...
+            "recycl", "trier", "trions", "tri selectif", "tri des",
+            "compost",
             # Protection / préservation
-            "proteg",      # proteger, protegeons, protegez...
-            "preserv",     # preserver, preservation...
-            "sauvegard",   # sauvegarder, sauvegardons...
+            "proteg", "preserv", "sauvegard",
             # Plantation / reboisement
-            "plant",       # planter, plantons, plantation...
-            "rebois",      # reboiser, reboisement...
-            "reforest",    # reforestation...
+            "plant", "rebois", "reforest",
             # Mobilisation / appels à l'action
             "agissons", "mobilisons", "mobilisez", "engageons",
             "venez", "rejoignez", "participez",
             # Verbes d'arrêt / lutte
             "doit cesser", "arretons", "luttons", "combattons",
             "stop a la",
-            # Propreté (nom d'action)
+            # Propreté
             "proprete",
             # Réduction / réutilisation
-            "reduire", "reutilis",   # reutiliser, reutilisable...
-            "zero dechet",
-            # Énergie renouvelable (installation = action)
+            "reduire", "reutilis", "zero dechet",
+            # Énergie renouvelable
             "solaire", "eolien", "panneau",
         ]
+
+        # --- Racines de CONSEIL / ENCOURAGEMENT / SENSIBILISATION ---
+        # Textes comme "Pensez à trier", "Ensemble protégeons la nature",
+        # "Saviez-vous que le plastique met 400 ans à se dégrader ?",
+        # "Chaque geste compte", "Faisons la différence"
+        _ECO_ADVICE_STEMS = [
+            # Conseils / astuces
+            "conseil", "astuce", "rappel", "recommand",
+            "saviez-vous", "le saviez-vous", "saviez vous",
+            "penser a", "pensez a", "n oubliez pas", "oubliez pas",
+            "il faut", "il est important", "important de",
+            "bonne pratique", "bonnes pratiques",
+            # Encouragement collectif
+            "ensemble", "tous ensemble", "chacun de nous",
+            "chaque geste", "petit geste", "chaque action",
+            "faisons", "faites", "contribu",  # contribuer, contribution...
+            "effort", "difference", "changement",
+            # Sensibilisation / impact
+            "sensibilis",  # sensibiliser, sensibilisation...
+            "conscien",    # conscience, consciencieux...
+            "impact", "consequence", "degradation",
+            "danger", "menace", "risque",
+            "avenir", "futur", "generation", "enfants",
+            "planete", "terre", "climat",
+            # Verbes d'encouragement
+            "encourag", "motiv", "inspir",  # encourager, motiver, inspirer...
+            "respecter", "respect", "prendre soin",
+            "adopter", "adoptons", "adoptez",
+            "eviter", "evitons", "evitez",
+            # Partage / communauté
+            "partag", "communaute", "citoyen", "responsab",
+            "engagement", "engag",
+            # Termes de tri / propreté / environnement (contexte positif)
+            "poubelle", "conteneur", "bac de tri", "point de collecte",
+            "dechets", "dechet", "ordure", "plastique", "verre",
+            "papier", "carton", "ecologi", "environnement",
+            "nature", "biodiversite", "pollution", "pollu",
+        ]
+
         text_promotes_action = any(
             stem in norm_text_full for stem in _ECO_ACTION_STEMS
         )
+        text_has_eco_advice = any(
+            stem in norm_text_full for stem in _ECO_ADVICE_STEMS
+        )
+        # Le texte est "éco-pertinent" s'il promeut une action OU donne un conseil/encouragement
+        text_is_eco_relevant = text_promotes_action or text_has_eco_advice
 
-        # ── Image off_topic + Texte d'ACTION éco → PUBLISHED ─────────────────
-        # Une image négative (pollution, décharge, ordures) accompagnée d'un texte
-        # qui PROMEUT activement l'amélioration (nettoyage, recyclage, protection)
-        # est un acte citoyen valide.
-        # Exemple OK  : photo de plage polluée + "Nettoyons ensemble notre littoral !"
-        # Exemple NOK : photo de plage polluée + "C'est dégueulasse ici"
-        if cnn_img_decision == "off_topic" and text_promotes_action:
-            if toxic_txt < CNN_TOXIC_THRESHOLD and nsfw_img < CNN_NSFW_THRESHOLD:
+        # --- Détection salutation ---
+        GREETINGS = {
+            "bonjour", "bonsoir", "salut", "salam", "hello",
+            "hi", "hey", "marhaba", "ahlan", "coucou",
+            "bonne journee", "bonne soiree",
+        }
+        has_greeting = bool(text_tokens & GREETINGS)
+
+        # Gardes de sécurité : pas de contenu toxique ni NSFW
+        is_safe_text  = toxic_txt < CNN_TOXIC_THRESHOLD
+        is_safe_image = nsfw_img  < CNN_NSFW_THRESHOLD
+
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 1 : Image éco + salutation → PUBLISHED directement
+        # ══════════════════════════════════════════════════════════════════════
+        # Ex: Photo de nature/recyclage/nettoyage + "Bonjour !" ou "Salam"
+        # L'image en elle-même est en lien avec le contexte éco, la salutation
+        # montre un citoyen engagé qui partage → accepté.
+        if (
+            cnn_img_decision == "eco"
+            and eco_img > off_img          # eco EST dominant
+            and has_greeting
+            and is_safe_text
+            and is_safe_image
+        ):
+            result.reasons = [
+                r for r in result.reasons
+                if "sans contexte environnemental" not in r
+                and "hors sujet" not in r.lower()
+                and "sans action eco" not in r.lower()
+            ]
+            result.score  = min(result.score, 0.15)
+            result.status = ModerationStatus.PUBLISHED.value
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
+
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 2 : Image pollution/déchets + texte encourageant → PUBLISHED
+        # ══════════════════════════════════════════════════════════════════════
+        # Ex: Photo de déchets dans la nature + "Protégeons notre environnement,
+        #     pensez à trier vos déchets !"
+        # L'image montre une situation négative MAIS le texte encourage à agir.
+        # Cela inclut :
+        #   - Verbes d'action (nettoyons, recyclons, protégeons...)
+        #   - Conseils (pensez à, n'oubliez pas, chaque geste compte...)
+        #   - Sensibilisation (saviez-vous que, impact, conséquences...)
+        if cnn_img_decision in ("off_topic", "eco") and text_is_eco_relevant:
+            if is_safe_text and is_safe_image:
                 result.reasons = [
                     r for r in result.reasons
                     if "sans contexte environnemental" not in r
                     and "hors sujet" not in r.lower()
+                    and "sans action eco" not in r.lower()
+                    and "contenu potentiellement inapproprie" not in r.lower()
                 ]
                 result.score  = min(result.score, 0.20)
                 result.status = ModerationStatus.PUBLISHED.value
                 result.processing_time_ms = round((time.time() - t0) * 1000, 2)
                 return result
 
-        # ── Image off_topic (sans texte éco) → PENDING_REVIEW ────────────────
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 3 : Image off_topic SANS texte éco → PENDING_REVIEW (admin)
+        # ══════════════════════════════════════════════════════════════════════
+        # Le contenu n'encourage pas le tri, la propreté ou la sensibilisation.
+        # Il est envoyé à l'administrateur pour validation manuelle.
         if cnn_img_decision == "off_topic":
-            result.score  = max(result.score, 0.45)  # zone pending
+            result.score  = max(result.score, 0.45)
             result.status = ModerationStatus.PENDING_REVIEW.value
-            off_reason = "Contenu hors sujet detecte : image non liee a l'environnement (validation admin requise)"
+            off_reason = "Contenu hors sujet : publication non liee au tri, a la proprete ou a la sensibilisation environnementale (envoyee a l'administrateur)"
             if off_reason not in result.reasons:
                 result.reasons.append(off_reason)
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
 
-        # ── Image éco + Texte d'ACTION → PUBLISHED ─────────────────────────
-        # Même quand ResNet18 confirme l'image comme éco (nature, recyclage...),
-        # le TEXTE doit AUSSI promouvoir une action concrète d'amélioration.
-        #   OK  : photo nature + "Protegeons notre environnement !"
-        #   NOK : photo nature + "bonjour" (salutation seule = pending_review)
-        #   NOK : photo pollution + "bonjour" (pas d'action = pending_review)
-        if (
-            cnn_img_decision == "eco"
-            and nsfw_img  < CNN_NSFW_THRESHOLD
-            and eco_img   > off_img          # eco EST dominant sur off_topic
-            and text_promotes_action          # texte PROMEUT une action éco
-        ):
-            # Supprimer TOUTES les pénalités textuelles (image + texte action = valide)
-            result.reasons = [
-                r for r in result.reasons
-                if "sans contexte environnemental" not in r
-                and "hors sujet" not in r.lower()
-                and "contenu potentiellement inapproprie" not in r.lower()
-            ]
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 4 : Image éco SANS texte éco ni salutation → PENDING_REVIEW
+        # ══════════════════════════════════════════════════════════════════════
+        # L'image est pertinente mais le texte ne contient ni encouragement,
+        # ni salutation, ni conseil. Admin vérifie par précaution.
+        if cnn_img_decision == "eco" and not text_is_eco_relevant and not has_greeting:
+            result.score  = max(result.score, 0.40)
+            result.status = ModerationStatus.PENDING_REVIEW.value
+            pending_reason = "Image eco-pertinente mais texte sans encouragement ni salutation (validation admin requise)"
+            if pending_reason not in result.reasons:
+                result.reasons.append(pending_reason)
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
+
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 5 : Texte seul éco-pertinent (sans image ou image neutre)
+        # ══════════════════════════════════════════════════════════════════════
+        # Le TextCNN a classé le texte comme "eco" → publié directement.
+        # CONDITION SUPPLÉMENTAIRE : le texte doit contenir au moins un
+        # mot-clé éco réel (dictionnaire) pour éviter les faux positifs CNN.
+        # Ex: "recette de couscous maison" → CNN dit eco mais AUCUN mot éco réel.
+        eco_count = result.text_analysis.get("categories", {}).get("positive_context", {}).get("count", 0)
+        if cnn_text_decision == "eco" and is_safe_text and (text_is_eco_relevant or eco_count >= 1):
             result.score  = min(result.score, 0.20)
             result.status = ModerationStatus.PUBLISHED.value
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
 
-        # ── Image éco SANS texte d'action → PENDING_REVIEW ────────────────
-        # L'image est eco mais le texte est une salutation/neutre :
-        # l'admin doit valider manuellement.
-        if cnn_img_decision == "eco" and not text_promotes_action:
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 6 : Texte off_topic (sans contexte éco ni salutation) → PENDING_REVIEW
+        # ══════════════════════════════════════════════════════════════════════
+        # Les salutations (salam, bonjour...) ne sont PAS du hors sujet —
+        # ce sont des échanges civils normaux dans la communauté.
+        if cnn_text_decision == "off_topic" and not text_is_eco_relevant and not has_greeting:
             result.score  = max(result.score, 0.40)
             result.status = ModerationStatus.PENDING_REVIEW.value
-            pending_reason = "Image positive detectee mais texte sans action eco (validation admin requise)"
-            if pending_reason not in result.reasons:
-                result.reasons.append(pending_reason)
+            ot_reason = "Texte hors sujet detecte : ne concerne pas le tri, la proprete ou l'environnement (envoyee a l'administrateur)"
+            if ot_reason not in result.reasons:
+                result.reasons.append(ot_reason)
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
+
+        # ══════════════════════════════════════════════════════════════════════
+        # CAS 7 : Filet de sécurité — texte sans AUCUN contexte éco → PENDING_REVIEW
+        # ══════════════════════════════════════════════════════════════════════
+        # Si le texte ne contient aucun mot-clé éco (dictionnaire), n'est pas
+        # une salutation, et que le parent l'a déjà pénalisé (score >= SAFE_THRESHOLD),
+        # on force pending_review. Cela attrape les cas comme "recette de couscous"
+        # que le CNN classe incorrectement comme "eco" ou "uncertain".
+        if (
+            not text_is_eco_relevant
+            and not has_greeting
+            and eco_count == 0
+            and result.score >= SAFE_THRESHOLD
+        ):
+            result.score  = max(result.score, 0.40)
+            result.status = ModerationStatus.PENDING_REVIEW.value
+            safety_reason = "Publication sans lien avec le tri, la proprete ou l'environnement (envoyee a l'administrateur)"
+            if safety_reason not in result.reasons:
+                result.reasons.append(safety_reason)
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
 

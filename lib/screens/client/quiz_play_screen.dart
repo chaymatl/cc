@@ -179,7 +179,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
   Widget _buildQuizScreen() {
     final q = _questions[_currentQuestion];
-    final qNum = q['number'] ?? (_currentQuestion + 1);
     final qText = q['question'] ?? '';
     final qType = q['type'] ?? 'mcq';
     final options = (q['options'] as List?)?.cast<String>() ?? [];

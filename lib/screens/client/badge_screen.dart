@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../models/user_badge_model.dart';
 import '../../models/user_model.dart';
+import '../../widgets/web_back_button.dart';
 
 class BadgeScreen extends StatelessWidget {
   const BadgeScreen({Key? key}) : super(key: key);
@@ -20,10 +21,10 @@ class BadgeScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
+          leading: webLeading(IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.deepSlate),
-          ),
+          )),
         ),
         body: Center(
           child: Text(
@@ -39,10 +40,10 @@ class BadgeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFF6B35),
         elevation: 0,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-        ),
+        )),
         title: Text(
           'Déchet\'tri',
           style: GoogleFonts.outfit(

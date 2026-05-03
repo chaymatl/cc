@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/safe_network_image.dart';
+import '../../widgets/web_back_button.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -54,10 +55,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       expandedHeight: 190,
       pinned: true,
       backgroundColor: AppTheme.primaryGreen,
-      leading: IconButton(
+      leading: webLeading(IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
-      ),
+      )),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(

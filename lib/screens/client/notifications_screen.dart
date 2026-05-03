@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import 'post_detail_screen.dart';
+import '../../widgets/web_back_button.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
@@ -172,10 +173,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
-        ),
+        )),
         title: Text('Notifications', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
         actions: [
           if (unreadCount > 0)

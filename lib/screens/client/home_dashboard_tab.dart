@@ -9,6 +9,7 @@ import '../../models/user_model.dart';
 import '../../models/post_model.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../services/auth_service.dart';
+import '../../constants.dart';
 import 'notifications_screen.dart';
 
 class HomeDashboardTab extends StatefulWidget {
@@ -74,7 +75,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   Future<void> _fetchStats() async {
     try {
       final res = await http
-          .get(Uri.parse('\${ApiConstants.baseUrl}/stats'))
+          .get(Uri.parse('${ApiConstants.baseUrl}/stats'))
           .timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -628,7 +629,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
             children: [
               _buildVlogCard(
                 'Le Futur du Recyclage',
-                'https://img.youtube.com/vi/yUwUEWtVAvU/maxresdefault.jpg',
+                'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
                 'Vidéo • 4 min',
               ),
               _buildVlogCard(

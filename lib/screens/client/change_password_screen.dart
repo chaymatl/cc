@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/premium_widgets.dart';
+import '../../widgets/web_back_button.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({Key? key}) : super(key: key);
@@ -105,10 +106,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.deepNavy),
           onPressed: () => Navigator.pop(context),
-        ),
+        )),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

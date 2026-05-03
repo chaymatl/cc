@@ -86,11 +86,11 @@ SEARCH_QUERIES = {
     ],
 }
 
-# Cibles par classe (train + val combinés)
+# Cibles par classe (train + val combinés) — v2 doublé
 TARGETS = {
-    "eco":       1000,
-    "off_topic": 1000,
-    "nsfw":       625,
+    "eco":       2000,
+    "off_topic": 2000,
+    "nsfw":      1000,
 }
 
 TRAIN_RATIO = 0.80

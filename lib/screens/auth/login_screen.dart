@@ -3,9 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/platform_ui.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
-
+import 'web_login.dart';
+import 'pinterest_bg.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -25,12 +27,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _bgController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -146,58 +146,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    // ── Web : layout professionnel split-screen ──────────────────────
+    if (PlatformUI.isWeb) {
+      return WebLoginBody(
+        emailController: _emailController,
+        passwordController: _passwordController,
+        isLoading: _isLoading,
+        obscurePassword: _obscurePassword,
+        errorMessage: _errorMessage,
+        onLogin: _handleLogin,
+        onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
+        onForgotPassword: _navigateToForgotPassword,
+        onGoogleSignIn: _handleGoogleSignIn,
+        onFacebookSignIn: _handleFacebookSignIn,
+        onSignUp: () => Navigator.pushNamed(context, '/signup'),
+      );
+    }
+
+    // ── Mobile : design Pinterest-like avec PinterestBackground ───────────────────
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
-          // ── Animated gradient background ──
-          AnimatedBuilder(
-            animation: _bgController,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.lerp(const Color(0xFF0A3D2E), const Color(0xFF0F172A), _bgController.value)!,
-                      Color.lerp(const Color(0xFF0F172A), const Color(0xFF1a1a2e), _bgController.value)!,
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // ── Background image ──
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.12,
-              child: Image.network(
-                'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=60',
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
-
-          // ── Floating orbs ──
-          Positioned(
-            top: -120, right: -80,
-            child: Animate(
-              onPlay: (c) => c.repeat(reverse: true),
-              effects: [MoveEffect(end: const Offset(-20, 20), duration: 6.seconds)],
-              child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [AppTheme.primaryGreen.withOpacity(0.15), Colors.transparent]))),
-            ),
-          ),
-          Positioned(
-            bottom: -60, left: -100,
-            child: Animate(
-              onPlay: (c) => c.repeat(reverse: true),
-              effects: [MoveEffect(end: const Offset(20, -20), duration: 8.seconds)],
-              child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [AppTheme.accentTeal.withOpacity(0.1), Colors.transparent]))),
-            ),
-          ),
+          // ── Pinterest Masonry Background ──
+          const Positioned.fill(child: PinterestBackground()),
 
           // ── Main content ──
           SafeArea(
@@ -214,9 +186,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withOpacity(0.1),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))
+                        ],
                       ),
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -225,7 +200,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.4), blurRadius: 24, offset: const Offset(0, 8))],
                         ),
-                        child: const Icon(Icons.eco_rounded, color: Colors.white, size: 36),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/ecorewind_logo.png',
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ).animate().scale(begin: const Offset(0.5, 0.5), curve: Curves.elasticOut, duration: 800.ms),
 
@@ -233,23 +215,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                     ShaderMask(
                       shaderCallback: (bounds) => const LinearGradient(colors: [Colors.white, Color(0xFF86EFAC)]).createShader(bounds),
-                      child: Text('Bon retour !', style: GoogleFonts.spaceGrotesk(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1)),
+                      child: Text('EcoRewind', style: GoogleFonts.spaceGrotesk(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1)),
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-                    Text('Connectez-vous pour continuer votre impact', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.5), fontSize: 13)).animate().fadeIn(delay: 300.ms),
+                    Text('Votre impact commence ici', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w500)).animate().fadeIn(delay: 300.ms),
 
                     const SizedBox(height: 40),
 
-                    // ── Form card (glassmorphism) ──
+                    // ── Form card (glassmorphism pro) ──
                     Container(
-                      padding: const EdgeInsets.all(28),
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.07),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40, offset: const Offset(0, 20))],
+                        color: Colors.white.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: Colors.white.withOpacity(0.25)),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 40, offset: const Offset(0, 20))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -299,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             child: TextButton(
                               onPressed: _navigateToForgotPassword,
                               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
-                              child: Text('Mot de passe oublié ?', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.primaryGreen, fontWeight: FontWeight.w600)),
+                              child: Text('Mot de passe oublié ?', style: GoogleFonts.inter(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600)),
                             ),
                           ),
 
@@ -311,9 +293,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             effects: [ShimmerEffect(delay: 3.seconds, duration: 2.seconds, color: Colors.white10)],
                             child: Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(20),
                                 gradient: const LinearGradient(colors: [AppTheme.primaryGreen, AppTheme.accentTeal]),
-                                boxShadow: [BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
+                                boxShadow: [BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
                               ),
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleLogin,
@@ -322,57 +304,62 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
                                   disabledBackgroundColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 ),
                                 child: _isLoading
                                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                                    : Text('SE CONNECTER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 14, color: Colors.white)),
+                                    : Text('SE CONNECTER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 15, color: Colors.white)),
                               ),
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 28),
 
                           // Divider
                           Row(children: [
-                            Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.08))),
+                            Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.15))),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text('OU', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white.withOpacity(0.3), letterSpacing: 2)),
+                              child: Text('OU', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white.withOpacity(0.5), letterSpacing: 2)),
                             ),
-                            Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.08))),
+                            Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.15))),
                           ]),
 
                           const SizedBox(height: 24),
 
-                          // Social buttons
-                          _buildSocialButton(
-                            onPressed: _isLoading ? null : _handleGoogleSignIn,
-                            icon: FontAwesomeIcons.google,
-                            label: 'Continuer avec Google',
-                            iconColor: const Color(0xFFDB4437),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildSocialButton(
-                            onPressed: _isLoading ? null : _handleFacebookSignIn,
-                            icon: FontAwesomeIcons.facebook,
-                            label: 'Continuer avec Facebook',
-                            iconColor: const Color(0xFF1877F2),
+                          // Social buttons (Simple Icons)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildSocialIcon(
+                                onPressed: _isLoading ? null : _handleGoogleSignIn,
+                                icon: FontAwesomeIcons.google,
+                                iconColor: Colors.white,
+                                bgColor: const Color(0xFFDB4437),
+                              ),
+                              const SizedBox(width: 24),
+                              _buildSocialIcon(
+                                onPressed: _isLoading ? null : _handleFacebookSignIn,
+                                icon: FontAwesomeIcons.facebookF,
+                                iconColor: Colors.white,
+                                bgColor: const Color(0xFF1877F2),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ).animate().fadeIn(delay: 500.ms, duration: 600.ms).slideY(begin: 0.06, end: 0),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 32),
 
                     // Sign up link
                     TextButton(
                       onPressed: () => Navigator.pushNamed(context, '/signup'),
                       child: RichText(text: TextSpan(
                         text: 'Pas encore de compte ? ',
-                        style: GoogleFonts.inter(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                        style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14),
                         children: [
-                          TextSpan(text: 'S\'inscrire', style: GoogleFonts.outfit(color: AppTheme.primaryGreen, fontWeight: FontWeight.w900)),
+                          TextSpan(text: 'S\'inscrire', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900)),
                         ],
                       )),
                     ).animate().fadeIn(delay: 700.ms),
@@ -423,21 +410,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildSocialButton({VoidCallback? onPressed, required IconData icon, required String label, required Color iconColor}) {
+  Widget _buildSocialIcon({VoidCallback? onPressed, required IconData icon, required Color iconColor, required Color bgColor}) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          color: bgColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: bgColor.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 8)),
+          ],
         ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          FaIcon(icon, size: 18, color: iconColor),
-          const SizedBox(width: 12),
-          Text(label, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w600, fontSize: 13)),
-        ]),
+        child: FaIcon(icon, size: 24, color: iconColor),
       ),
     );
   }

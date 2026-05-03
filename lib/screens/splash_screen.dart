@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 
@@ -60,6 +61,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Replaced fixed delay with logic that checks for existing session
     final stopwatch = Stopwatch()..start();
 
+    // Restaurer le token JWT en mémoire (AuthState.authToken)
+    final prefs = await SharedPreferences.getInstance();
+    final savedToken = prefs.getString('jwt_token');
+    if (savedToken != null) AuthState.authToken = savedToken;
+
     final authService = AuthService();
     final result = await authService.getCurrentUserDetails();
 
@@ -93,6 +99,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       // Pour les nouveaux visiteurs, on affiche la page Marketing ultra-attractive
+      AuthState.authToken = null;
       AuthState.currentUser = null;
       Navigator.pushReplacementNamed(context, '/marketing');
     }

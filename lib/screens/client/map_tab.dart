@@ -69,7 +69,7 @@ class _MapTabState extends State<MapTab> {
         if (permission == LocationPermission.denied) throw 'Permission refusée';
       }
 
-      final pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       if (mounted) {
         setState(() => _currentLocation = LatLng(pos.latitude, pos.longitude));
         _mapController.move(_currentLocation!, 14);

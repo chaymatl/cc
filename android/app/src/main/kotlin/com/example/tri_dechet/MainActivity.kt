@@ -1,4 +1,4 @@
-package com.example.tri_dechet
+package com.example.eco_rewind
 
 import io.flutter.embedding.android.FlutterActivity
 

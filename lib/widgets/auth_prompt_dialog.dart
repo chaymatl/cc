@@ -89,7 +89,14 @@ class AuthPromptDialog {
                   ),
                 ],
               ),
-              child: const Icon(Icons.eco_rounded, color: Colors.white, size: 32),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/ecorewind_logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 

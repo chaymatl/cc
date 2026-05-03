@@ -1,461 +1,447 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import '../../theme/app_theme.dart';
+import '../../widgets/safe_network_image.dart';
 
 class RewardsTab extends StatelessWidget {
   const RewardsTab({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── EN-TÊTE ──
-          Animate(
-            effects: [FadeEffect(), SlideEffect(begin: const Offset(-0.1, 0))],
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Récompenses', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.deepSlate)),
-                    Text('Gagnez des points, débloquez des récompenses', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
-                  ],
-                ),
-                Animate(
-                  onPlay: (c) => c.repeat(reverse: true),
-                  effects: [
-                    ScaleEffect(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 2.seconds),
-                  ],
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.card_giftcard_rounded, color: AppTheme.primaryGreen, size: 28),
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildScoreCard(),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Niveaux & Avantages'),
+                  const SizedBox(height: 16),
+                  _buildLevelCarousel(),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Vos Badges'),
+                  const SizedBox(height: 16),
+                  _buildBadgesGrid(context),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Récompenses Exclusives'),
+                  const SizedBox(height: 16),
+                  _buildRewardsGrid(),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // ── COMMENT ÇA MARCHE ──
-          _buildHowItWorksSection(),
-
-          const SizedBox(height: 36),
-
-          // ── NIVEAUX DU PROGRAMME ──
-          _buildSectionHeader('NIVEAUX DU PROGRAMME'),
-          const SizedBox(height: 16),
-          _buildLevelCard(
-            'Explorateur',
-            '0 - 500 pts',
-            'Commencez votre aventure écologique',
-            Icons.explore_rounded,
-            const Color(0xFF60A5FA),
-            0.25,
-          ),
-          const SizedBox(height: 12),
-          _buildLevelCard(
-            'Éco-Citoyen',
-            '500 - 2000 pts',
-            'Réductions chez nos partenaires locaux',
-            Icons.eco_rounded,
-            const Color(0xFF34D399),
-            0.50,
-          ),
-          const SizedBox(height: 12),
-          _buildLevelCard(
-            'Champion Vert',
-            '2000 - 5000 pts',
-            'Cadeaux exclusifs et accès VIP',
-            Icons.emoji_events_rounded,
-            const Color(0xFFFBBF24),
-            0.75,
-          ),
-          const SizedBox(height: 12),
-          _buildLevelCard(
-            'Légende Éco',
-            '5000+ pts',
-            'Statut ambassadeur et récompenses premium',
-            Icons.workspace_premium_rounded,
-            const Color(0xFFF472B6),
-            1.0,
-          ),
-
-          const SizedBox(height: 36),
-
-          // ── BADGES DISPONIBLES ──
-          _buildSectionHeader('BADGES À DÉBLOQUER'),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 150,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              children: [
-                _buildBadgeCard('Premier Tri', 'Triez votre premier déchet', Icons.recycling_rounded, Colors.blue),
-                _buildBadgeCard('Série 7 jours', '7 jours consécutifs de tri', Icons.local_fire_department_rounded, Colors.orange),
-                _buildBadgeCard('Expert Quiz', 'Score 100% à un quiz', Icons.quiz_rounded, Colors.purple),
-                _buildBadgeCard('Communauté', 'Partagez 10 publications', Icons.groups_rounded, Colors.teal),
-                _buildBadgeCard('Cartographe', 'Visitez 5 bornes de tri', Icons.map_rounded, Colors.green),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 36),
-
-          // ── RÉCOMPENSES DISPONIBLES ──
-          _buildSectionHeader('RÉCOMPENSES DISPONIBLES'),
-          const SizedBox(height: 16),
-          _buildRewardItem(
-            'Bon d\'achat 10 DT',
-            '1000 points',
-            'Utilisable chez tous nos partenaires',
-            Icons.shopping_bag_rounded,
-            const Color(0xFF3B82F6),
-          ),
-          const SizedBox(height: 12),
-          _buildRewardItem(
-            'Gourde écologique',
-            '2500 points',
-            'Gourde réutilisable en inox 500ml',
-            Icons.water_drop_rounded,
-            const Color(0xFF10B981),
-          ),
-          const SizedBox(height: 12),
-          _buildRewardItem(
-            'Sac en toile bio',
-            '1500 points',
-            'Sac shopping 100% coton biologique',
-            Icons.shopping_cart_rounded,
-            const Color(0xFF8B5CF6),
-          ),
-          const SizedBox(height: 12),
-          _buildRewardItem(
-            'Plantation d\'arbre',
-            '3000 points',
-            'Un arbre planté en votre nom en Tunisie',
-            Icons.park_rounded,
-            const Color(0xFF059669),
-          ),
-
-          const SizedBox(height: 36),
-
-          // ── PARTENAIRES ──
-          _buildSectionHeader('NOS PARTENAIRES'),
-          const SizedBox(height: 16),
-          _buildPartnersSection(),
-
-          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  // ── COMMENT ÇA MARCHE ──
-  Widget _buildHowItWorksSection() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryGreen.withOpacity(0.06),
-            AppTheme.accentTeal.withOpacity(0.03),
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120.0,
+      floating: true,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        title: Text(
+          'Récompenses',
+          style: GoogleFonts.spaceGrotesk(
+            color: AppTheme.deepNavy,
+            fontWeight: FontWeight.w900,
+            fontSize: 24,
+            letterSpacing: -0.5,
+          ),
+        ),
+        background: Stack(
+          children: [
+            Positioned(
+              right: -50,
+              top: -50,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryGreen.withOpacity(0.05),
+                ),
+              ),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.12)),
+      ),
+    );
+  }
+
+  Widget _buildScoreCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryGreen.withOpacity(0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.lightbulb_rounded, color: AppTheme.primaryGreen, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text('Comment gagner des points ?', style: GoogleFonts.spaceGrotesk(
-                fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.deepNavy,
-              )),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildStepRow('1', 'Triez vos déchets', 'Scannez et triez correctement pour gagner des points'),
-          const SizedBox(height: 14),
-          _buildStepRow('2', 'Participez aux quiz', 'Testez vos connaissances et gagnez des bonus'),
-          const SizedBox(height: 14),
-          _buildStepRow('3', 'Partagez vos actions', 'Inspirez la communauté et recevez des likes'),
-          const SizedBox(height: 14),
-          _buildStepRow('4', 'Échangez vos points', 'Convertissez vos points en récompenses réelles'),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05, end: 0);
-  }
-
-  Widget _buildStepRow(String num, String title, String desc) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 28, height: 28,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryGreen,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(child: Text(num, style: GoogleFonts.outfit(
-            color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14,
-          ))),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: GoogleFonts.spaceGrotesk(
-                fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.deepNavy,
-              )),
-              Text(desc, style: GoogleFonts.inter(
-                fontSize: 12, color: AppTheme.textMuted, height: 1.4,
-              )),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── NIVEAUX ──
-  Widget _buildLevelCard(String name, String range, String desc, IconData icon, Color color, double progress) {
-    return Animate(
-      effects: [FadeEffect(), SlideEffect(begin: const Offset(0, 0.08))],
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.15)),
-          boxShadow: [
-            BoxShadow(color: color.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 6)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(name, style: GoogleFonts.spaceGrotesk(
-                        fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.deepNavy,
-                      )),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(range, style: GoogleFonts.inter(
-                          fontSize: 11, fontWeight: FontWeight.w700, color: color,
-                        )),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Éco-Citoyen',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(desc, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: color.withOpacity(0.1),
-                      color: color,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Solde Actuel',
+            style: GoogleFonts.inter(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '1,250',
+                style: GoogleFonts.spaceGrotesk(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'pts',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
   }
 
-  // ── BADGES ──
-  Widget _buildBadgeCard(String label, String desc, IconData icon, Color color) {
-    return Container(
-      width: 130,
-      margin: const EdgeInsets.only(right: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.12)),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4)),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.spaceGrotesk(
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        color: AppTheme.deepNavy,
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.05);
+  }
+
+  Widget _buildLevelCarousel() {
+    return SizedBox(
+      height: 180,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        clipBehavior: Clip.none,
+        children: [
+          _buildMobileLevelCard('Éco-Citoyen', 'Niveau Actuel', Icons.eco_rounded, const Color(0xFF10B981), true),
+          const SizedBox(width: 16),
+          _buildMobileLevelCard('Champion Vert', '2000 pts', Icons.emoji_events_rounded, const Color(0xFFF59E0B), false),
+          const SizedBox(width: 16),
+          _buildMobileLevelCard('Légende Éco', '5000 pts', Icons.workspace_premium_rounded, const Color(0xFF8B5CF6), false),
         ],
+      ),
+    ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1);
+  }
+
+  Widget _buildMobileLevelCard(String title, String subtitle, IconData icon, Color color, bool isCurrent) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isCurrent ? color : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: isCurrent ? null : Border.all(color: Colors.grey.shade200),
+        boxShadow: isCurrent ? [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ] : [],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: isCurrent ? Colors.white.withOpacity(0.2) : color.withOpacity(0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.2), width: 2),
             ),
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(icon, color: isCurrent ? Colors.white : color, size: 28),
           ),
-          const SizedBox(height: 10),
-          Text(label, style: GoogleFonts.spaceGrotesk(
-            fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.deepNavy,
-          ), textAlign: TextAlign.center),
-          const SizedBox(height: 3),
-          Text(desc, style: GoogleFonts.inter(
-            fontSize: 9, color: AppTheme.textMuted, height: 1.3,
-          ), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isCurrent ? Colors.white : AppTheme.deepNavy,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isCurrent ? Colors.white.withOpacity(0.8) : AppTheme.textMuted,
+                ),
+              ),
+            ],
+          ),
         ],
-      ),
-    ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack);
-  }
-
-  // ── RÉCOMPENSES ──
-  Widget _buildRewardItem(String title, String points, String desc, IconData icon, Color color) {
-    return Animate(
-      effects: [FadeEffect(), SlideEffect(begin: const Offset(0.05, 0))],
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade100),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 12, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: color, size: 26),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: GoogleFonts.spaceGrotesk(
-                    fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.deepNavy,
-                  )),
-                  const SizedBox(height: 3),
-                  Text(desc, style: GoogleFonts.inter(
-                    fontSize: 12, color: AppTheme.textMuted,
-                  )),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(points, style: GoogleFonts.outfit(
-                fontSize: 12, fontWeight: FontWeight.w800, color: color,
-              )),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  // ── PARTENAIRES ──
-  Widget _buildPartnersSection() {
-    final partners = [
-      {'name': 'Carrefour', 'icon': Icons.storefront_rounded, 'color': const Color(0xFF3B82F6)},
-      {'name': 'Monoprix', 'icon': Icons.shopping_basket_rounded, 'color': const Color(0xFFEF4444)},
-      {'name': 'Géant', 'icon': Icons.store_rounded, 'color': const Color(0xFF10B981)},
-      {'name': 'Aziza', 'icon': Icons.local_mall_rounded, 'color': const Color(0xFFF59E0B)},
+  Widget _buildBadgesGrid(BuildContext context) {
+    final badges = [
+      {'icon': Icons.recycling_rounded, 'color': const Color(0xFF3B82F6), 'title': 'Premier Tri'},
+      {'icon': Icons.local_fire_department_rounded, 'color': const Color(0xFFF59E0B), 'title': 'Série 7J'},
+      {'icon': Icons.quiz_rounded, 'color': const Color(0xFF8B5CF6), 'title': 'Expert Quiz'},
+      {'icon': Icons.groups_rounded, 'color': Colors.grey.shade300, 'title': 'Communauté', 'locked': true},
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Échangez vos points chez nos partenaires',
-            style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: badges.map((b) {
+        final isLocked = b['locked'] == true;
+        final color = isLocked ? Colors.grey.shade400 : b['color'] as Color;
+        return Container(
+          width: (MediaQuery.of(context).size.width - 40 - 16) / 2, // 2 columns
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isLocked ? Colors.grey.shade50 : color.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isLocked ? Colors.grey.shade200 : color.withOpacity(0.1)),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: partners.map((p) {
-              final color = p['color'] as Color;
-              return Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(p['icon'] as IconData, color: color, size: 24),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isLocked ? Colors.grey.shade200 : color.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(b['icon'] as IconData, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  b['title'] as String,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isLocked ? Colors.grey.shade500 : AppTheme.deepNavy,
                   ),
-                  const SizedBox(height: 8),
-                  Text(p['name'] as String, style: GoogleFonts.inter(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.deepNavy,
-                  )),
-                ],
-              );
-            }).toList(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildRewardsGrid() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              _buildRewardCard(
+                title: 'Bon d\'achat 10 DT',
+                points: '1000 pts',
+                imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80',
+                height: 220,
+              ),
+              const SizedBox(height: 16),
+              _buildRewardCard(
+                title: 'Sac en toile bio',
+                points: '1500 pts',
+                imageUrl: 'https://images.unsplash.com/photo-1597348989645-46b190ce4918?w=400&q=80',
+                height: 260,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            children: [
+              _buildRewardCard(
+                title: 'Gourde écologique',
+                points: '2500 pts',
+                imageUrl: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80',
+                height: 260,
+              ),
+              const SizedBox(height: 16),
+              _buildRewardCard(
+                title: 'Plantation d\'arbre',
+                points: '3000 pts',
+                imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80',
+                height: 220,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildRewardCard({
+    required String title,
+    required String points,
+    required String imageUrl,
+    required double height,
+  }) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 300.ms);
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: AppTheme.textMuted),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            SafeNetworkImage(
+              imageUrl,
+              fit: BoxFit.cover,
+              placeholder: Container(color: Colors.grey.shade200),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.85),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.4, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  points,
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.primaryGreen,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Text(
+                title,
+                style: GoogleFonts.spaceGrotesk(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  height: 1.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

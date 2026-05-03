@@ -68,6 +68,12 @@ class User {
         return 'Citoyen';
     }
   }
+
+  User copyWithScore(double newScore) => User(
+    id: id, name: name, email: email, role: role,
+    points: points, globalScore: newScore,
+    avatarUrl: avatarUrl, qrCode: qrCode,
+  );
 }
 
 // État d'authentification global
@@ -83,6 +89,13 @@ class AuthState {
   static void logout() {
     currentUser = null;
   }
+
+  /// Token JWT stoké après login
+  static String? authToken;
+
+  /// Header Authorization prêt à l'emploi
+  static Map<String, String> get authHeader =>
+      authToken != null ? {'Authorization': 'Bearer $authToken'} : {};
 
   static bool get isLoggedIn => currentUser != null;
   static bool get isAdmin => currentUser?.role == UserRole.admin;

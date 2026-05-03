@@ -62,7 +62,7 @@ app.add_middleware(
 )
 
 # ── Include routers ────────────────────────────────────────────────────────────
-from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz  # noqa: E402
+from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz, educator_videos, qr_bins  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -72,6 +72,10 @@ app.include_router(collection_points.router)
 app.include_router(community.router)
 app.include_router(moderation.router)
 app.include_router(quiz.router)
+app.include_router(educator_videos.router)
+app.include_router(qr_bins.router)
+
+# Note: /uploads est déjà monté ci-dessus (ligne 44). Pas de doublon.
 
 
 # ── Startup : pré-chargement des modèles IA ────────────────────────────────────

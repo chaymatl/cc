@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../models/waste_record_model.dart';
 import '../../models/user_model.dart';
+import '../../widgets/web_back_button.dart';
 
 class TrackRecordsScreen extends StatelessWidget {
   const TrackRecordsScreen({Key? key}) : super(key: key);
@@ -21,10 +22,10 @@ class TrackRecordsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.deepSlate),
-        ),
+        )),
         title: Text(
           'Historique de Tri',
           style: GoogleFonts.outfit(

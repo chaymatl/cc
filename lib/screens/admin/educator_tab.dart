@@ -16,19 +16,189 @@ class EducatorTab extends StatefulWidget {
 class _EducatorTabState extends State<EducatorTab> {
   final AuthService _authService = AuthService();
   List<dynamic> _quizzes = [];
+  List<dynamic> _myVideos = [];
+  List<dynamic> _categories = [];
   bool _isLoading = false;
   bool _isUploading = false;
+  bool _isPublishingVideo = false;
 
   @override
   void initState() {
     super.initState();
     _loadQuizzes();
+    _loadMyVideos();
+    _loadCategories();
   }
 
   Future<void> _loadQuizzes() async {
     setState(() => _isLoading = true);
     final quizzes = await _authService.fetchMyQuizzes();
     if (mounted) setState(() { _quizzes = quizzes; _isLoading = false; });
+  }
+
+  Future<void> _loadMyVideos() async {
+    final videos = await _authService.fetchMyEducatorVideos();
+    if (mounted) setState(() => _myVideos = videos);
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await _authService.fetchVideoCategories();
+    if (mounted) setState(() => _categories = cats);
+  }
+
+  Future<void> _createCategory() async {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    dynamic coverFile;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Nouveau Dossier', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Cover image picker
+          GestureDetector(
+            onTap: () async {
+              final res = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+              if (res != null && res.files.isNotEmpty) {
+                setDState(() => coverFile = res.files.first);
+              }
+            },
+            child: Container(
+              height: 120, width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                image: coverFile != null && coverFile.bytes != null
+                    ? DecorationImage(image: MemoryImage(coverFile.bytes!), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: coverFile == null
+                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.add_photo_alternate_rounded, size: 36, color: Colors.grey.shade400),
+                      const SizedBox(height: 6),
+                      Text('Image de couverture', style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 12)),
+                    ])
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre du sujet', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: 'Description (optionnel)', prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.create_new_folder, size: 18),
+            label: const Text('Créer', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          ),
+        ],
+      )),
+    );
+
+    if (confirmed != true || titleCtrl.text.isEmpty) return;
+
+    final wrapper = coverFile != null ? _VideoFileWrapper(coverFile.name ?? 'cover.jpg', coverFile.bytes!) : null;
+    final res = await _authService.createVideoCategory(
+      title: titleCtrl.text,
+      description: descCtrl.text.isNotEmpty ? descCtrl.text : null,
+      coverImage: wrapper,
+    );
+    if (res['success'] == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Dossier créé !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
+      _loadCategories();
+    }
+  }
+
+  Future<void> _publishVideo() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['mp4', 'webm', 'mov', 'avi', 'mkv'], withData: true);
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    final titleCtrl = TextEditingController(text: file.name.replaceAll(RegExp(r'\.[^.]+$'), ''));
+    final descCtrl = TextEditingController();
+    final durationCtrl = TextEditingController();
+    int? selectedCatId;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Publier une Vidéo', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(16)),
+            child: Row(children: [
+              Icon(Icons.video_file_rounded, color: Colors.teal.shade400, size: 32),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(file.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text('${(file.size / (1024 * 1024)).toStringAsFixed(1)} Mo', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11)),
+              ])),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<int?>(
+            value: selectedCatId,
+            decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
+            items: [
+              const DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —')),
+              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? ''))),
+            ],
+            onChanged: (v) => setDState(() => selectedCatId = v),
+          ),
+          const SizedBox(height: 14),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre', prefixIcon: const Icon(Icons.title), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: descCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'Description (optionnel)', prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: durationCtrl, decoration: InputDecoration(labelText: 'Durée (ex: 5:30)', prefixIcon: const Icon(Icons.timer), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+            label: const Text('Publier', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          ),
+        ],
+      )),
+    );
+
+    if (confirmed != true || titleCtrl.text.isEmpty) return;
+    setState(() => _isPublishingVideo = true);
+    final res = await _authService.uploadEducatorVideo(
+      videoFile: _VideoFileWrapper(file.name, file.bytes!),
+      title: titleCtrl.text,
+      description: descCtrl.text.isNotEmpty ? descCtrl.text : null,
+      duration: durationCtrl.text.isNotEmpty ? durationCtrl.text : null,
+      categoryId: selectedCatId,
+    );
+    setState(() => _isPublishingVideo = false);
+    if (res['success'] == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Vidéo publiée !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
+      _loadMyVideos();
+      _loadCategories();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Erreur'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Future<void> _deleteVideo(int id) async {
+    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('Supprimer cette vidéo ?'),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Supprimer', style: TextStyle(color: Colors.red)))],
+    ));
+    if (ok != true) return;
+    final deleted = await _authService.deleteEducatorVideo(id);
+    if (deleted && mounted) { _loadMyVideos(); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vidéo supprimée'))); }
   }
 
   Future<void> _uploadQuizPdf() async {
@@ -291,6 +461,31 @@ class _EducatorTabState extends State<EducatorTab> {
             ],
 
             const SizedBox(height: 40),
+            _buildSectionHeader('VIDÉOS ÉDUCATIVES', Icons.video_library_rounded),
+            const SizedBox(height: 20),
+            // Create folder + Upload video buttons
+            Row(children: [
+              Expanded(child: _buildActionCard('Nouveau Dossier', Icons.create_new_folder_rounded, Colors.indigo, _createCategory)),
+              const SizedBox(width: 14),
+              Expanded(child: _buildActionCard('Publier Vidéo', Icons.video_call_rounded, Colors.teal, _isPublishingVideo ? null : _publishVideo)),
+            ]),
+            const SizedBox(height: 20),
+            // Category folders
+            if (_categories.isNotEmpty) ...[
+              Text('DOSSIERS (${_categories.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              const SizedBox(height: 12),
+              ..._categories.map((c) => _buildCategoryCard(c)).toList(),
+              const SizedBox(height: 20),
+            ],
+            // Videos without category
+            if (_myVideos.isNotEmpty) ...[
+              Text('MES VIDÉOS (${_myVideos.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              const SizedBox(height: 12),
+              ..._myVideos.map((v) => _buildMyVideoCard(v)).toList(),
+            ] else if (_categories.isEmpty)
+              Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Aucune vidéo publiée.', style: GoogleFonts.inter(color: AppTheme.textMuted)))),
+
+            const SizedBox(height: 40),
             _buildSectionHeader('SÉANCES DE SENSIBILISATION', Icons.event_available_rounded),
             const SizedBox(height: 20),
             _buildAwarenessSessions(context),
@@ -479,7 +674,7 @@ class _EducatorTabState extends State<EducatorTab> {
                 ),
               ],
             ),
-            // Bouton Réessayer pour les quiz en erreur
+            // Bouton Réessayer + Supprimer pour les quiz en erreur
             if (isError) ...[
               const SizedBox(height: 12),
               Container(
@@ -500,19 +695,36 @@ class _EducatorTabState extends State<EducatorTab> {
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _retryQuiz(quiz['id']),
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: Text('RÉESSAYER L\'EXTRACTION IA', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 12)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _retryQuiz(quiz['id']),
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: Text('RÉESSAYER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _deleteQuiz(quiz['id']),
+                            icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                            label: Text('SUPPRIMER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -522,6 +734,44 @@ class _EducatorTabState extends State<EducatorTab> {
         ),
       ),
     ).animate().fadeIn().slideX(begin: 0.05);
+  }
+
+  Future<void> _deleteQuiz(int quizId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Supprimer ce quiz ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text('Cette action est irréversible. Le fichier PDF et toutes les données seront supprimés.', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_forever_rounded, size: 18),
+            label: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final res = await _authService.deleteQuiz(quizId);
+    if (res['success'] == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Quiz supprimé'),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      _loadQuizzes();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res['message'] ?? 'Erreur lors de la suppression'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Future<void> _retryQuiz(int quizId) async {
@@ -623,6 +873,146 @@ class _EducatorTabState extends State<EducatorTab> {
       ),
     ).animate().fadeIn().slideY(begin: 0.1);
   }
+
+  Widget _buildActionCard(String label, IconData icon, Color color, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [color.withOpacity(0.8), color]),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: color.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6))],
+        ),
+        child: Column(children: [
+          Icon(icon, color: Colors.white, size: 32),
+          const SizedBox(height: 8),
+          Text(label, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
+        ]),
+      ),
+    ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9));
+  }
+
+  Widget _buildCategoryCard(dynamic cat) {
+    final title = cat['title'] ?? 'Dossier';
+    final desc = cat['description'] ?? '';
+    final videoCount = cat['video_count'] ?? 0;
+    final coverUrl = cat['cover_image_url'];
+    final catId = cat['id'] as int?;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: AppTheme.tightShadow),
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
+          child: SizedBox(width: 90, height: 80,
+            child: coverUrl != null
+                ? Image.network('${AuthService.baseUrl}$coverUrl', fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.indigo.shade50, child: const Icon(Icons.folder, color: Colors.indigo, size: 32)))
+                : Container(color: Colors.indigo.shade50, child: const Icon(Icons.folder_special, color: Colors.indigo, size: 32)),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+            if (desc.isNotEmpty) Text(desc, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 4),
+            Row(children: [
+              Icon(Icons.video_library_rounded, size: 13, color: Colors.indigo.shade300),
+              const SizedBox(width: 4),
+              Text('$videoCount vidéo${videoCount > 1 ? 's' : ''}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.indigo)),
+            ]),
+          ]),
+        )),
+        if (catId != null) IconButton(
+          icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 20),
+          onPressed: () async {
+            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+              title: const Text('Supprimer ce dossier ?'), content: const Text('Les vidéos ne seront pas supprimées.'),
+              actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Supprimer', style: TextStyle(color: Colors.red)))],
+            ));
+            if (ok == true) { await _authService.deleteVideoCategory(catId); _loadCategories(); _loadMyVideos(); }
+          },
+        ),
+      ]),
+    ).animate().fadeIn().slideX(begin: 0.05);
+  }
+
+  Widget _buildMyVideoCard(dynamic video) {
+    final title = video['title'] ?? 'Vidéo';
+    final duration = video['duration'] ?? '';
+    final createdAt = video['created_at'] ?? '';
+    final thumbnail = video['thumbnail_url'];
+    final videoId = video['id'] as int?;
+
+    // Format date
+    String dateLabel = '';
+    if (createdAt.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(createdAt).toLocal();
+        dateLabel = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} à ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) {
+        dateLabel = createdAt;
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.tightShadow,
+        border: const Border(left: BorderSide(color: Colors.teal, width: 4)),
+      ),
+      child: Row(
+        children: [
+          // Thumbnail
+          ClipRRect(
+            borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
+            child: SizedBox(
+              width: 100, height: 80,
+              child: thumbnail != null
+                  ? Image.network(thumbnail, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, child: const Icon(Icons.play_circle_fill, color: Colors.teal, size: 36)))
+                  : Container(color: Colors.teal.shade50, child: const Icon(Icons.play_circle_fill, color: Colors.teal, size: 36)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Info
+          Expanded(child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Row(children: [
+                  if (duration.isNotEmpty) ...[
+                    const Icon(Icons.timer_outlined, size: 12, color: AppTheme.textMuted),
+                    const SizedBox(width: 3),
+                    Text(duration, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                    const SizedBox(width: 10),
+                  ],
+                  const Icon(Icons.calendar_today_outlined, size: 12, color: AppTheme.textMuted),
+                  const SizedBox(width: 3),
+                  Flexible(child: Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
+                ]),
+              ],
+            ),
+          )),
+          // Delete button
+          if (videoId != null)
+            IconButton(
+              icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 20),
+              onPressed: () => _deleteVideo(videoId),
+              tooltip: 'Supprimer',
+            ),
+          const SizedBox(width: 4),
+        ],
+      ),
+    ).animate().fadeIn().slideX(begin: 0.05);
+  }
 }
 
 
@@ -631,5 +1021,13 @@ class _PdfFileWrapper {
   final String name;
   final List<int> _bytes;
   _PdfFileWrapper(this.name, this._bytes);
+  Future<List<int>> readAsBytes() async => _bytes;
+}
+
+/// Wrapper pour envoyer des bytes vidéo
+class _VideoFileWrapper {
+  final String name;
+  final List<int> _bytes;
+  _VideoFileWrapper(this.name, this._bytes);
   Future<List<int>> readAsBytes() async => _bytes;
 }

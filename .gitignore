@@ -57,6 +57,12 @@ backend/sql_app.db
 backend/test.db
 sql_app.db
 
+# Firebase — NEVER commit credentials
+backend/firebase_credentials.json
+firebase_credentials.json
+google-services.json
+GoogleService-Info.plist
+
 # Temporary analysis / build / debug output files
 analysis*.txt
 dart_analyze*.txt

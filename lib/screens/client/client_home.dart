@@ -13,6 +13,8 @@ import '../admin/intercommunality_tab.dart';
 import '../admin/point_manager_tab.dart';
 import '../admin/educator_tab.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/platform_ui.dart';
+import '../../layouts/web_shell.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MainNavigationShell extends StatefulWidget {
@@ -50,11 +52,38 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
   }
 
-  /// Appelé quand on change d'onglet — rafraîchit le profil si nécessaire
+  /// Retourne la route nommée correspondant à l'index d'onglet (role-aware)
+  String _routeForIndex(int index) {
+    final role = AuthState.currentUser?.role ?? UserRole.user;
+    // Éducateur : 3 onglets seulement (Fil=0, Éducateur=1, Profil=2)
+    if (role == UserRole.educator) {
+      switch (index) {
+        case 0: return '/home';
+        case 1: return '/multimedia';
+        case 2: return '/profile';
+        default: return '/home';
+      }
+    }
+    // Tous les autres rôles : 5 onglets
+    switch (index) {
+      case 0: return '/home';
+      case 1: return '/multimedia';
+      case 2: return '/rewards';
+      case 3: return '/map';
+      case 4: return '/profile';
+      default: return '/home';
+    }
+  }
+
+  /// Appelé quand on change d'onglet — met à jour l'index ET la route active
   void _onTabSelected(int index) {
-    setState(() => _currentIndex = index);
+    if (_currentIndex == index) return; // déjà sur cet onglet
+    final role = AuthState.currentUser?.role ?? UserRole.user;
     // Rafraîchir le score quand on arrive sur l'onglet Profil
-    _profileKey.currentState?.refreshScore();
+    final profileIndex = (role == UserRole.educator) ? 2 : 4;
+    if (index == profileIndex) _profileKey.currentState?.refreshScore();
+    // Remplacer la route courante par celle de l'onglet ciblé
+    Navigator.pushReplacementNamed(context, _routeForIndex(index));
   }
 
   List<Widget> _initializePages(UserRole role) {
@@ -68,6 +97,45 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
 
     switch (role) {
+      // ── Rôle Éducateur : 3 onglets uniquement (Fil, Éducateur, Profil) ──
+      case UserRole.educator:
+        return [
+          const FeedTab(key: ValueKey('feed')),
+          const EducatorTab(key: ValueKey('educator')),
+          ProfileTab(key: _profileKey),
+        ];
+
+      // ── Rôle Collecteur : même structure, Formation → Espace Collecteur ──
+      case UserRole.collector:
+        return [
+          const FeedTab(key: ValueKey('feed')),
+          const CollectorTab(key: ValueKey('collector')),
+          const RewardsTab(key: ValueKey('rewards')),
+          const MapTab(key: ValueKey('map')),
+          ProfileTab(key: _profileKey),
+        ];
+
+      // ── Rôle Intercommunalité : même structure, Formation → Espace Intercommunalité ──
+      case UserRole.intercommunality:
+        return [
+          const FeedTab(key: ValueKey('feed')),
+          const IntercommunalityTab(key: ValueKey('intercommunality')),
+          const RewardsTab(key: ValueKey('rewards')),
+          const MapTab(key: ValueKey('map')),
+          ProfileTab(key: _profileKey),
+        ];
+
+      // ── Rôle Gestionnaire de point : même structure, Formation → Gestionnaire ──
+      case UserRole.pointManager:
+        return [
+          const FeedTab(key: ValueKey('feed')),
+          const PointManagerTab(key: ValueKey('pointmanager')),
+          const RewardsTab(key: ValueKey('rewards')),
+          const MapTab(key: ValueKey('map')),
+          ProfileTab(key: _profileKey),
+        ];
+
+      // ── Rôle Citoyen (user) ──
       case UserRole.user:
         return [
           const FeedTab(key: ValueKey('feed')),
@@ -76,24 +144,47 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           const MapTab(key: ValueKey('map')),
           ProfileTab(key: _profileKey),
         ];
-      case UserRole.collector:
-        return [const CollectorTab(key: ValueKey('collector')), ProfileTab(key: _profileKey)];
-      case UserRole.intercommunality:
+
+      default:
         return [
-          const IntercommunalityTab(key: ValueKey('intercommunality')),
+          const FeedTab(key: ValueKey('feed')),
+          const MultimediaTab(key: ValueKey('multimedia')),
+          const RewardsTab(key: ValueKey('rewards')),
+          const MapTab(key: ValueKey('map')),
           ProfileTab(key: _profileKey),
         ];
+    }
+  }
+
+  /// Renvoie le label de l'onglet "Formation" selon le rôle
+  String _proTabLabel(UserRole role) {
+    switch (role) {
+      case UserRole.educator:     return 'Éducateur';
+      case UserRole.collector:    return 'Collecte';
+      case UserRole.intercommunality: return 'Gestion';
+      case UserRole.pointManager: return 'Points';
+      default:                    return 'Formation';
+    }
+  }
+
+  /// Renvoie l'icône de l'onglet "Formation" selon le rôle
+  Widget _proTabIcon(UserRole role) {
+    switch (role) {
       case UserRole.educator:
-        return [const EducatorTab(key: ValueKey('educator')), ProfileTab(key: _profileKey)];
+        return const FaIcon(FontAwesomeIcons.chalkboardUser, size: 20);
+      case UserRole.collector:
+        return const Icon(Icons.recycling_rounded, size: 22);
+      case UserRole.intercommunality:
+        return const Icon(Icons.account_balance_rounded, size: 22);
       case UserRole.pointManager:
-        return [const PointManagerTab(key: ValueKey('pointmanager')), ProfileTab(key: _profileKey)];
+        return const Icon(Icons.location_on_rounded, size: 22);
       default:
-        return [const FeedTab(key: ValueKey('feed')), ProfileTab(key: _profileKey)];
+        return const FaIcon(FontAwesomeIcons.graduationCap, size: 20);
     }
   }
 
   List<NavigationDestination> _getDestinations(UserRole role) {
-    // Visitor (not logged in) — no Profile tab
+    // Visiteur non connecté — pas d'onglet Profil
     if (!_isLoggedIn) {
       return const [
         NavigationDestination(icon: FaIcon(FontAwesomeIcons.house, size: 20), label: 'Fil'),
@@ -103,18 +194,22 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       ];
     }
 
-    if (role == UserRole.user) {
-      return const [
-        NavigationDestination(icon: FaIcon(FontAwesomeIcons.house, size: 20), label: 'Fil'),
-        NavigationDestination(icon: FaIcon(FontAwesomeIcons.graduationCap, size: 20), label: 'Formation'),
-        NavigationDestination(icon: FaIcon(FontAwesomeIcons.chartLine, size: 20), label: 'Impact'),
-        NavigationDestination(icon: FaIcon(FontAwesomeIcons.mapLocationDot, size: 20), label: 'Carte'),
-        NavigationDestination(icon: FaIcon(FontAwesomeIcons.user, size: 20), label: 'Profil'),
+    // ── Éducateur : 3 onglets (pas d'Impact ni de Carte) ──
+    if (role == UserRole.educator) {
+      return [
+        const NavigationDestination(icon: FaIcon(FontAwesomeIcons.house, size: 20), label: 'Fil'),
+        NavigationDestination(icon: _proTabIcon(role), label: _proTabLabel(role)),
+        const NavigationDestination(icon: FaIcon(FontAwesomeIcons.user, size: 20), label: 'Profil'),
       ];
     }
-    return const [
-      NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: 'Tableau de bord'),
-      NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+
+    // Tous les autres rôles connectés : 5 onglets
+    return [
+      const NavigationDestination(icon: FaIcon(FontAwesomeIcons.house, size: 20), label: 'Fil'),
+      NavigationDestination(icon: _proTabIcon(role), label: _proTabLabel(role)),
+      const NavigationDestination(icon: FaIcon(FontAwesomeIcons.chartLine, size: 20), label: 'Impact'),
+      const NavigationDestination(icon: FaIcon(FontAwesomeIcons.mapLocationDot, size: 20), label: 'Carte'),
+      const NavigationDestination(icon: FaIcon(FontAwesomeIcons.user, size: 20), label: 'Profil'),
     ];
   }
 
@@ -122,6 +217,19 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget build(BuildContext context) {
     final role = AuthState.currentUser?.role ?? UserRole.user;
 
+    // ── Web : sidebar + contenu (professionnel) ──────────────────────
+    if (PlatformUI.shouldUseWebLayout(context)) {
+      return WebShell(
+        currentIndex: _currentIndex,
+        onTabSelected: (index) {
+          if (_currentIndex == index) return;
+          setState(() => _currentIndex = index);
+        },
+        pages: _pages,
+      );
+    }
+
+    // ── Mobile : bottom navigation (Pinterest-like) ──────────────────
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,

@@ -326,12 +326,19 @@ class ProfileTabState extends State<ProfileTab> {
             ],
 
             // Section QR Code Eco-Badge (citoyens uniquement)
-            if (showStats) ...[
+            if (showStats) ...[ 
               const SizedBox(height: 24),
               Animate(
                 effects: [FadeEffect(delay: 400.ms), const SlideEffect(begin: Offset(0, 0.1))],
                 child: _buildQrBadgeButton(),
               ),
+              const SizedBox(height: 12),
+              // Bouton scanner poubelle intelligente (mobile uniquement)
+              if (!kIsWeb)
+                Animate(
+                  effects: [FadeEffect(delay: 500.ms), const SlideEffect(begin: Offset(0, 0.1))],
+                  child: _buildBinScannerButton(),
+                ),
             ],
 
             const SizedBox(height: 40),
@@ -690,6 +697,85 @@ class ProfileTabState extends State<ProfileTab> {
               ),
             ),
             const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Bouton d'accès au scanner QR des poubelles intelligentes
+  Widget _buildBinScannerButton() {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/bin-scanner').then((_) {
+        // Rafraîchir le score après un scan réussi
+        refreshScore();
+      }),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF059669), Color(0xFF10B981)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF059669).withOpacity(0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Scanner une Poubelle',
+                    style: GoogleFonts.outfit(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Gagnez des points en recyclant',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star_rounded, color: Colors.white, size: 14),
+                  const SizedBox(width: 4),
+                  Text('+ pts', style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
           ],
         ),
       ),

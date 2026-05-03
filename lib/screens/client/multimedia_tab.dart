@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import '../../services/auth_service.dart';
+import '../../constants.dart';
 import 'quiz_play_screen.dart';
 
 // Écran principal gérant l'affichage des contenus éducatifs (Vidéos, Articles, Quiz)
@@ -17,7 +19,7 @@ class MultimediaTab extends StatefulWidget {
 class _MultimediaTabState extends State<MultimediaTab> {
   // État local pour gérer les filtres et les catégories
   String _selectedCategory = 'Tout';
-  final List<String> _categories = ['Tout', 'Vidéos', 'Quiz', 'Articles', 'Impact'];
+  final List<String> _categories = ['Tout', 'Vidéos', 'Quiz'];
 
   // Quiz dynamiques depuis l'API
   final AuthService _authService = AuthService();
@@ -26,17 +28,23 @@ class _MultimediaTabState extends State<MultimediaTab> {
   // IDs des quiz déjà complétés par l'utilisateur
   final Set<int> _completedQuizIds = {};
 
+  // Vidéos éducateur depuis l'API
+  List<dynamic> _educatorVideos = [];
+  List<dynamic> _videoCategories = [];
+  bool _videosLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _loadApiQuizzes();
+    _loadEducatorVideos();
+    _loadVideoCategories();
   }
 
   Future<void> _loadApiQuizzes() async {
     final quizzes = await _authService.fetchAvailableQuizzes();
     if (mounted) {
       setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
-      // Vérifier lesquels ont déjà été complétés
       _checkCompletedQuizzes(quizzes);
     }
   }
@@ -52,6 +60,16 @@ class _MultimediaTabState extends State<MultimediaTab> {
         }
       } catch (_) {}
     }
+  }
+
+  Future<void> _loadEducatorVideos() async {
+    final videos = await _authService.fetchEducatorVideos();
+    if (mounted) setState(() { _educatorVideos = videos; _videosLoaded = true; });
+  }
+
+  Future<void> _loadVideoCategories() async {
+    final cats = await _authService.fetchVideoCategories();
+    if (mounted) setState(() => _videoCategories = cats);
   }
 
   void _openQuiz(Map<String, dynamic> quiz) {
@@ -82,452 +100,152 @@ class _MultimediaTabState extends State<MultimediaTab> {
     });
   }
 
-  // Base de données simulée contenant tous les items multimédias
-  final List<Map<String, String>> _allContent = [
-    {
-      'title': 'Le Guide du Tri Pratique',
-      'meta': 'Vidéo • 4min',
-      'type': 'Vidéos',
-      'url': 'https://youtu.be/yUwUEWtVAvU',
-      'image': 'https://img.youtube.com/vi/yUwUEWtVAvU/maxresdefault.jpg',
-      'description': 'Maîtrisez les fondamentaux du tri en quelques minutes. Cette vidéo vous explique comment séparer vos déchets ménagers pour faciliter le recyclage en Tunisie.',
-    },
-    {
-      'title': 'Quiz : Maître du Tri',
-      'meta': 'Quiz • 100pts',
-      'type': 'Quiz',
-      'image': 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400&q=80',
-      'description': 'Êtes-vous vraiment un expert du tri ? Testez vos connaissances sur les différents types de plastiques et gagnez des points éco !',
-    },
-    {
-      'title': 'L\'Essentiel du Tri',
-      'meta': 'Article • 3min',
-      'type': 'Articles',
-      'image': 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
-      'description': 'Découvrez les règles d\'or pour un tri sélectif efficace. Un guide complet pour devenir un citoyen éco-responsable exemplaire.',
-    },
-    {
-      'title': 'Le Plastique en Tunisie',
-      'meta': 'Vidéo • 5min',
-      'type': 'Vidéos',
-      'image': 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400&q=80',
-      'description': 'Quels sont les enjeux de la pollution plastique dans nos villes ? Explorez les solutions locales pour réduire notre empreinte écologique.',
-    },
-    {
-      'title': 'Quiz : Zéro Déchet',
-      'meta': 'Quiz • 80pts',
-      'type': 'Quiz',
-      'image': 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
-      'description': 'Comment réduire vos déchets au quotidien ? Relevez le défi de ce quiz et découvrez des astuces pour une vie sans plastique.',
-    },
-    {
-      'title': 'Compostage Maison',
-      'meta': 'Vidéo • 8min',
-      'type': 'Vidéos',
-      'image': 'https://images.unsplash.com/photo-1581578017093-cd30fce4eeb7?w=400&q=80',
-      'description': 'Le guide ultime pour débuter votre composteur, même en appartement. Transformez vos restes en ressources pour vos plantes.',
-    },
-    {
-      'title': 'Mission Recyclage',
-      'meta': 'Vidéo • Short',
-      'type': 'Vidéos',
-      'url': 'https://youtube.com/shorts/e_4aS_472zw',
-      'image': 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400&q=80',
-      'description': 'Suivez le parcours incroyable d\'un déchet plastique, de votre poubelle jusqu\'à sa transformation finale en un nouvel objet utile.',
-    },
-    {
-      'title': 'Quiz : Océans Propres',
-      'meta': 'Quiz • 120pts',
-      'type': 'Quiz',
-      'image': 'https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=400&q=80',
-      'description': 'Testez vos connaissances sur la protection de la vie marine et l\'impact des micro-plastiques dans nos mers.',
-    },
-    {
-      'title': 'Bénévolat & Environnement',
-      'meta': 'Article • 6min',
-      'type': 'Articles',
-      'image': 'https://media.istockphoto.com/id/1156692026/fr/vectoriel/b%C3%A9n%C3%A9voles-ramassant-les-ordures-en-plastique-%C3%A0-lext%C3%A9rieur-concept-de-volontariat.jpg?s=612x612&w=0&k=20&c=yRbJL49HMH_KYLDcRq7ehn5DWNMRiP87sms-WYpGBDU=',
-      'description': 'Rejoignez notre réseau de volontaires passionnés. Ensemble, nous organisons des journées de nettoyage sur les plages et dans les parcs.',
-    },
-    {
-      'title': 'Impact de la Pollution',
-      'meta': 'Impact • Galeries',
-      'type': 'Impact',
-      'image': 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=400&q=80',
-      'description': 'Des images frappantes de l\'impact de nos déchets sur la biodiversité marine. Une raison de plus pour agir dès aujourd\'hui.',
-    },
-    {
-      'title': 'Avant/Après : Nettoyage',
-      'meta': 'Impact • Photos',
-      'type': 'Impact',
-      'image': 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=400&q=80',
-      'description': 'Visualisez les résultats spectaculaires de nos dernières actions de nettoyage communautaire à travers la Tunisie.',
-    },
-    {
-      'title': 'Économie Circulaire',
-      'meta': 'Article • 10min',
-      'type': 'Articles',
-      'image': 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400&q=80',
-      'description': 'Pourquoi jeter quand on peut réutiliser ? Apprenez comment le modèle circulaire peut sauver notre planète et créer de nouveaux emplois.',
-    },
-    {
-      'title': 'Quiz Énergie Propre',
-      'meta': 'Quiz • 50pts',
-      'type': 'Quiz',
-      'image': 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&q=80',
-      'description': 'Mettez vos connaissances au défi sur les énergies solaires et éoliennes. Relevez le challenge et gagnez des récompenses !',
-    },
-  ];
 
-  // Ouvre une URL externe (ex: YouTube) en utilisant url_launcher
-  Future<void> _launchURL(String? url) async {
-    if (url == null) return;
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Impossible d\'ouvrir le lien : $url')),
-        );
-      }
-    }
-  }
 
-  // Affiche les détails d'un contenu dans une feuille modale (Bottom Sheet)
-  void _openContent(Map<String, String> content) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 250,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                    image: DecorationImage(image: NetworkImage(content['image']!), fit: BoxFit.cover),
-                  ),
-                ),
-                Positioned(
-                  top: 20,
-                  right: 20,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black26,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                ),
-                if (content['type'] == 'Vidéos')
-                  const Positioned.fill(
-                    child: Center(
-                      child: Icon(Icons.play_circle_fill_rounded, size: 80, color: Colors.white70),
-                    ),
-                  ),
-              ],
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                          child: Text(content['type']!.toUpperCase(), style: const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 10)),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(content['meta']!, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(content['title']!, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
-                    Text(
-                      content['description'] ?? 'Aucune description disponible pour ce contenu.',
-                      style: const TextStyle(fontSize: 16, height: 1.6, color: AppTheme.textMain),
-                    ),
-                    const SizedBox(height: 40),
-                    if (content['type'] == 'Quiz')
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // S'il y a des quiz IA disponibles, ouvrir le premier
-                          if (_apiQuizzes.isNotEmpty) {
-                            _openQuiz(Map<String, dynamic>.from(_apiQuizzes.first));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Aucun quiz IA disponible pour le moment.')));
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
-                        child: const Text('COMMENCER LE QUIZ'),
-                      )
-                    else if (content['type'] == 'Vidéos')
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          if (content.containsKey('url')) {
-                            _launchURL(content['url']);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lecture de la vidéo...')));
-                          }
-                        },
-                        icon: const Icon(Icons.play_circle_outline_rounded),
-                        label: const Text('REGARDER LA VIDÉO'),
-                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
-                      )
-                    else
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contenu téléchargé pour une lecture hors-ligne.')));
-                        },
-                        icon: const Icon(Icons.download_rounded),
-                        label: const Text('TÉLÉCHARGER POUR HORS-LIGNE'),
-                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   @override
-  // Construction de l'interface utilisateur principale
   Widget build(BuildContext context) {
-    // Filtrage du contenu basé sur la catégorie sélectionnée
-    final filteredContent = _selectedCategory == 'Tout' 
-        ? _allContent 
-        : _allContent.where((c) => c['type'] == _selectedCategory).toList();
-    // Pour la grille statique, exclure les quiz (ils sont affichés dynamiquement via l'API)
-    final filteredNonQuiz = filteredContent.where((c) => c['type'] != 'Quiz').toList();
-
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: const Color(0xFFF4F7F6),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Animate(
-                    effects: const [FadeEffect(), SlideEffect(begin: Offset(-0.2, 0))],
-                    child: Text('Formation Éco', style: AppTheme.seniorTheme.textTheme.headlineMedium),
+          // En-tête Premium
+          SliverAppBar(
+            expandedHeight: 180,
+            floating: false,
+            pinned: true,
+            backgroundColor: AppTheme.primaryGreen,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+              title: Text('Formation Éco', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.teal.shade700, Colors.teal.shade400],
                   ),
-                  const Text('Apprendre. Agir. Transformer.'),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Animate(
-              effects: const [FadeEffect(), SlideEffect(begin: Offset(0, 0.1))],
-              child: _buildFeaturedSection(context),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _buildSortingGuideCard(context),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-          SliverToBoxAdapter(
-            child: _buildCategoryList(),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-          // Section Quiz IA dynamiques (visible pour 'Tout' et 'Quiz')
-          if ((_selectedCategory == 'Tout' || _selectedCategory == 'Quiz') && _apiQuizzes.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                child: Stack(
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.auto_awesome, size: 18, color: Colors.purple),
-                        const SizedBox(width: 8),
-                        Text('QUIZ IA DISPONIBLES', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: Colors.purple)),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text('${_apiQuizzes.length} quiz', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.purple)),
-                        ),
-                      ],
+                    Positioned(
+                      right: -30,
+                      top: -30,
+                      child: Icon(Icons.school_rounded, size: 160, color: Colors.white.withOpacity(0.1)),
                     ),
-                    const SizedBox(height: 14),
-                    ..._apiQuizzes.map((q) => _buildApiQuizCard(q)).toList(),
-                    const SizedBox(height: 24),
+                    Positioned(
+                      left: 24,
+                      bottom: 60,
+                      child: Text('Apprendre. Agir. Transformer.', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
+                    )
                   ],
                 ),
               ),
             ),
+          ),
 
-          // Message si aucun quiz IA disponible (uniquement quand filtre Quiz actif)
-          if (_selectedCategory == 'Quiz' && _apiQuizzes.isEmpty && _quizzesLoaded)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: AppTheme.tightShadow,
-                  ),
+          // Filtres
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: _buildCategoryList(),
+            ),
+          ),
+
+          // Loading globaux
+          if (!_quizzesLoaded || !_videosLoaded)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
+            )
+          else ...[
+            // Section Dossiers Vidéos (catégories)
+            if ((_selectedCategory == 'Tout' || _selectedCategory == 'Vidéos') && (_videoCategories.isNotEmpty || _educatorVideos.isNotEmpty))
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.quiz_rounded, size: 48, color: Colors.grey.shade300),
+                      Row(
+                        children: [
+                          Icon(Icons.video_library_rounded, size: 20, color: Colors.teal.shade600),
+                          const SizedBox(width: 8),
+                          Text('VIDÉOS ÉDUCATIVES', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Colors.teal.shade800)),
+                        ],
+                      ),
                       const SizedBox(height: 16),
-                      Text('Aucun quiz disponible', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                      // Category folder cards grid
+                      if (_videoCategories.isNotEmpty) ...[
+                        GridView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1.0, crossAxisSpacing: 16, mainAxisSpacing: 16),
+                          itemCount: _videoCategories.length,
+                          itemBuilder: (_, i) => _buildCategoryFolderCard(_videoCategories[i]),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      // Uncategorized videos
+                      if (_educatorVideos.where((v) => v['category_id'] == null).isNotEmpty) ...[
+                        Text('AUTRES VIDÉOS', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+                        const SizedBox(height: 12),
+                        ..._educatorVideos.where((v) => v['category_id'] == null).map((v) => _buildEducatorVideoCard(v)).toList(),
+                      ],
+                    ],
+                  ).animate().fadeIn().slideY(begin: 0.1),
+                ),
+              ),
+
+            // Section Quiz IA dynamiques
+            if ((_selectedCategory == 'Tout' || _selectedCategory == 'Quiz') && _apiQuizzes.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, size: 20, color: Colors.purple.shade500),
+                          const SizedBox(width: 8),
+                          Text('QUIZ IA', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Colors.purple.shade700)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                            child: Text('${_apiQuizzes.length} quiz', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.purple)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ..._apiQuizzes.map((q) => _buildApiQuizCard(q)).toList(),
+                    ],
+                  ).animate().fadeIn().slideY(begin: 0.1),
+                ),
+              ),
+
+            // État vide
+            if (_selectedCategory == 'Quiz' && _apiQuizzes.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.quiz_outlined, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      Text('Aucun quiz', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
                       const SizedBox(height: 8),
-                      Text('Les éducateurs n\'ont pas encore publié de quiz.\nRevenez bientôt !',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted, height: 1.5)),
+                      Text('Revenez plus tard pour de nouveaux défis', style: GoogleFonts.inter(color: Colors.grey.shade400)),
                     ],
                   ),
                 ),
               ),
-            ),
-
-          // Loading indicator pour les quiz
-          if (_selectedCategory == 'Quiz' && !_quizzesLoaded)
-            const SliverToBoxAdapter(
-              child: Center(child: Padding(
-                padding: EdgeInsets.all(40),
-                child: CircularProgressIndicator(color: AppTheme.primaryGreen),
-              )),
-            ),
-
-          // Grille de contenu statique (Vidéos, Articles, Impact — PAS les Quiz statiques)
-          if (_selectedCategory != 'Quiz')
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.8,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = filteredNonQuiz[index];
-                    return Animate(
-                      key: ValueKey(item['title']),
-                      effects: const [FadeEffect(), ScaleEffect(begin: Offset(0.9, 0.9))],
-                      child: GestureDetector(
-                        onTap: () => _openContent(item),
-                        child: _buildCourseCard(item['title']!, item['meta']!, item['image']!, item['type']!),
-                      ),
-                    );
-                  },
-                  childCount: filteredNonQuiz.length,
-                ),
-              ),
-            ),
-          
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
-      ),
-    );
-  }
-
-  // Section "À la une" mettant en avant un contenu spécial
-  Widget _buildFeaturedSection(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _openContent({
-        'title': 'Le Futur de nos Villes',
-        'meta': 'Spécial • 15min',
-        'type': 'Vidéos',
-        'image': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&q=80',
-      }),
-      child: Container(
-        height: 420,
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                image: const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&q=80'),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: AppTheme.premiumShadow,
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text('SÉRIE ORIGINALE', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Le Futur de nos Villes',
-                    style: GoogleFonts.outfit(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -1),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Découvrez comment le tri transforme l\'urbanisme moderne en Tunisie.',
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, height: 1.4),
-                  ),
-                ],
-              ),
-            ),
           ],
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
       ),
     );
   }
@@ -535,10 +253,9 @@ class _MultimediaTabState extends State<MultimediaTab> {
   // Widget de liste horizontale pour les catégories
   Widget _buildCategoryList() {
     return SizedBox(
-      height: 45,
+      height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final category = _categories[index];
@@ -546,155 +263,28 @@ class _MultimediaTabState extends State<MultimediaTab> {
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = category),
             child: AnimatedContainer(
-              duration: 200.ms,
+              duration: 300.ms,
+              curve: Curves.easeOutCubic,
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryGreen : Colors.white,
+                gradient: isSelected ? LinearGradient(colors: [Colors.teal.shade500, Colors.teal.shade700]) : const LinearGradient(colors: [Colors.white, Colors.white]),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade200),
-                boxShadow: isSelected ? [BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))] : [],
+                boxShadow: isSelected ? [BoxShadow(color: Colors.teal.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
               ),
               child: Center(
                 child: Text(
                   category,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: isSelected ? Colors.white : AppTheme.textMuted,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
                   ),
                 ),
               ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  // Carte individuelle représentant un cours ou un média
-  Widget _buildCourseCard(String title, String meta, String imageUrl, String type) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppTheme.tightShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: Center(
-                          child: Icon(
-                            Icons.image_not_supported_rounded,
-                            color: Colors.grey.shade400,
-                            size: 40,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
-                    ),
-                  ),
-                ),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      type == 'Quiz' ? Icons.help_outline_rounded : Icons.play_arrow_rounded,
-                      color: Colors.white, 
-                      size: 28
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.deepSlate), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(meta, style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 10, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSortingGuideCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/guide'),
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: AppTheme.primaryGreen.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: AppTheme.primaryGreen, borderRadius: BorderRadius.circular(10)),
-                      child: const Text('NOUVEAU', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 10),
-                    Text('Guide Illutré du Tri', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const Text('Apprenez les bases en 1 min.', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(24), bottomRight: Radius.circular(24)),
-                child: Image.network(
-                  'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400&q=80',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.auto_stories_rounded, color: AppTheme.primaryGreen, size: 40)),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -781,5 +371,431 @@ class _MultimediaTabState extends State<MultimediaTab> {
         ),
       ),
     ).animate().fadeIn().slideX(begin: 0.05);
+  }
+
+  Widget _buildCategoryFolderCard(dynamic cat) {
+    final title = cat['title'] ?? '';
+    final coverUrl = cat['cover_image_url'];
+    final videoCount = cat['video_count'] ?? 0;
+    final catId = cat['id'] as int?;
+
+    return GestureDetector(
+      onTap: () { if (catId != null) _openCategoryDetail(catId, title); },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.tightShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(children: [
+            // Cover image
+            Positioned.fill(
+              child: coverUrl != null
+                  ? Image.network('${ApiConstants.baseUrl}$coverUrl', fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade200, Colors.indigo.shade400])),
+                        child: const Icon(Icons.folder, color: Colors.white, size: 48),
+                      ))
+                  : Container(
+                      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade200, Colors.indigo.shade400])),
+                      child: const Icon(Icons.folder, color: Colors.white, size: 48),
+                    ),
+            ),
+            // Dark overlay
+            Positioned.fill(child: Container(
+              decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.7)])),
+            )),
+            // Title & count
+            Positioned(
+              bottom: 12, left: 14, right: 14,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15), maxLines: 2, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Row(children: [
+                  const Icon(Icons.play_circle_fill, size: 14, color: Colors.white70),
+                  const SizedBox(width: 4),
+                  Text('$videoCount vidéo${videoCount > 1 ? 's' : ''}', style: GoogleFonts.inter(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+                ]),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    ).animate().fadeIn().scale(begin: const Offset(0.92, 0.92));
+  }
+
+  void _openCategoryDetail(int catId, String title) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _CategoryDetailPage(catId: catId, title: title),
+    ));
+  }
+
+  Widget _buildEducatorVideoCard(dynamic video) {
+    final title = video['title'] ?? 'Vidéo';
+    final educatorName = video['educator_name'] ?? 'Éducateur';
+    final duration = video['duration'] ?? '';
+    final createdAt = video['created_at'] ?? '';
+    final videoUrl = video['video_url'] ?? '';
+    final description = video['description'] ?? '';
+
+    // Format date
+    String dateLabel = '';
+    if (createdAt.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(createdAt).toLocal();
+        dateLabel = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} à ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) {
+        dateLabel = createdAt;
+      }
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (videoUrl.isNotEmpty) {
+          _openVideoPlayer(videoUrl, title, educatorName, dateLabel);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.tightShadow,
+        ),
+        child: Column(
+          children: [
+            // Play icon placeholder
+            Container(
+              height: 160, width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.teal.shade300, Colors.cyan.shade600]),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Stack(children: [
+                const Center(child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 60)),
+                if (duration.isNotEmpty)
+                  Positioned(
+                    bottom: 10, right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(6)),
+                      child: Text(duration, style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+              ]),
+            ),
+            // Info section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.deepSlate), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(description, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ],
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.teal.withOpacity(0.1),
+                        child: const Icon(Icons.person, size: 16, color: Colors.teal),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(educatorName, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate), overflow: TextOverflow.ellipsis)),
+                      const Icon(Icons.access_time_rounded, size: 13, color: AppTheme.textMuted),
+                      const SizedBox(width: 4),
+                      Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn().slideY(begin: 0.05);
+  }
+
+  /// Ouvre le lecteur vidéo intégré dans un bottom sheet
+  void _openVideoPlayer(String videoUrl, String title, String educatorName, String dateLabel) {
+    // Build full URL from relative path
+    String fullUrl = videoUrl;
+    if (videoUrl.startsWith('/')) {
+      fullUrl = '${ApiConstants.baseUrl}$videoUrl';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _VideoPlayerSheet(
+        videoUrl: fullUrl,
+        title: title,
+        educatorName: educatorName,
+        dateLabel: dateLabel,
+      ),
+    );
+  }
+}
+
+/// Bottom sheet avec lecteur vidéo Chewie intégré
+class _VideoPlayerSheet extends StatefulWidget {
+  final String videoUrl;
+  final String title;
+  final String educatorName;
+  final String dateLabel;
+
+  const _VideoPlayerSheet({
+    required this.videoUrl,
+    required this.title,
+    required this.educatorName,
+    required this.dateLabel,
+  });
+
+  @override
+  State<_VideoPlayerSheet> createState() => _VideoPlayerSheetState();
+}
+
+class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
+  late VideoPlayerController _videoController;
+  ChewieController? _chewieController;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    try {
+      await _videoController.initialize();
+      if (!mounted) return;
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController,
+        autoPlay: true,
+        looping: false,
+        aspectRatio: _videoController.value.aspectRatio,
+        allowFullScreen: true,
+        allowMuting: true,
+        showControls: true,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: AppTheme.primaryGreen,
+          handleColor: AppTheme.primaryGreen,
+          bufferedColor: Colors.teal.shade100,
+          backgroundColor: Colors.grey.shade300,
+        ),
+      );
+      setState(() {});
+    } catch (e) {
+      if (mounted) setState(() => _hasError = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.dispose();
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade600, borderRadius: BorderRadius.circular(2)),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+            child: Row(
+              children: [
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.title, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.person, size: 14, color: Colors.teal),
+                      const SizedBox(width: 4),
+                      Text(widget.educatorName, style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.access_time_rounded, size: 12, color: Colors.white54),
+                      const SizedBox(width: 4),
+                      Text(widget.dateLabel, style: GoogleFonts.inter(color: Colors.white54, fontSize: 11)),
+                    ]),
+                  ],
+                )),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white70),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          // Video player
+          Expanded(
+            child: _hasError
+                ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Impossible de lire la vidéo', style: GoogleFonts.inter(color: Colors.white70)),
+                  ]))
+                : _chewieController != null
+                    ? Chewie(controller: _chewieController!)
+                    : const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Page de détail d'une catégorie — affiche toutes les vidéos du dossier
+class _CategoryDetailPage extends StatefulWidget {
+  final int catId;
+  final String title;
+  const _CategoryDetailPage({required this.catId, required this.title});
+  @override
+  State<_CategoryDetailPage> createState() => _CategoryDetailPageState();
+}
+
+class _CategoryDetailPageState extends State<_CategoryDetailPage> {
+  final AuthService _authService = AuthService();
+  List<dynamic> _videos = [];
+  bool _loading = true;
+  String _description = '';
+  String? _coverUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategory();
+  }
+
+  Future<void> _loadCategory() async {
+    final data = await _authService.fetchCategoryDetail(widget.catId);
+    if (data != null && mounted) {
+      setState(() {
+        _videos = data['videos'] ?? [];
+        _description = data['description'] ?? '';
+        _coverUrl = data['cover_image_url'];
+        _loading = false;
+      });
+    } else if (mounted) {
+      setState(() => _loading = false);
+    }
+  }
+
+  void _playVideo(String videoUrl, String title, String educatorName, String dateLabel) {
+    String fullUrl = videoUrl;
+    if (videoUrl.startsWith('/')) fullUrl = '${ApiConstants.baseUrl}$videoUrl';
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => _VideoPlayerSheet(videoUrl: fullUrl, title: title, educatorName: educatorName, dateLabel: dateLabel),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: CustomScrollView(slivers: [
+        SliverAppBar(
+          expandedHeight: 200,
+          pinned: true,
+          backgroundColor: Colors.indigo,
+          flexibleSpace: FlexibleSpaceBar(
+            title: Text(widget.title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18)),
+            background: Stack(children: [
+              if (_coverUrl != null) Positioned.fill(child: Image.network('${ApiConstants.baseUrl}$_coverUrl', fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.indigo))),
+              Positioned.fill(child: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.6)])))),
+            ]),
+          ),
+        ),
+        if (_description.isNotEmpty)
+          SliverToBoxAdapter(child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+            child: Text(_description, style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted, height: 1.5)),
+          )),
+        if (_loading)
+          const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)))
+        else if (_videos.isEmpty)
+          SliverFillRemaining(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.video_library_outlined, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text('Aucune vidéo dans ce dossier', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+          ])))
+        else
+          SliverList(delegate: SliverChildBuilderDelegate(
+            (ctx, i) {
+              final v = _videos[i];
+              final title = v['title'] ?? 'Vidéo';
+              final educator = v['educator_name'] ?? '';
+              final duration = v['duration'] ?? '';
+              final videoUrl = v['video_url'] ?? '';
+              final createdAt = v['created_at'] ?? '';
+              String dateLabel = '';
+              if (createdAt.isNotEmpty) {
+                try {
+                  final dt = DateTime.parse(createdAt).toLocal();
+                  dateLabel = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+                } catch (_) {}
+              }
+              return GestureDetector(
+                onTap: () => _playVideo(videoUrl, title, educator, dateLabel),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 7),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: AppTheme.tightShadow),
+                  child: Row(children: [
+                    Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.teal.shade300, Colors.cyan.shade600]), borderRadius: BorderRadius.circular(14)),
+                      child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Row(children: [
+                        if (educator.isNotEmpty) ...[
+                          const Icon(Icons.person, size: 12, color: Colors.teal),
+                          const SizedBox(width: 4),
+                          Text(educator, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                          const SizedBox(width: 8),
+                        ],
+                        if (dateLabel.isNotEmpty) Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                      ]),
+                    ])),
+                    if (duration.isNotEmpty) Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                      child: Text(duration, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+                    ),
+                  ]),
+                ),
+              );
+            },
+            childCount: _videos.length,
+          )),
+        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+      ]),
+    );
   }
 }

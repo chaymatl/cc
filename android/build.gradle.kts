@@ -5,6 +5,17 @@ allprojects {
     }
 }
 
+subprojects {
+    if (name != "app") {
+        project.extra.set("flutter", mapOf(
+            "compileSdkVersion" to 36,
+            "minSdkVersion" to 23,
+            "targetSdkVersion" to 36
+        ))
+    }
+}
+
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
@@ -22,3 +33,5 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+

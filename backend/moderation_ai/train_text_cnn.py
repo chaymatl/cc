@@ -37,14 +37,19 @@ VOC_PATH = os.path.join(MDL_DIR, "vocab.pkl")
 
 # ── Hyper-paramètres ──────────────────────────────────────────────────────────
 MAX_LEN    = 120      # longueur max d'une séquence (tokens)
-EMB_DIM    = 128      # dimension des embeddings
-NUM_FILT   = 256      # nombre de filtres par conv (augmenté)
-EPOCHS     = 25       # max epochs (early stopping peut couper avant)
+EMB_DIM    = 128      # dimension des embeddings (sera 300 si FastText)
+NUM_FILT   = 256      # nombre de filtres par conv
+EPOCHS     = 30       # max epochs (early stopping peut couper avant)
 BATCH_SIZE = 64       # plus grand batch pour meilleure convergence
 LR         = 5e-4     # learning rate initial
-VOCAB_SIZE = 25_000   # taille max du vocabulaire (augmenté)
-PATIENCE   = 4        # early stopping patience
+VOCAB_SIZE = 25_000   # taille max du vocabulaire
+PATIENCE   = 5        # early stopping patience (augmenté)
 DROPOUT    = 0.4      # dropout pour régularisation
+N_PER_CLASS = 6000    # exemples par classe (doublé vs v2)
+
+# Embeddings pré-entraînés FastText (si disponibles)
+PRETRAINED_EMB_PATH = os.path.join(MDL_DIR, "fasttext_embeddings.pt")
+USE_PRETRAINED = os.path.exists(PRETRAINED_EMB_PATH)
 
 LABEL_MAP  = {"eco": 0, "off_topic": 1, "toxic": 2}
 
@@ -100,11 +105,26 @@ class CitizenPostDataset(Dataset):
 
 def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"\n{'='*60}")
-    print(f"  EcoRewind — Entraînement Text CNN v2")
+
+    # Détecter embeddings pré-entraînés
+    if USE_PRETRAINED:
+        pretrained_data = torch.load(PRETRAINED_EMB_PATH, map_location="cpu", weights_only=True)
+        EMB_DIM = pretrained_data["emb_dim"]
+        NUM_FILT = 256
+        coverage = pretrained_data.get("coverage", 0)
+        print(f"\n{'='*60}")
+        print(f"  EcoRewind — Entraînement Text CNN v3 (FastText {EMB_DIM}d)")
+        print(f"  Embeddings pré-entraînés : {coverage:.1f}% couverture")
+    else:
+        EMB_DIM = 128
+        NUM_FILT = 256
+        pretrained_data = None
+        print(f"\n{'='*60}")
+        print(f"  EcoRewind — Entraînement Text CNN v3 (embeddings {EMB_DIM}d)")
+
     print(f"  Device        : {device}")
     print(f"  Epochs (max)  : {EPOCHS}  | Early-stop patience: {PATIENCE}")
-    print(f"  Batch size    : {BATCH_SIZE}")
+    print(f"  Batch size    : {BATCH_SIZE} | Dataset : {N_PER_CLASS}/classe")
     print(f"{'='*60}\n")
 
     # ── Génération automatique du dataset si absent ou trop petit ─────────────
@@ -114,13 +134,13 @@ def train():
         print("[INFO] Dataset absent — génération automatique...")
     else:
         df_check = pd.read_csv(DATA_CSV)
-        if len(df_check) < 8000:
+        if len(df_check) < N_PER_CLASS * 3 * 0.9:  # vérifier taille vs cible
             regenerate = True
-            print(f"[INFO] Dataset trop petit ({len(df_check)} lignes) — régénération...")
+            print(f"[INFO] Dataset trop petit ({len(df_check)} lignes, cible={N_PER_CLASS*3}) — régénération...")
 
     if regenerate:
         from moderation_ai.build_text_dataset import build_dataset
-        build_dataset(DATA_CSV, n_per_class=3000)
+        build_dataset(DATA_CSV, n_per_class=N_PER_CLASS)
 
     # ── Chargement données ─────────────────────────────────────────────────────
     df = pd.read_csv(DATA_CSV)
@@ -159,6 +179,14 @@ def train():
     print(f"[SPLIT] Train={len(train_df)} | Val={len(val_df)}\n")
 
     # ── Modèle ─────────────────────────────────────────────────────────────────
+    # Charger embeddings pré-entraînés si disponibles
+    pretrained_data = None
+    if USE_PRETRAINED:
+        pretrained_data = torch.load(PRETRAINED_EMB_PATH, map_location="cpu", weights_only=True)
+        EMB_DIM = pretrained_data["emb_dim"]
+        coverage = pretrained_data.get("coverage", 0)
+        print(f"[EMB] FastText {EMB_DIM}d détecté ({coverage:.1f}% couverture)")
+
     model = EcoTextCNN(
         vocab_size    = len(vocab) + 2,
         embedding_dim = EMB_DIM,
@@ -166,9 +194,18 @@ def train():
         num_classes   = len(LABEL_MAP),
     ).to(device)
 
-    # Appliquer dropout plus fort si l'architecture l'expose
+    if pretrained_data is not None:
+        pretrained_emb = pretrained_data["embeddings"]
+        model_vs = len(vocab) + 2
+        load_sz = min(pretrained_emb.shape[0], model_vs)
+        model.embedding.weight.data[:load_sz] = pretrained_emb[:load_sz].to(device)
+        # Geler les embeddings pendant le warm-up (3 premières epochs)
+        model.embedding.weight.requires_grad = False
+        print(f"[EMB] Embeddings chargés et gelés (dégel epoch 4)")
+
     total_params = sum(p.numel() for p in model.parameters())
-    print(f"[MODEL] EcoTextCNN — {total_params:,} paramètres\n")
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"[MODEL] EcoTextCNN — {total_params:,} params ({trainable_params:,} entraînables)\n")
 
     opt       = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -198,6 +235,11 @@ def train():
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)   # gradient clipping
             opt.step()
             total_loss += loss.item()
+
+        # Dégeler les embeddings après les 3 premières epochs (warm-up)
+        if epoch == 3 and pretrained_data is not None and not model.embedding.weight.requires_grad:
+            model.embedding.weight.requires_grad = True
+            print(f"          🔓 Embeddings dégelés (fine-tuning activé)")
 
         # Validation
         model.eval()

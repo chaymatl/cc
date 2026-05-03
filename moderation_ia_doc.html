@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<title>EcoRewind – Documentation Système de Modération IA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#1a2e2a;background:#fff;font-size:13px;line-height:1.6}
+  .cover{background:linear-gradient(135deg,#0d7a5f,#1ab380);color:#fff;padding:80px 60px;min-height:300px;page-break-after:always}
+  .cover h1{font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:12px}
+  .cover h2{font-size:18px;font-weight:300;opacity:.85;margin-bottom:40px}
+  .cover .meta{font-size:12px;opacity:.7;border-top:1px solid rgba(255,255,255,.3);padding-top:20px;margin-top:40px}
+  .page{padding:50px 60px;max-width:900px;margin:auto}
+  h2.section{font-size:22px;font-weight:800;color:#0d7a5f;border-bottom:3px solid #0d7a5f;padding-bottom:8px;margin:40px 0 20px}
+  h3{font-size:15px;font-weight:700;color:#1a2e2a;margin:24px 0 10px}
+  p{margin-bottom:10px;color:#344}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin:2px}
+  .green{background:#d4f5e9;color:#0d7a5f}
+  .orange{background:#fff3cd;color:#b45309}
+  .red{background:#fde8e8;color:#c0392b}
+  .purple{background:#ede9fe;color:#6d28d9}
+  .blue{background:#dbeafe;color:#1d4ed8}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px}
+  th{background:#0d7a5f;color:#fff;padding:10px 12px;text-align:left;font-weight:600}
+  td{padding:9px 12px;border-bottom:1px solid #e2e8f0}
+  tr:nth-child(even) td{background:#f8fffe}
+  .box{background:#f0fdf8;border-left:4px solid #0d7a5f;padding:14px 18px;border-radius:0 8px 8px 0;margin:14px 0}
+  .box.warn{background:#fffbeb;border-color:#f59e0b}
+  .box.danger{background:#fff5f5;border-color:#e53e3e}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0}
+  .flow-item{background:#0d7a5f;color:#fff;padding:8px 16px;border-radius:8px;font-weight:600;font-size:12px}
+  .flow-arrow{color:#0d7a5f;font-size:18px;font-weight:700}
+  .score-bar{display:flex;height:24px;border-radius:8px;overflow:hidden;margin:10px 0;font-size:11px;font-weight:700}
+  .score-green{background:#22c55e;color:#fff;display:flex;align-items:center;justify-content:center;flex:30}
+  .score-orange{background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;flex:35}
+  .score-red{background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;flex:35}
+  @media print{.page-break{page-break-before:always}}
+</style>
+</head>
+<body>
+
+<!-- COUVERTURE -->
+<div class="cover">
+  <div style="font-size:13px;opacity:.7;margin-bottom:20px">🌿 EcoRewind Platform</div>
+  <h1>Système de Modération IA</h1>
+  <h2>Documentation Technique Complète</h2>
+  <p style="opacity:.8;max-width:500px">Description des modèles utilisés, des anomalies détectées et des règles de publication automatique des contenus citoyens.</p>
+  <div class="meta">
+    <strong>Version :</strong> 2.0 Enhanced &nbsp;|&nbsp;
+    <strong>Date :</strong> Avril 2026 &nbsp;|&nbsp;
+    <strong>Plateforme :</strong> FastAPI + PyTorch + Detoxify
+  </div>
+</div>
+
+<!-- PAGE 1 -->
+<div class="page">
+
+<h2 class="section">1. Vue d'ensemble</h2>
+<p>EcoRewind utilise un pipeline de modération à plusieurs couches combinant des <strong>règles basées sur des mots-clés</strong> et des <strong>modèles d'apprentissage automatique</strong> pour analyser chaque publication citoyenne avant affichage.</p>
+
+<div class="box">
+  <strong>Objectif :</strong> Publier automatiquement les contenus pro-environnementaux valides, mettre en attente les contenus ambigus pour révision administrative, et rejeter automatiquement les contenus nuisibles (toxiques, NSFW, anti-environnementaux).
+</div>
+
+<h3>Architecture générale</h3>
+<div class="flow">
+  <div class="flow-item">📝 Publication citoyenne</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">Couche 0 : Règles</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">Couche 1 : TextCNN</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">Couche 2 : ResNet18</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">Couche 3 : NudeNet</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">Couche 4 : Detoxify</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-item">✅ Décision finale</div>
+</div>
+
+<h2 class="section">2. Modèles utilisés</h2>
+
+<table>
+  <tr>
+    <th>Couche</th><th>Modèle</th><th>Type</th><th>Fonction</th><th>Latence</th>
+  </tr>
+  <tr>
+    <td>0</td>
+    <td>Règles basées mots-clés</td>
+    <td><span class="badge blue">Rule-based</span></td>
+    <td>Profanité, anti-environnemental, hors-sujet — FR/AR/EN</td>
+    <td>&lt; 1 ms</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><strong>EcoTextCNN</strong></td>
+    <td><span class="badge purple">CNN Custom</span></td>
+    <td>Classification texte : eco / toxic / off_topic</td>
+    <td>~5 ms (CPU)</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>ResNet18 fine-tuné</strong></td>
+    <td><span class="badge purple">CNN Custom</span></td>
+    <td>Classification image : eco / off_topic / nsfw</td>
+    <td>~20 ms (CPU)</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>NudeNet</strong></td>
+    <td><span class="badge purple">CNN pré-entraîné</span></td>
+    <td>Détection NSFW haute précision (bounding boxes)</td>
+    <td>~100 ms</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>Detoxify</strong> (BERT multilingue)</td>
+    <td><span class="badge purple">Transformer</span></td>
+    <td>Toxicité générale, menaces, insults — multilingue</td>
+    <td>~50 ms</td>
+  </tr>
+</table>
+
+<div class="box">
+  <strong>Note :</strong> CLIP (ViT-B/32, ~2.4 Go) et XLM-RoBERTa (~1.1 Go) ont été retirés du pipeline pour réduire l'empreinte mémoire et le temps de démarrage du serveur. Ils ont été remplacés par EcoTextCNN et ResNet18 entraînés sur mesure.
+</div>
+
+<div class="page-break"></div>
+
+<h2 class="section">3. Anomalies détectées</h2>
+
+<h3>3.1 Profanité / Langage vulgaire</h3>
+<p>Détectée dans 3 langues : Français, Arabe, Anglais.</p>
+<table>
+  <tr><th>Sévérité</th><th>Condition</th><th>Score ajouté</th><th>Exemples (FR)</th></tr>
+  <tr><td><span class="badge green">Faible</span></td><td>1 mot vulgaire</td><td>+0.35</td><td>merde, putain</td></tr>
+  <tr><td><span class="badge orange">Moyen</span></td><td>2–3 mots vulgaires</td><td>+0.70 → rejet</td><td>connard, enculé, chier</td></tr>
+  <tr><td><span class="badge red">Élevé</span></td><td>4+ mots vulgaires</td><td>+0.90 → rejet fort</td><td>combinaison de plusieurs</td></tr>
+</table>
+
+<h3>3.2 Contenu anti-environnemental</h3>
+<p>Phrases explicitement hostiles à l'environnement ou encourageant des comportements illégaux.</p>
+<table>
+  <tr><th>Condition</th><th>Score</th><th>Exemples détectés</th></tr>
+  <tr><td>1 phrase anti-env</td><td>+0.40 → pending_review</td><td>"jeter par terre c'est plus simple"</td></tr>
+  <tr><td>2+ phrases anti-env</td><td>+0.80 → rejet</td><td>"brûler les déchets" + "nique la nature"</td></tr>
+  <tr><td>Négationnisme climatique</td><td>+0.80 → rejet</td><td>"réchauffement climatique fake"</td></tr>
+  <tr><td>Actions illégales</td><td>+0.80 → rejet</td><td>"chasse illégale", "déversement illégal"</td></tr>
+</table>
+
+<h3>3.3 Contenu hors-sujet (Off-topic)</h3>
+<p>Contenu sans rapport avec la mission environnementale d'EcoRewind.</p>
+<table>
+  <tr><th>Catégorie</th><th>Mots-clés (exemples)</th><th>Score</th></tr>
+  <tr><td>Accidents / urgences</td><td>accident, blessé, ambulance, hôpital</td><td>+0.22 par mot-clé</td></tr>
+  <tr><td>Crime / police</td><td>police, meurtre, attentat, crime</td><td>+0.22 par mot-clé</td></tr>
+  <tr><td>Politique</td><td>élection, président, parlement, vote</td><td>+0.22 par mot-clé</td></tr>
+  <tr><td>Sport / divertissement</td><td>match, football, cinéma, concert</td><td>+0.22 par mot-clé</td></tr>
+  <tr><td>Commerce non-éco</td><td>promo, soldes, publicité, vente</td><td>+0.22 par mot-clé</td></tr>
+</table>
+<div class="box warn">
+  <strong>Règle de sécurité :</strong> Un contenu purement hors-sujet (sans profanité ni anti-env) est toujours plafonné à <code>pending_review</code>, jamais directement rejeté.
+</div>
+
+<h3>3.4 Contenu NSFW (images)</h3>
+<p>NudeNet détecte des zones corporelles sensibles avec des bounding boxes.</p>
+<table>
+  <tr><th>Classe détectée</th><th>Risque</th><th>Action</th></tr>
+  <tr><td>EXPOSED_ANUS, EXPOSED_BREAST_F, EXPOSED_GENITALIA_M/F</td><td><span class="badge red">Élevé</span></td><td>Rejet automatique (score 0.95)</td></tr>
+  <tr><td>EXPOSED_BELLY, COVERED_GENITALIA, EXPOSED_ARMPITS</td><td><span class="badge orange">Moyen</span></td><td>Pending_review (score × 0.7)</td></tr>
+</table>
+
+<h3>3.5 Contenu vide</h3>
+<div class="box warn">Publication sans texte ET sans image → score +0.35 → pending_review automatique.</div>
+
+<div class="page-break"></div>
+
+<h2 class="section">4. Système de score et décision</h2>
+
+<h3>4.1 Seuils de décision</h3>
+<div class="score-bar">
+  <div class="score-green">✅ Publié auto (score &lt; 0.30)</div>
+  <div class="score-orange">⏳ Révision admin (0.30 ≤ score &lt; 0.65)</div>
+  <div class="score-red">❌ Rejeté auto (score ≥ 0.65)</div>
+</div>
+
+<table>
+  <tr><th>Statut</th><th>Score</th><th>Signification</th></tr>
+  <tr><td><span class="badge green">PUBLISHED</span></td><td>&lt; 0.30</td><td>Contenu sûr, publié automatiquement sans intervention</td></tr>
+  <tr><td><span class="badge orange">PENDING_REVIEW</span></td><td>0.30 – 0.64</td><td>Contenu ambigu, l'administrateur doit valider manuellement</td></tr>
+  <tr><td><span class="badge red">REJECTED</span></td><td>≥ 0.65</td><td>Contenu nuisible, rejeté automatiquement</td></tr>
+</table>
+
+<h3>4.2 Formule de calcul du score</h3>
+<div class="box">
+  <strong>Avec ML actif :</strong> Score = (règles × 0.30) + (Detoxify × 0.40) + (NLI × 0.30) + pénalités de pertinence<br><br>
+  <strong>Sans ML (règles seules) :</strong> Score = profanité + anti-env + (off_topic × 0.6) − bonus_éco<br><br>
+  <strong>Bonus éco :</strong> −0.05 par mot-clé positif (max −0.25)
+</div>
+
+<h3>4.3 Seuils des modèles CNN custom</h3>
+<table>
+  <tr><th>Modèle</th><th>Classe</th><th>Seuil</th><th>Action</th></tr>
+  <tr><td>EcoTextCNN</td><td>toxic</td><td>≥ 0.50</td><td>Force score ≥ 0.70 → rejet</td></tr>
+  <tr><td>EcoTextCNN</td><td>eco</td><td>≥ 0.45</td><td>Plafonne score à 0.20 → publication</td></tr>
+  <tr><td>EcoTextCNN</td><td>off_topic</td><td>≥ 0.55</td><td>Force score ≥ 0.35 → pending</td></tr>
+  <tr><td>ResNet18</td><td>nsfw</td><td>≥ 0.45</td><td>Score = 0.95 → rejet immédiat</td></tr>
+  <tr><td>ResNet18</td><td>eco (argmax)</td><td>≥ 0.45 et dominant</td><td>Plafonne score à 0.15</td></tr>
+  <tr><td>ResNet18</td><td>off_topic</td><td>≥ 0.55 et dominant</td><td>Force score ≥ 0.45 → pending</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2 class="section">5. Publications approuvées automatiquement</h2>
+<p>Les publications suivantes sont publiées <strong>sans intervention humaine</strong> (score &lt; 0.30) :</p>
+
+<table>
+  <tr><th>#</th><th>Type de publication</th><th>Condition</th><th>Exemple</th></tr>
+  <tr>
+    <td>1</td>
+    <td>Salutation simple (texte court)</td>
+    <td>≤ 8 tokens, pas de profanité/off-topic, contient un mot de salutation</td>
+    <td>"Bonjour la communauté !" / "Salam tout le monde"</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Texte éco + image éco + action</td>
+    <td>TextCNN = eco ET ResNet18 = eco ET texte promeut une action</td>
+    <td>Photo de nettoyage + "Recyclons ensemble !"</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Image off-topic + texte d'action éco</td>
+    <td>ResNet18 = off_topic MAIS texte promeut action éco ET pas toxique</td>
+    <td>Photo décharge + "Nettoyons notre littoral !"</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Texte riche en mots-clés éco</td>
+    <td>Nombreux mots positifs (recyclage, tri, compost…), pas de contenu négatif</td>
+    <td>"Le tri sélectif du plastique réduit la pollution"</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Conseil ou astuce écologique</td>
+    <td>Contient mots-clés conseil + mots-clés éco, texte court, pas de négativité</td>
+    <td>"Astuce : rincez vos bouteilles avant de les recycler"</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Documentation de pollution (acte citoyen)</td>
+    <td>Mots "signaler", "pollution", "honte", "scandale" + contexte civic positif</td>
+    <td>"Honte ! Ces ordures polluent la rivière. Signalons !"</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Appel à la mobilisation</td>
+    <td>Verbes d'action (nettoyons, recyclons, protégeons) + contexte positif</td>
+    <td>"Rejoignez notre journée de reboisement samedi !"</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Termes arabes environnementaux</td>
+    <td>Mots-clés AR (بيئة, طبيعة, تدوير, تنظيف) sans contenu négatif</td>
+    <td>"تنظيف الشاطئ معاً" (Nettoyons la plage ensemble)</td>
+  </tr>
+</table>
+
+<h2 class="section">6. Raisons de rejet / mise en attente (exemples)</h2>
+
+<table>
+  <tr><th>Raison retournée</th><th>Statut</th><th>Déclencheur</th></tr>
+  <tr><td>Langage vulgaire : [mots détectés]</td><td><span class="badge red">REJECTED</span></td><td>2+ mots profanes + toxicité ML &gt; 0.5</td></tr>
+  <tr><td>Contenu anti-environnement : [phrases]</td><td><span class="badge red">REJECTED</span></td><td>2+ phrases anti-env</td></tr>
+  <tr><td>Contenu adulte détecté dans l'image</td><td><span class="badge red">REJECTED</span></td><td>NudeNet HIGH_RISK &gt; 0.7</td></tr>
+  <tr><td>Contenu toxique détecté par l'IA</td><td><span class="badge red">REJECTED</span></td><td>Detoxify toxicity &gt; 0.6</td></tr>
+  <tr><td>Contenu hors sujet : [mots]</td><td><span class="badge orange">PENDING</span></td><td>Off-topic keywords sans éco</td></tr>
+  <tr><td>Texte sans contexte environnemental</td><td><span class="badge orange">PENDING</span></td><td>0 mots-clés éco, score bas</td></tr>
+  <tr><td>Image positive mais texte sans action éco</td><td><span class="badge orange">PENDING</span></td><td>ResNet18 = eco mais texte = salutation</td></tr>
+  <tr><td>Image hors sujet (validation admin requise)</td><td><span class="badge orange">PENDING</span></td><td>ResNet18 = off_topic sans texte éco</td></tr>
+  <tr><td>Publication vide sans texte ni image</td><td><span class="badge orange">PENDING</span></td><td>Contenu vide</td></tr>
+</table>
+
+<h2 class="section">7. Confidentialité et performances</h2>
+
+<table>
+  <tr><th>Indicateur</th><th>Valeur</th></tr>
+  <tr><td>Temps de traitement (règles seules)</td><td>&lt; 5 ms</td></tr>
+  <tr><td>Temps de traitement (pipeline complet)</td><td>~200 ms</td></tr>
+  <tr><td>Niveau de confiance (avec ML)</td><td>95%</td></tr>
+  <tr><td>Niveau de confiance (règles seules)</td><td>75%</td></tr>
+  <tr><td>Traitement des données</td><td>100% local — aucune donnée envoyée vers un service externe</td></tr>
+  <tr><td>Langues supportées</td><td>Français, Arabe (dialectal + MSA), Anglais</td></tr>
+  <tr><td>Activer/désactiver via</td><td>Variable d'env. <code>AI_MODERATION_ENABLED=true/false</code></td></tr>
+</table>
+
+<div class="box" style="margin-top:40px">
+  <strong>🌿 EcoRewind</strong> — Plateforme citoyenne de sensibilisation environnementale en Tunisie.<br>
+  Ce document est à usage interne. Toute modification des seuils de modération doit être validée par l'équipe technique.
+</div>
+
+<p style="text-align:center;color:#999;margin-top:40px;font-size:11px">EcoRewind AI Moderation System — v2.0 Enhanced — Avril 2026</p>
+</div>
+
+</body>
+</html>

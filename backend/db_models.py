@@ -200,3 +200,54 @@ class QuizSubmission(Base):
 
     quiz = relationship("Quiz", back_populates="submissions")
     student = relationship("User")
+
+
+class VideoCategory(Base):
+    __tablename__ = "video_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    cover_image_url = Column(String, nullable=True)
+    educator_id = Column(Integer, ForeignKey("users.id"), index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    educator = relationship("User")
+    videos = relationship("EducatorVideo", back_populates="category")
+
+
+class EducatorVideo(Base):
+    __tablename__ = "educator_videos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    educator_id = Column(Integer, ForeignKey("users.id"), index=True)
+    educator_name = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    video_url = Column(String, nullable=False)
+    thumbnail_url = Column(String, nullable=True)
+    duration = Column(String, nullable=True)
+    category_id = Column(Integer, ForeignKey("video_categories.id"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    educator = relationship("User")
+    category = relationship("VideoCategory", back_populates="videos")
+
+
+class BinScan(Base):
+    """Historique de tous les scans QR sur les poubelles intelligentes."""
+    __tablename__ = "bin_scans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    qr_code = Column(String, nullable=False)          # QR code scanné
+    bin_id = Column(String, nullable=True)             # Identifiant de la poubelle (optionnel)
+    waste_type = Column(String, default="general")     # plastique, verre, papier, métal, etc.
+    weight_kg = Column(Float, nullable=True)           # Poids en kg (si poubelle connectée)
+    points_earned = Column(Float, default=0.0)         # Points attribués lors de ce scan
+    score_before = Column(Float, default=0.0)          # Score avant le scan
+    score_after = Column(Float, default=0.0)           # Score après le scan
+    firebase_synced = Column(Boolean, default=False)   # True si synchronisé avec Firebase RTDB
+    scanned_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

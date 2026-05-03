@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../constants.dart';
 
 /// Widget simple et réutilisable pour charger des images réseau sans planter
 /// sur Flutter Web (gère l'erreur de type ProgressEvent via errorBuilder).
@@ -33,8 +35,15 @@ class SafeNetworkImage extends StatelessWidget {
     final int? cacheW = width != null ? (width! * dpr).toInt() : null;
     final int? cacheH = height != null ? (height! * dpr).toInt() : null;
 
+    String finalUrl = url;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && ApiConstants.usePhysicalDevice) {
+      if (finalUrl.contains('localhost') || finalUrl.contains('127.0.0.1')) {
+        finalUrl = finalUrl.replaceAll('localhost', '192.168.253.158').replaceAll('127.0.0.1', '192.168.253.158');
+      }
+    }
+
     return Image.network(
-      url,
+      finalUrl,
       width: width,
       height: height,
       fit: fit,

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../constants.dart';
+import '../models/user_model.dart';
 
 /// Service d'authentification
 /// Gere la connexion, l'inscription et la gestion des utilisateurs
@@ -19,13 +20,17 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  static const String _googleClientId = "686199052163-tvieiu6db5vlstcnnsr5tp7q0eh6oi99.apps.googleusercontent.com";
+  // Web client ID du projet Firebase EcoRewind (client_type: 3)
+  // Obtenu automatiquement depuis google-services.json après activation de
+  // Google dans Firebase Auth > Sign-in method.
+  static const String _webClientId = "539828926028-a2m18h48leoaqqelr3pejlf811rg0urf.apps.googleusercontent.com";
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // Sur le web, clientId est requis. Sur Android, serverClientId permet d'obtenir un idToken.
-    clientId: kIsWeb ? _googleClientId : null,
-    serverClientId: kIsWeb ? null : _googleClientId,
-    scopes: ['email', 'profile', 'openid'],
+    // Web : clientId explicite requis
+    clientId: kIsWeb ? _webClientId : null,
+    // Android : serverClientId (Web client ID) requis pour obtenir un idToken
+    serverClientId: kIsWeb ? null : _webClientId,
+    scopes: ['email', 'profile'],
   );
 
   // ===========================================
@@ -136,6 +141,8 @@ class AuthService {
     if (_isGoogleSignInInProgress) return {'success': false, 'message': 'Opération déjà en cours'};
     _isGoogleSignInInProgress = true;
     try {
+      // Déconnecter la session précédente pour forcer le sélecteur de compte
+      await _googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         return {'success': false, 'message': 'Connexion annulée'};
@@ -203,6 +210,7 @@ class AuthService {
       developer.log('[FB-AUTH] Ouverture dialog de connexion Facebook...', name: 'FacebookAuth');
 
       // Déclencher la boîte de dialogue de connexion Facebook avec timeout
+      // dialogOnly = forcer le dialogue web au lieu de réutiliser la session de l'app Facebook
       final LoginResult loginResult = await FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
       ).timeout(
@@ -401,6 +409,8 @@ class AuthService {
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('jwt_token', token);
+    // Synchroniser avec AuthState pour accès synchrone
+    AuthState.authToken = token;
   }
 
   /// Public alias for saving token (used by OTP verification)
@@ -1540,6 +1550,25 @@ class AuthService {
     }
   }
 
+  /// Supprime un quiz (éducateur créateur ou admin)
+  Future<Map<String, dynamic>> deleteQuiz(int quizId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final response = await http.delete(
+        Uri.parse('$baseUrl/quiz/$quizId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        return {'success': true, ...data};
+      }
+      return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
   /// Liste les quiz de l'éducateur connecté
   Future<List<dynamic>> fetchMyQuizzes() async {
     try {
@@ -1647,6 +1676,151 @@ class AuthService {
       return null; // 404 = pas encore soumis
     } catch (e) {
       return null;
+    }
+  }
+
+  // ===========================================
+  // VIDÉOS ÉDUCATEUR + CATÉGORIES
+  // ===========================================
+
+  /// Crée une catégorie avec image de couverture
+  Future<Map<String, dynamic>> createVideoCategory({
+    required String title,
+    String? description,
+    dynamic coverImage,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final uri = Uri.parse('$baseUrl/educator-videos/categories');
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..fields['title'] = title;
+      if (description != null && description.isNotEmpty) request.fields['description'] = description;
+      if (coverImage != null) {
+        final bytes = await coverImage.readAsBytes();
+        final name = coverImage.name ?? 'cover.jpg';
+        request.files.add(http.MultipartFile.fromBytes('cover_image', bytes, filename: name, contentType: MediaType.parse('image/jpeg')));
+      }
+      final resp = await request.send();
+      final data = json.decode(await resp.stream.bytesToString());
+      if (resp.statusCode == 200) return {'success': true, ...data};
+      return {'success': false, 'message': data['detail'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
+  /// Liste toutes les catégories (public)
+  Future<List<dynamic>> fetchVideoCategories() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/educator-videos/categories'));
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        return data['categories'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Détail d'une catégorie avec ses vidéos
+  Future<Map<String, dynamic>?> fetchCategoryDetail(int catId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/educator-videos/categories/$catId'));
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Supprime une catégorie
+  Future<bool> deleteVideoCategory(int catId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
+      final resp = await http.delete(Uri.parse('$baseUrl/educator-videos/categories/$catId'), headers: {'Authorization': 'Bearer $token'});
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Upload une vidéo dans une catégorie
+  Future<Map<String, dynamic>> uploadEducatorVideo({
+    required dynamic videoFile,
+    required String title,
+    String? description,
+    String? duration,
+    int? categoryId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final uri = Uri.parse('$baseUrl/educator-videos/upload');
+      final request = http.MultipartRequest('POST', uri)..headers['Authorization'] = 'Bearer $token';
+      final bytes = await videoFile.readAsBytes();
+      final fileName = videoFile.name ?? 'video.mp4';
+      final ext = fileName.split('.').last.toLowerCase();
+      final mimeMap = {'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo', 'mkv': 'video/x-matroska'};
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName, contentType: MediaType.parse(mimeMap[ext] ?? 'video/mp4')));
+      request.fields['title'] = title;
+      if (description != null && description.isNotEmpty) request.fields['description'] = description;
+      if (duration != null && duration.isNotEmpty) request.fields['duration'] = duration;
+      if (categoryId != null) request.fields['category_id'] = categoryId.toString();
+      final resp = await request.send();
+      final data = json.decode(await resp.stream.bytesToString());
+      if (resp.statusCode == 200) return {'success': true, ...data};
+      return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
+    } catch (e) {
+      developer.log('uploadEducatorVideo error: $e', name: 'AuthService');
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
+  /// Liste toutes les vidéos (public)
+  Future<List<dynamic>> fetchEducatorVideos() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/educator-videos/'));
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        return data['videos'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Liste mes vidéos
+  Future<List<dynamic>> fetchMyEducatorVideos() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+      final resp = await http.get(Uri.parse('$baseUrl/educator-videos/my-videos'), headers: {'Authorization': 'Bearer $token'});
+      if (resp.statusCode == 200) {
+        final data = json.decode(utf8.decode(resp.bodyBytes));
+        return data['videos'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Supprime une vidéo
+  Future<bool> deleteEducatorVideo(int videoId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
+      final resp = await http.delete(Uri.parse('$baseUrl/educator-videos/$videoId'), headers: {'Authorization': 'Bearer $token'});
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 }

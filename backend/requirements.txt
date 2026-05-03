@@ -1,4 +1,6 @@
 fastapi
+psycopg2-binary
+firebase-admin
 uvicorn
 python-jose[cryptography]
 passlib[bcrypt]
@@ -36,3 +38,9 @@ tiktoken>=0.5.0            # Fallback tokenizer (BPE)
 # ─── AI Moderation — Couche 5 : CNN custom (Text CNN + ResNet18) ───────────
 pandas>=1.5.0
 scikit-learn>=1.3.0
+
+# ─── AI Moderation — Amélioration : embeddings pré-entraînés ──────────────
+gensim>=4.3.0              # FastText / Word2Vec embeddings pré-entraînés
+
+# ─── AI Moderation — Dataset images (téléchargement) ──────────────────────
+icrawler>=0.6.6             # Bing Image Crawler pour dataset images

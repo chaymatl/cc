@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:ui';
 import '../../theme/app_theme.dart';
 import '../../widgets/premium_widgets.dart';
+import '../../widgets/web_back_button.dart';
 
 class AddSortingCenterScreen extends StatefulWidget {
   const AddSortingCenterScreen({Key? key}) : super(key: key);
@@ -66,9 +67,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
+        desiredAccuracy: LocationAccuracy.high,
       );
 
       if (mounted) {
@@ -173,7 +172,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: webLeading(IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -184,7 +183,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.deepNavy, size: 20),
           ),
           onPressed: () => Navigator.pop(context),
-        ),
+        )),
         title: Text(
           'Ajouter un Point',
           style: GoogleFonts.outfit(

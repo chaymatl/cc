@@ -506,3 +506,39 @@ async def get_my_result(
         raise HTTPException(status_code=404, detail="Aucune soumission trouvée")
 
     return _format_submission(submission)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ÉDUCATEUR : Supprimer un quiz (et son PDF)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.delete("/{quiz_id}")
+async def delete_quiz(
+    quiz_id: int,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
+    """Supprime un quiz et son fichier PDF associé (éducateur créateur ou admin)."""
+    quiz = db.query(db_models.Quiz).filter(db_models.Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz non trouvé")
+    if quiz.educator_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Non autorisé")
+
+    # Supprimer le fichier PDF si présent
+    if quiz.pdf_filename:
+        pdf_path = os.path.join(UPLOADS_DIR, "quizzes", quiz.pdf_filename)
+        if os.path.exists(pdf_path):
+            try:
+                os.remove(pdf_path)
+            except OSError:
+                pass  # Fichier déjà supprimé ou inaccessible
+
+    # Supprimer les soumissions associées
+    db.query(db_models.QuizSubmission).filter(
+        db_models.QuizSubmission.quiz_id == quiz_id
+    ).delete()
+
+    db.delete(quiz)
+    db.commit()
+    return {"message": "Quiz supprimé avec succès"}
