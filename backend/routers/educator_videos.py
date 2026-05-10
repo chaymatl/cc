@@ -32,7 +32,20 @@ ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 
 # ── Formatters ────────────────────────────────────────────────────────────────
 
+def _is_youtube_url(url: str) -> bool:
+    """Retourne True si l'URL est une miniature ou lien YouTube."""
+    if not url:
+        return False
+    return any(h in url for h in ("youtube.com", "youtu.be", "img.youtube.com"))
+
+
 def _fmt_video(v: db_models.EducatorVideo) -> dict:
+    # On ne renvoie jamais une URL YouTube comme thumbnail :
+    # les vidéos doivent être locales uniquement.
+    safe_thumbnail = v.thumbnail_url
+    if safe_thumbnail and _is_youtube_url(safe_thumbnail):
+        safe_thumbnail = None
+
     return {
         "id": v.id,
         "educator_id": v.educator_id,
@@ -40,11 +53,12 @@ def _fmt_video(v: db_models.EducatorVideo) -> dict:
         "title": v.title,
         "description": v.description or "",
         "video_url": v.video_url,
-        "thumbnail_url": v.thumbnail_url,
+        "thumbnail_url": safe_thumbnail,
         "duration": v.duration,
         "category_id": v.category_id,
         "created_at": _utc_iso(v.created_at),
     }
+
 
 
 def _fmt_category(c: db_models.VideoCategory, include_videos: bool = False) -> dict:

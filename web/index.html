@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="EcoRewind - Application éco-citoyenne de gestion des déchets.">
@@ -33,6 +19,30 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- ── Firebase Web SDK ─────────────────────────────────────────────────── -->
+  <!-- Requis pour firebase_core, firebase_database sur Flutter Web           -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // ⚠️  Remplacez appId par la valeur de Firebase Console → Web App
+    // (Paramètres du projet → Vos applications → Application web)
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_u6ShMPHJO9DzTlB3Z9zllM6rBwq496I",
+      authDomain: "ecorewind-6b5d6.firebaseapp.com",
+      databaseURL: "https://ecorewind-6b5d6-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ecorewind-6b5d6",
+      storageBucket: "ecorewind-6b5d6.firebasestorage.app",
+      messagingSenderId: "539828926028",
+      appId: "1:539828926028:web:403f2f0420d1f1aa4726e9"
+    };
+
+    // Initialiser Firebase globalement pour que flutter_web_plugin puisse le trouver
+    window.firebaseApp = initializeApp(firebaseConfig);
+    window.firebaseDb  = getDatabase(window.firebaseApp);
+  </script>
+  <!-- ────────────────────────────────────────────────────────────────────── -->
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

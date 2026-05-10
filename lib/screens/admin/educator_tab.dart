@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/meetings_service.dart';
+import '../educator/create_meeting_screen.dart';
+import '../educator/manage_groups_screen.dart';
 
 
 class EducatorTab extends StatefulWidget {
@@ -18,6 +23,7 @@ class _EducatorTabState extends State<EducatorTab> {
   List<dynamic> _quizzes = [];
   List<dynamic> _myVideos = [];
   List<dynamic> _categories = [];
+  List<dynamic> _meetings = [];
   bool _isLoading = false;
   bool _isUploading = false;
   bool _isPublishingVideo = false;
@@ -28,6 +34,7 @@ class _EducatorTabState extends State<EducatorTab> {
     _loadQuizzes();
     _loadMyVideos();
     _loadCategories();
+    _loadMeetings();
   }
 
   Future<void> _loadQuizzes() async {
@@ -44,6 +51,11 @@ class _EducatorTabState extends State<EducatorTab> {
   Future<void> _loadCategories() async {
     final cats = await _authService.fetchVideoCategories();
     if (mounted) setState(() => _categories = cats);
+  }
+
+  Future<void> _loadMeetings() async {
+    final data = await MeetingsService.getMyMeetings();
+    if (mounted) setState(() => _meetings = data);
   }
 
   Future<void> _createCategory() async {
@@ -486,8 +498,32 @@ class _EducatorTabState extends State<EducatorTab> {
               Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Aucune vidéo publiée.', style: GoogleFonts.inter(color: AppTheme.textMuted)))),
 
             const SizedBox(height: 40),
-            _buildSectionHeader('SÉANCES DE SENSIBILISATION', Icons.event_available_rounded),
-            const SizedBox(height: 20),
+            _buildSectionHeader('GROUPES DE CITOYENS', Icons.group_rounded),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const ManageGroupsScreen(),
+                  ));
+                  _loadMeetings(); // refresh après retour
+                },
+                icon: const Icon(Icons.group_add_rounded),
+                label: Text('Gérer mes groupes de citoyens',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF6C5CE7),
+                  side: const BorderSide(color: Color(0xFF6C5CE7), width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+            _buildSectionHeader('SÉANCES GOOGLE MEET', Icons.video_camera_front_rounded),
+            const SizedBox(height: 16),
             _buildAwarenessSessions(context),
             const SizedBox(height: 100),
           ],
@@ -801,78 +837,6 @@ class _EducatorTabState extends State<EducatorTab> {
     }
   }
 
-  Widget _buildAwarenessSessions(BuildContext context) {
-    return Column(
-      children: [
-        _buildSessionCard(context, 'Atelier Compostage', 'Campus Universitaire, Tunis', '24 Mars • 14:00', '32 Inscrits', true),
-        const SizedBox(height: 16),
-        _buildSessionCard(context, 'Webinaire Zéro Déchet', 'En ligne (Zoom)', '28 Mars • 18:00', '150 Inscrits', false),
-      ],
-    );
-  }
-
-  Widget _buildSessionCard(BuildContext context, String title, String location, String date, String attendees, bool isPhysical) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.tightShadow,
-        border: Border(left: BorderSide(color: isPhysical ? Colors.orange : Colors.blue, width: 4)),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: (isPhysical ? Colors.orange : Colors.blue).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: Column(children: [
-                    Text(date.split('•')[0].split(' ')[0], style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.deepSlate)),
-                    Text(date.split('•')[0].split(' ')[1], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                  ]),
-                ),
-                const SizedBox(width: 16),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.deepSlate)),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      const Icon(Icons.location_on_rounded, size: 12, color: AppTheme.textMuted),
-                      const SizedBox(width: 4),
-                      Text(location, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                    ]),
-                  ],
-                )),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(children: [
-                  const Icon(Icons.people_alt_rounded, size: 14, color: AppTheme.deepSlate),
-                  const SizedBox(width: 4),
-                  Text(attendees, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.deepSlate)),
-                ]),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: (isPhysical ? Colors.orange : Colors.blue).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                  child: Text(isPhysical ? 'PRÉSENTIEL' : 'EN LIGNE',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: isPhysical ? Colors.orange : Colors.blue)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn().slideY(begin: 0.1);
-  }
 
   Widget _buildActionCard(String label, IconData icon, Color color, VoidCallback? onTap) {
     return GestureDetector(
@@ -1012,6 +976,193 @@ class _EducatorTabState extends State<EducatorTab> {
         ],
       ),
     ).animate().fadeIn().slideX(begin: 0.05);
+  }
+
+
+  Widget _buildAwarenessSessions(BuildContext context) {
+    const kGreen = Color(0xFF00C896);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Bouton créer séance ──────────────────────────────────────────
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final ok = await Navigator.push<bool>(context, MaterialPageRoute(
+                builder: (_) => const CreateMeetingScreen(),
+              ));
+              if (ok == true) _loadMeetings();
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: Text('Planifier une séance Google Meet',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Liste des séances ────────────────────────────────────────────
+        if (_meetings.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.event_note_rounded, size: 40, color: Colors.grey.shade400),
+              const SizedBox(height: 10),
+              Text('Aucune séance planifiée', style: GoogleFonts.outfit(
+                  color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text('Créez votre première séance Google Meet\npour vos citoyens.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12, height: 1.5)),
+            ])),
+          )
+        else
+          ..._meetings.map((m) {
+            final scheduledAt = DateTime.tryParse(m['scheduled_at'] ?? '') ?? DateTime.now();
+            final isPast = scheduledAt.isBefore(DateTime.now());
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                border: Border.all(
+                  color: isPast ? Colors.grey.shade200 : kGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 12, 10),
+                  decoration: BoxDecoration(
+                    color: isPast ? Colors.grey.shade50 : kGreen.withOpacity(0.05),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.video_camera_front_rounded,
+                      color: isPast ? Colors.grey : kGreen, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(m['title'] ?? '',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15,
+                        color: AppTheme.deepSlate))),
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isPast ? Colors.grey.shade100 : kGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(isPast ? 'Terminée' : 'Planifiée',
+                        style: GoogleFonts.inter(
+                          color: isPast ? Colors.grey : kGreen,
+                          fontSize: 11, fontWeight: FontWeight.w700)),
+                    ),
+                  ]),
+                ),
+                // Body
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.textMuted),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat('dd/MM/yyyy à HH:mm').format(scheduledAt),
+                        style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.timer_rounded, size: 14, color: AppTheme.textMuted),
+                      const SizedBox(width: 4),
+                      Text('${m['duration_minutes']} min',
+                        style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
+                    ]),
+                    if ((m['group_name'] as String? ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(children: [
+                        const Icon(Icons.group_rounded, size: 14, color: AppTheme.textMuted),
+                        const SizedBox(width: 6),
+                        Text(m['group_name'], style: GoogleFonts.inter(
+                            color: AppTheme.textMuted, fontSize: 13)),
+                      ]),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      const Icon(Icons.people_rounded, size: 14, color: AppTheme.textMuted),
+                      const SizedBox(width: 6),
+                      Text('${m['participants_count']} participant(s)',
+                        style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
+                    ]),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      // Rejoindre
+                      Expanded(child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final uri = Uri.parse(m['meet_link'] ?? '');
+                          if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                        label: Text('Ouvrir Meet', style: GoogleFonts.outfit()),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kGreen,
+                          side: BorderSide(color: kGreen.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      )),
+                      const SizedBox(width: 8),
+                      // Modifier
+                      IconButton(
+                        onPressed: () async {
+                          final ok = await Navigator.push<bool>(context, MaterialPageRoute(
+                            builder: (_) => CreateMeetingScreen(existingMeeting: m),
+                          ));
+                          if (ok == true) _loadMeetings();
+                        },
+                        icon: const Icon(Icons.edit_rounded, size: 20),
+                        color: Colors.blue,
+                        tooltip: 'Modifier',
+                      ),
+                      // Supprimer
+                      IconButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(context: context, builder: (_) =>
+                            AlertDialog(
+                              title: Text('Supprimer la séance ?', style: GoogleFonts.outfit()),
+                              content: Text('Cette action est irréversible.', style: GoogleFonts.inter()),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Annuler')),
+                                TextButton(onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Supprimer', style: TextStyle(color: Colors.red))),
+                              ],
+                            ));
+                          if (confirm == true) {
+                            await MeetingsService.deleteMeeting(m['id']);
+                            _loadMeetings();
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                        color: Colors.red,
+                        tooltip: 'Supprimer',
+                      ),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ).animate().fadeIn().slideY(begin: 0.05);
+          }).toList(),
+      ],
+    );
   }
 }
 

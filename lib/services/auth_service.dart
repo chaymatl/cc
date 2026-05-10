@@ -499,13 +499,7 @@ class AuthService {
       // Pour l'instant on va lister tous les utilisateurs et filtrer (ou on peut modifier le backend)
       // Mais attendons, le backend a déjà un système de token qui contient le sub (email)
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/me'), // On va supposer qu'on a un endpoint /users/me ou l'ajouter
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await authenticatedGet('$baseUrl/users/me');
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -513,11 +507,14 @@ class AuthService {
           'success': true,
           'user': data,
         };
-      } else {
-        // Si le token est invalide/expiré, on le supprime
+      } else if (response.statusCode == 401) {
+        // Seulement si non autorisé (token invalide/expiré et refresh impossible), on supprime
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('jwt_token');
+        await prefs.remove('refresh_token');
         return {'success': false, 'message': 'Session expirée'};
+      } else {
+        return {'success': false, 'message': 'Erreur serveur: ${response.statusCode}'};
       }
     } catch (e) {
       return {'success': false, 'message': 'Erreur réseau : $e'};

@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import '../../theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../models/post_model.dart';
-import '../../widgets/safe_network_image.dart';
 import '../../services/auth_service.dart';
 import '../../constants.dart';
 import 'notifications_screen.dart';
@@ -81,9 +80,9 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
         final data = json.decode(res.body);
         if (mounted) {
           setState(() {
-            _co2 = (data['co2_saved_kg'] as num?)?.toDouble() ?? 1200;
-            _waste = (data['waste_sorted_kg'] as num?)?.toDouble() ?? 850;
-            _trees = (data['trees_equivalent'] as num?)?.toInt() ?? 12;
+            _co2 = (data['co2_saved_kg'] as num?)?.toDouble() ?? 0;
+            _waste = (data['waste_sorted_kg'] as num?)?.toDouble() ?? 0;
+            _trees = (data['trees_equivalent'] as num?)?.toInt() ?? 0;
             _statsLoaded = true;
           });
           _counterCtrl.forward();
@@ -91,7 +90,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       }
     } catch (_) {
       if (mounted) {
-        setState(() { _co2 = 1200; _waste = 850; _trees = 12; _statsLoaded = true; });
+        setState(() { _co2 = 0; _waste = 0; _trees = 0; _statsLoaded = true; });
         _counterCtrl.forward();
       }
     }
@@ -136,85 +135,97 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       expandedHeight: 0,
       floating: true,
       pinned: true,
-      backgroundColor: Colors.white.withOpacity(0.95),
+      backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      shadowColor: Colors.black.withOpacity(0.06),
+      forceElevated: true,
       centerTitle: false,
       automaticallyImplyLeading: false,
-      title: Row(
-        children: [
+      titleSpacing: 0,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          // Logo pill
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(10),
+              boxShadow: [BoxShadow(
+                color: AppTheme.primaryGreen.withOpacity(0.3),
+                blurRadius: 8, offset: const Offset(0, 3),
+              )],
             ),
-            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 18),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.eco_rounded, color: Colors.white, size: 15),
+              const SizedBox(width: 5),
+              Text('EcoRewind', style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white,
+                letterSpacing: -0.2)),
+            ]),
           ),
-          const SizedBox(width: 10),
-          Text(
-            'EcoRewind',
-            style: GoogleFonts.spaceGrotesk(
-              fontWeight: FontWeight.w900,
-              fontSize: 22,
-              color: AppTheme.primaryGreen,
-            ),
-          ),
-        ],
+        ]),
       ),
       actions: [
-        IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-            );
-          },
-          icon: Badge(
-            backgroundColor: AppTheme.primaryGreen,
-            label: Text(
-              '2',
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            child: const Icon(Icons.notifications_outlined, color: AppTheme.deepNavy),
+        // Notification bell
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: IconButton(
+            onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+            icon: Stack(clipBehavior: Clip.none, children: [
+              const Icon(Icons.notifications_outlined, color: Color(0xFF475569), size: 24),
+              Positioned(top: -2, right: -2, child: Container(
+                width: 8, height: 8,
+                decoration: const BoxDecoration(
+                  color: AppTheme.primaryGreen, shape: BoxShape.circle),
+              )),
+            ]),
+            tooltip: 'Notifications',
           ),
         ),
+        // Avatar
         Padding(
-          padding: const EdgeInsets.only(right: 16, left: 4),
+          padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
             onTap: () => widget.onNavigate(4),
-              child: Hero(
+            child: Hero(
               tag: 'profile_avatar',
               child: Container(
-                width: 36,
-                height: 36,
+                width: 36, height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.primaryGreen.withOpacity(0.3),
-                    width: 2,
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
                   ),
+                  boxShadow: [BoxShadow(
+                    color: AppTheme.primaryGreen.withOpacity(0.35),
+                    blurRadius: 8, offset: const Offset(0, 2),
+                  )],
                 ),
                 child: ClipOval(
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: SafeNetworkImage(user?.avatarUrl ?? 'https://i.pravatar.cc/150?u=guest',
-                        fit: BoxFit.cover, placeholder: Container(color: Colors.grey.shade200)),
-                  ),
+                  child: (user?.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                      ? Image.network(user.avatarUrl!, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _avatarFallback(user.name))
+                      : _avatarFallback(user?.name ?? 'E'),
                 ),
               ),
-            ).animate().scale(delay: 200.ms),
+            ),
           ),
         ),
       ],
     );
   }
+
+  Widget _avatarFallback(String name) => Center(
+    child: Text(name[0].toUpperCase(), style: GoogleFonts.outfit(
+      color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+  );
 
   Widget _buildWelcomeHero(User? user) {
     final name = user?.name ?? 'Éco-Citoyen';

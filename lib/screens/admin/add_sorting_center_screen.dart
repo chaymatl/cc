@@ -12,9 +12,11 @@ import 'dart:ui';
 import '../../theme/app_theme.dart';
 import '../../widgets/premium_widgets.dart';
 import '../../widgets/web_back_button.dart';
+import '../../services/auth_service.dart';
 
 class AddSortingCenterScreen extends StatefulWidget {
-  const AddSortingCenterScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic>? existingCenter;
+  const AddSortingCenterScreen({Key? key, this.existingCenter}) : super(key: key);
 
   @override
   State<AddSortingCenterScreen> createState() => _AddSortingCenterScreenState();
@@ -22,28 +24,85 @@ class AddSortingCenterScreen extends StatefulWidget {
 
 class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
   final MapController _mapController = MapController();
-  LatLng _selectedLocation = const LatLng(36.8065, 10.1815); // Tunis
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _typesController = TextEditingController();
-  final TextEditingController _hoursController = TextEditingController();
+  late LatLng _selectedLocation;
+  late TextEditingController _nameController;
+  late TextEditingController _hoursController;
   final TextEditingController _searchController = TextEditingController();
-  String _selectedStatus = 'Disponible';
+  late String _selectedStatus;
   bool _isFetchingLocation = false;
   bool _isSearching = false;
   List<dynamic> _searchResults = [];
   Timer? _debounce;
 
+  List<String> _availableTypes = [];
+  Map<String, List<String>> _categorizedTypes = {
+    "disponible": [],
+    "sature": [],
+    "maintenance": []
+  };
+  bool _isLoadingTypes = true;
+
   @override
   void initState() {
     super.initState();
-    _fetchExactLocation();
+    final existing = widget.existingCenter;
+    
+    _selectedLocation = existing != null && existing['lat'] != null && existing['lng'] != null
+        ? LatLng(double.tryParse(existing['lat'].toString()) ?? 36.8065, double.tryParse(existing['lng'].toString()) ?? 10.1815) 
+        : const LatLng(36.8065, 10.1815);
+        
+    _nameController = TextEditingController(text: existing?['name'] ?? '');
+    _hoursController = TextEditingController(text: existing?['hours'] ?? '');
+    
+    String rawStatus = existing?['status']?.toString().toLowerCase() ?? 'disponible';
+    if (rawStatus == 'disponible') _selectedStatus = 'Disponible';
+    else if (rawStatus == 'saturé') _selectedStatus = 'Saturé';
+    else if (rawStatus == 'maintenance') _selectedStatus = 'Maintenance';
+    else _selectedStatus = 'Disponible';
+    
+    if (existing != null && existing['types_detail'] != null && existing['types_detail'] is Map) {
+      final detail = existing['types_detail'] as Map<String, dynamic>;
+      _categorizedTypes["disponible"] = (detail["disponible"] as List?)?.map((e) => e.toString()).toList() ?? [];
+      _categorizedTypes["sature"] = (detail["sature"] as List?)?.map((e) => e.toString()).toList() ?? [];
+      _categorizedTypes["maintenance"] = (detail["maintenance"] as List?)?.map((e) => e.toString()).toList() ?? [];
+    } else if (existing != null && existing['types'] is List) {
+      _categorizedTypes["disponible"] = (existing['types'] as List).map((e) => e.toString()).toList();
+    }
+
+    if (existing == null) {
+      _fetchExactLocation();
+    } else {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) _mapController.move(_selectedLocation, 16);
+      });
+    }
+    
+    _fetchWasteTypes();
+  }
+
+  Future<void> _fetchWasteTypes() async {
+    try {
+      final response = await http.get(Uri.parse('${AuthService.baseUrl}/collection-points/waste-types'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        if (mounted) {
+          setState(() {
+            _availableTypes = data.map((e) => e.toString()).toList();
+            _isLoadingTypes = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingTypes = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingTypes = false);
+    }
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
     _nameController.dispose();
-    _typesController.dispose();
     _hoursController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -158,9 +217,9 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     );
     Navigator.pop(context, {
       'name': _nameController.text,
-      'types': _typesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+      'types': jsonEncode(_categorizedTypes),
       'hours': _hoursController.text,
-      'status': _selectedStatus,
+      'status': _selectedStatus.toLowerCase(),
       'location': _selectedLocation,
     });
   }
@@ -185,7 +244,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
           onPressed: () => Navigator.pop(context),
         )),
         title: Text(
-          'Ajouter un Point',
+          widget.existingCenter == null ? 'Ajouter un Point' : 'Modifier le Point',
           style: GoogleFonts.outfit(
             color: AppTheme.deepNavy,
             fontWeight: FontWeight.bold,
@@ -216,8 +275,8 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
               initialCenter: _selectedLocation,
               initialZoom: 13,
               minZoom: 5,
-              cameraConstraint: CameraConstraint.contain(
-                bounds: LatLngBounds(const LatLng(30.0, 7.0), const LatLng(37.6, 11.6)),
+              cameraConstraint: CameraConstraint.containCenter(
+                bounds: LatLngBounds(const LatLng(28.5, 5.5), const LatLng(38.5, 13.0)),
               ),
               onTap: _onMapTap,
             ),
@@ -359,7 +418,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'DÉTAILS DU NOUVEAU CENTRE',
+                          'DÉTAILS DU CENTRE',
                           style: GoogleFonts.outfit(
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.5,
@@ -382,41 +441,82 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        TextField(
+                          controller: _hoursController,
+                          decoration: InputDecoration(
+                            hintText: 'Horaires (ex: 8h-18h)',
+                            prefixIcon: const Icon(Icons.access_time_rounded, color: AppTheme.primaryGreen),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _typesController,
-                                decoration: InputDecoration(
-                                  hintText: 'Types (ex: Plastique, Verre)',
-                                  prefixIcon: const Icon(Icons.recycling_rounded, color: AppTheme.primaryGreen),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: _hoursController,
-                                decoration: InputDecoration(
-                                  hintText: 'Horaires (ex: 8h-18h)',
-                                  prefixIcon: const Icon(Icons.access_time_rounded, color: AppTheme.primaryGreen),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            Text('CLASSIFICATION DES DÉCHETS', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
+                            const Spacer(),
+                            Text('(Cliquez pour changer l\'état)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontStyle: FontStyle.italic)),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        if (_isLoadingTypes)
+                          const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen))
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _availableTypes.map((type) {
+                              String state = "none";
+                              if (_categorizedTypes["disponible"]!.contains(type)) state = "disponible";
+                              else if (_categorizedTypes["sature"]!.contains(type)) state = "sature";
+                              else if (_categorizedTypes["maintenance"]!.contains(type)) state = "maintenance";
+
+                              Color color = Colors.grey.shade400;
+                              Color bgColor = Colors.transparent;
+                              IconData? icon;
+                              
+                              if (state == "disponible") { color = Colors.green; bgColor = Colors.green.withOpacity(0.15); icon = Icons.check_circle; }
+                              else if (state == "sature") { color = Colors.red; bgColor = Colors.red.withOpacity(0.15); icon = Icons.warning_rounded; }
+                              else if (state == "maintenance") { color = Colors.orange; bgColor = Colors.orange.withOpacity(0.15); icon = Icons.build_circle; }
+
+                              return InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _categorizedTypes["disponible"]!.remove(type);
+                                    _categorizedTypes["sature"]!.remove(type);
+                                    _categorizedTypes["maintenance"]!.remove(type);
+                                    
+                                    if (state == "none") _categorizedTypes["disponible"]!.add(type);
+                                    else if (state == "disponible") _categorizedTypes["sature"]!.add(type);
+                                    else if (state == "sature") _categorizedTypes["maintenance"]!.add(type);
+                                    else if (state == "maintenance") { /* stays removed */ }
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: bgColor,
+                                    border: Border.all(color: state == "none" ? Colors.grey.shade300 : color, width: 1.5),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 4)],
+                                      Text(type, style: GoogleFonts.inter(fontSize: 12, color: state == "none" ? Colors.grey.shade600 : color, fontWeight: state != "none" ? FontWeight.bold : FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         const SizedBox(height: 16),
                         Row(
                           children: [
@@ -429,7 +529,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                         ),
                         const SizedBox(height: 24),
                         PremiumButton(
-                          text: 'CONFIRMER L\'AJOUT',
+                          text: widget.existingCenter == null ? 'CONFIRMER L\'AJOUT' : 'ENREGISTRER',
                           onPressed: _saveNewCenter,
                         ),
                       ],

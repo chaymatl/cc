@@ -343,19 +343,6 @@ class ProfileTabState extends State<ProfileTab> {
 
             const SizedBox(height: 40),
 
-            // Section communauté (uniquement pour les citoyens)
-            if (showStats)
-              _buildMenuSection('COMMUNAUTÉ', [
-                _MenuAction(
-                  icon: FontAwesomeIcons.comments,
-                  title: 'Avis & Propositions',
-                  subtitle: 'Témoignages et centres de tri',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen())),
-                ),
-              ]),
-
-            if (showStats) const SizedBox(height: 32),
-
             _buildMenuSection('SÉCURITÉ ET DONNÉES', [
               _MenuAction(
                 icon: FontAwesomeIcons.userShield,

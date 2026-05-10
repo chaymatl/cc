@@ -6,10 +6,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../services/auth_service.dart';
+import '../../constants.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({Key? key}) : super(key: key);
@@ -18,28 +20,165 @@ class MapTab extends StatefulWidget {
   State<MapTab> createState() => _MapTabState();
 }
 
+// Vehicle mode model
+enum VehicleMode { foot, moto, car }
+
+extension VehicleModeExtension on VehicleMode {
+  String get osrmProfile {
+    switch (this) {
+      case VehicleMode.foot: return 'walking';
+      case VehicleMode.moto: return 'driving';
+      case VehicleMode.car:  return 'driving';
+    }
+  }
+
+  // Moto is ~20% faster than car in urban areas (filtering traffic)
+  double get durationFactor {
+    switch (this) {
+      case VehicleMode.foot: return 1.0;
+      case VehicleMode.moto: return 0.80;
+      case VehicleMode.car:  return 1.0;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case VehicleMode.foot: return 'À pied';
+      case VehicleMode.moto: return 'Moto';
+      case VehicleMode.car:  return 'Voiture';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case VehicleMode.foot: return Icons.directions_walk_rounded;
+      case VehicleMode.moto: return Icons.two_wheeler_rounded;
+      case VehicleMode.car:  return Icons.directions_car_rounded;
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case VehicleMode.foot: return const Color(0xFF4CAF50);
+      case VehicleMode.moto: return const Color(0xFFFF9800);
+      case VehicleMode.car:  return const Color(0xFF2196F3);
+    }
+  }
+}
+
 class _MapTabState extends State<MapTab> {
   final AuthService _authService = AuthService();
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _points = [];
+  List<Map<String, dynamic>> _allPoints = []; // cache complet non filtré
   bool _isLoading = true;
-  String? _activeFilter;
+  String? _activeFilter; // clé interne ex: 'plastique'
+  String _searchQuery = '';
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
   bool _isGettingRoute = false;
-  
+
+  // Vehicle selection
+  VehicleMode _selectedVehicle = VehicleMode.car;
+
   // Route Info
   String? _routeDistance;
   String? _routeDuration;
   String? _routeDestinationName;
+  double? _routeDestLat;
+  double? _routeDestLng;
 
-  final List<String> _filters = ['Proximité', 'Plastique', 'Verre', 'Batteries', 'Compost'];
+  // ── Dictionnaire bilingue FR / AR ─────────────────────────────────────────
+  static const List<Map<String, String>> _typeMap = [
+    {'key': 'tous',         'fr': 'Tous',         'ar': 'الكل'},
+    {'key': 'plastique',    'fr': 'Plastique',    'ar': 'بلاستيك'},
+    {'key': 'verre',        'fr': 'Verre',        'ar': 'زجاج'},
+    {'key': 'papier',       'fr': 'Papier',       'ar': 'ورق'},
+    {'key': 'carton',       'fr': 'Carton',       'ar': 'كرتون'},
+    {'key': 'metal',        'fr': 'Métal',        'ar': 'معدن'},
+    {'key': 'electronique', 'fr': 'Électronique', 'ar': 'إلكترونيات'},
+    {'key': 'batteries',    'fr': 'Batteries',    'ar': 'بطاريات'},
+    {'key': 'compost',      'fr': 'Compost',      'ar': 'سماد'},
+    {'key': 'vetements',    'fr': 'Vêtements',    'ar': 'ملابس'},
+    {'key': 'general',      'fr': 'Général',      'ar': 'عام'},
+  ];
+
+  /// Normalize pour comparaison insensible à la casse et aux accents
+  String _norm(String s) => s.toLowerCase()
+    .replaceAll(RegExp(r'[éèêë]'), 'e')
+    .replaceAll(RegExp(r'[àâä]'), 'a')
+    .replaceAll(RegExp(r'[îï]'), 'i')
+    .replaceAll(RegExp(r'[ôö]'), 'o')
+    .replaceAll(RegExp(r'[ùûü]'), 'u')
+    .trim();
+
+  /// Retourne les équivalents AR et FR pour une clé de type donnée
+  List<String> _bilingualTerms(String key) {
+    final e = _typeMap.firstWhere((m) => m['key'] == key, orElse: () => {});
+    if (e.isEmpty) return [];
+    return [_norm(e['fr']!), e['ar']!];
+  }
+
+  // ── Dictionnaire bilingue des VILLES FR ↔ AR ──────────────────────────────
+  /// Chaque entrée : liste de tous les termes équivalents (FR + AR + variantes)
+  static const List<List<String>> _cityTranslations = [
+    ['nabeul', 'نابل', 'hammamet', 'حمامت', 'kelibia', 'قليبية', 'beni khiar', 'بني خيار', 'la jarre'],
+    ['tunis', 'تونس', 'bardo', 'باردو', 'carthage', 'قرطاج'],
+    ['sousse', 'سوسة', 'hammam sousse', 'حمام سوسة', 'msaken', 'مساكن'],
+    ['sfax', 'صفاقس'],
+    ['bizerte', 'بنزرت', 'menzel bourguiba', 'منزل بورقيبة'],
+    ['ariana', 'أريانة', 'raoued', 'راوض', 'ennasr', 'النصر'],
+    ['ben arous', 'بن عروس', 'rades', 'رادس', 'megrine', 'مقرين', 'ezzahra', 'الزهراء'],
+    ['manouba', 'منوبة', 'oued ellil', 'وادي الليل', 'douar hicher', 'دوار هيشر'],
+    ['monastir', 'المنستير', 'skanes', 'سكانس'],
+    ['mahdia', 'المهدية'],
+    ['kairouan', 'القيروان'],
+    ['kasserine', 'القصرين'],
+    ['gabes', 'قابس', 'gabès'],
+    ['gafsa', 'قفصة'],
+    ['medenine', 'مدنين', 'médenine', 'djerba', 'جربة', 'houmt souk', 'حومة السوق'],
+    ['tozeur', 'توزر'],
+    ['tataouine', 'تطاوين'],
+    ['zaghouan', 'زغوان'],
+    ['siliana', 'سليانة'],
+    ['jendouba', 'جندوبة'],
+    ['kef', 'الكاف', 'le kef'],
+    ['sidi bouzid', 'سيدي بوزيد'],
+    ['beja', 'باجة', 'béja'],
+  ];
+
+  /// Étend une requête de recherche à tous ses équivalents bilingues
+  /// Ex: "نابل" → ['نابل', 'nabeul', 'hammamet', ...]
+  List<String> _expandQuery(String query) {
+    final q = query.trim();
+    if (q.isEmpty) return [];
+    final normalized = _norm(q);
+    for (final group in _cityTranslations) {
+      final normGroup = group.map(_norm).toList();
+      // Si la requête correspond à l'un des termes du groupe (partiel OK)
+      if (normGroup.any((t) => t.contains(normalized) || normalized.contains(t)) ||
+          group.any((t) => t.contains(q) || q.contains(t))) {
+        return group; // Retourne tout le groupe (FR + AR + variantes)
+      }
+    }
+    // Pas trouvé dans les villes → retourner uniquement la requête originale
+    return [q];
+  }
+
+
+  // Cache keys
+  static const _kCachePoints   = 'map_points_cache_v2';
+  static const _kCacheVersion  = 'map_points_version_v2';
+
+  // Indique si le cache a été affiché mais qu'un refresh silencieux est en cours
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPoints();
+    _loadFromCache();           // Affichage instantané depuis SharedPreferences
+    _checkAndRefreshCache();    // Vérification silencieuse de la version en arrière-plan
   }
 
   @override
@@ -48,14 +187,114 @@ class _MapTabState extends State<MapTab> {
     super.dispose();
   }
 
-  Future<void> _loadPoints({String? type, String? search}) async {
-    setState(() => _isLoading = true);
+  // ── Cache : chargement instantané ──────────────────────────────────────────
+  Future<void> _loadFromCache() async {
     try {
-      final points = await _authService.fetchCollectionPoints(type: type, search: search);
-      if (mounted) setState(() { _points = points; _isLoading = false; });
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kCachePoints);
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> decoded = json.decode(raw);
+        if (mounted) {
+          _allPoints = decoded.cast<Map<String, dynamic>>();
+          _applyFilters();
+          setState(() => _isLoading = false);
+        }
+      } else {
+        await _fetchAndCachePoints();
+      }
+    } catch (_) {
+      await _fetchAndCachePoints();
+    }
+  }
+
+  // ── Cache : vérification version en arrière-plan ─────────────────────────────
+  Future<void> _checkAndRefreshCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedVersion = prefs.getDouble(_kCacheVersion) ?? 0.0;
+
+      // Appel ultra-léger : retourne juste un timestamp
+      final uri = Uri.parse('${ApiConstants.baseUrl}/collection-points/version');
+      final resp = await http.get(uri).timeout(const Duration(seconds: 5));
+      if (resp.statusCode != 200) return;
+
+      final serverVersion = (json.decode(resp.body)['version'] as num).toDouble();
+
+      if (serverVersion > cachedVersion) {
+        // Le serveur a une version plus récente → on rafraîchit
+        if (mounted) setState(() => _isRefreshing = true);
+        await _fetchAndCachePoints(newVersion: serverVersion);
+        if (mounted) setState(() => _isRefreshing = false);
+      }
+      // Sinon : le cache est à jour, on ne fait rien
+    } catch (_) {
+      // Pas de réseau ? On garde le cache tel quel
+    }
+  }
+
+  Future<void> _fetchAndCachePoints({double? newVersion}) async {
+    if (_allPoints.isEmpty && mounted) setState(() => _isLoading = true);
+    try {
+      // Toujours charger TOUS les points (pas de filtre backend)
+      final points = await _authService.fetchCollectionPoints();
+      if (!mounted) return;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kCachePoints, json.encode(points));
+      if (newVersion != null) await prefs.setDouble(_kCacheVersion, newVersion);
+      _allPoints = points;
+      _applyFilters();
+      if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Filtre client-side bilingue FR + AR depuis le cache complet
+  /// La recherche est étendue à tous les équivalents bilingues via _expandQuery
+  void _applyFilters() {
+    final rawQuery = _searchQuery.trim();
+    final key = _activeFilter; // null = tous
+    final terms = key != null && key != 'tous' ? _bilingualTerms(key) : <String>[];
+
+    // Étend la requête : 'نابل' → ['nabeul', 'hammamet', 'نابل', 'حمامت', ...]
+    final expandedTerms = rawQuery.isEmpty ? <String>[] : _expandQuery(rawQuery);
+
+    final filtered = _allPoints.where((p) {
+      // ── Recherche textuelle bilingue ──────────────────────────────
+      final name    = (p['name']    ?? '').toString();
+      final address = (p['address'] ?? '').toString();
+      final nameN    = _norm(name);
+      final addressN = _norm(address);
+
+      bool matchSearch = rawQuery.isEmpty;
+      if (!matchSearch) {
+        matchSearch = expandedTerms.any((term) {
+          final termN = _norm(term);
+          // Comparaison normalisée (FR) ET brute (AR)
+          return nameN.contains(termN) || addressN.contains(termN) ||
+                 name.toLowerCase().contains(term.toLowerCase()) ||
+                 address.toLowerCase().contains(term.toLowerCase());
+        });
+      }
+
+      // ── Filtre par type bilingue ──────────────────────────────────
+      bool matchType = terms.isEmpty;
+      if (!matchType) {
+        final rawTypes = p['types'];
+        final typeList = rawTypes is List
+            ? rawTypes.map((t) => t.toString()).toList()
+            : <String>[];
+        matchType = typeList.any((t) {
+          final tn = _norm(t);
+          final tar = t.trim();
+          return terms.any((term) => tn.contains(term) || tar.contains(term));
+        });
+      }
+
+      return matchSearch && matchType;
+    }).toList();
+
+    setState(() => _points = filtered);
   }
 
   Future<void> _fetchCurrentLocation() async {
@@ -81,52 +320,75 @@ class _MapTabState extends State<MapTab> {
     }
   }
 
-  Future<void> _getRouteToPoint(double destLat, double destLng, String destName) async {
+  Future<void> _getRouteToPoint(
+    double destLat,
+    double destLng,
+    String destName, {
+    bool closeModal = true,
+  }) async {
     if (_currentLocation == null) {
       await _fetchCurrentLocation();
       if (_currentLocation == null) return;
     }
 
     setState(() => _isGettingRoute = true);
-    Navigator.pop(context); // Close modal
+    if (closeModal && Navigator.canPop(context)) Navigator.pop(context);
 
     try {
       final startLat = _currentLocation!.latitude;
       final startLng = _currentLocation!.longitude;
-      final url = 'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$destLng,$destLat?overview=full&geometries=geojson';
-      
+      final profile = _selectedVehicle.osrmProfile;
+      final url =
+          'https://router.project-osrm.org/route/v1/$profile/$startLng,$startLat;$destLng,$destLat?overview=full&geometries=geojson';
+
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final route = data['routes'][0];
         final coords = route['geometry']['coordinates'] as List;
-        
+
         final distanceMeters = route['distance'] as num;
-        final durationSeconds = route['duration'] as num;
-        
-        String distStr = distanceMeters > 1000 
+        final rawDuration = (route['duration'] as num).toDouble();
+        final adjustedDuration = rawDuration * _selectedVehicle.durationFactor;
+
+        final distStr = distanceMeters > 1000
             ? '${(distanceMeters / 1000).toStringAsFixed(1)} km'
             : '${distanceMeters.toInt()} m';
-            
-        String durStr = durationSeconds > 3600
-            ? '${(durationSeconds / 3600).floor()}h ${((durationSeconds % 3600) / 60).round()}min'
-            : '${(durationSeconds / 60).round()} min';
-        
+
+        final durStr = adjustedDuration > 3600
+            ? '${(adjustedDuration / 3600).floor()}h ${((adjustedDuration % 3600) / 60).round()}min'
+            : '${(adjustedDuration / 60).round()} min';
+
         setState(() {
-          _routePoints = coords.map((c) => LatLng(c[1] as double, c[0] as double)).toList();
+          _routePoints =
+              coords.map((c) => LatLng(c[1] as double, c[0] as double)).toList();
           _routeDistance = distStr;
           _routeDuration = durStr;
           _routeDestinationName = destName;
+          _routeDestLat = destLat;
+          _routeDestLng = destLng;
           _isGettingRoute = false;
         });
 
-        // Fit map bounds to show route
-        final bounds = LatLngBounds.fromPoints([_currentLocation!, LatLng(destLat, destLng)]);
-        _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)));
+        final bounds = LatLngBounds.fromPoints(
+            [_currentLocation!, LatLng(destLat, destLng)]);
+        _mapController.fitCamera(
+            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)));
       }
     } catch (e) {
       setState(() => _isGettingRoute = false);
     }
+  }
+
+  Future<void> _switchVehicle(VehicleMode mode) async {
+    if (_routeDestLat == null || _routeDestLng == null) return;
+    setState(() => _selectedVehicle = mode);
+    await _getRouteToPoint(
+      _routeDestLat!,
+      _routeDestLng!,
+      _routeDestinationName ?? '',
+      closeModal: false,
+    );
   }
 
   void _clearRoute() {
@@ -135,28 +397,22 @@ class _MapTabState extends State<MapTab> {
       _routeDistance = null;
       _routeDuration = null;
       _routeDestinationName = null;
+      _routeDestLat = null;
+      _routeDestLng = null;
     });
-    // Re-center on all points or current location
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 12);
     }
   }
 
-  void _onFilterTap(int index) {
-    final filter = _filters[index];
-    if (index == 0) {
-      // "Proximité" = reset filter
-      setState(() => _activeFilter = null);
-      _loadPoints();
-    } else {
-      final type = filter.toLowerCase();
-      setState(() => _activeFilter = type);
-      _loadPoints(type: type);
-    }
+  void _onFilterTap(String key) {
+    setState(() => _activeFilter = (key == 'tous') ? null : key);
+    _applyFilters();
   }
 
   void _onSearch(String query) {
-    _loadPoints(search: query, type: _activeFilter);
+    _searchQuery = query;
+    _applyFilters();
   }
 
   void _showPointDetails(BuildContext context, Map<String, dynamic> point) {
@@ -218,21 +474,99 @@ class _MapTabState extends State<MapTab> {
             _infoRow(Icons.access_time_rounded, 'Horaires', point['hours'] ?? 'Non spécifié'),
             const SizedBox(height: 10),
             _infoRow(Icons.delete_outline_rounded, 'Déchets acceptés', types.isEmpty ? 'Non spécifié' : types),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            // Vehicle selector
+            StatefulBuilder(
+              builder: (ctx, setModal) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mode de transport',
+                        style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: AppTheme.deepNavy)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: VehicleMode.values.map((mode) {
+                        final selected = _selectedVehicle == mode;
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedVehicle = mode);
+                              setModal(() {});
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? mode.color.withOpacity(0.12)
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: selected
+                                      ? mode.color
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(mode.icon,
+                                      color: selected
+                                          ? mode.color
+                                          : Colors.grey.shade400,
+                                      size: 26),
+                                  const SizedBox(height: 6),
+                                  Text(mode.label,
+                                      style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: selected
+                                              ? mode.color
+                                              : Colors.grey.shade500)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isGettingRoute 
-                    ? null 
-                    : () => _getRouteToPoint((point['lat'] as num).toDouble(), (point['lng'] as num).toDouble(), point['name'] ?? 'Point de tri'),
-                icon: _isGettingRoute 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.directions, color: Colors.white),
-                label: Text('ITINÉRAIRE', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 1, color: Colors.white)),
+                onPressed: _isGettingRoute
+                    ? null
+                    : () => _getRouteToPoint(
+                          (point['lat'] as num).toDouble(),
+                          (point['lng'] as num).toDouble(),
+                          point['name'] ?? 'Point de tri',
+                        ),
+                icon: _isGettingRoute
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : Icon(_selectedVehicle.icon, color: Colors.white),
+                label: Text('ITINÉRAIRE',
+                    style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                        color: Colors.white)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
+                  backgroundColor: _selectedVehicle.color,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ),
@@ -320,7 +654,7 @@ class _MapTabState extends State<MapTab> {
             ],
           ),
 
-          // Loading indicator
+          // Loading indicator (premier chargement uniquement - cache vide)
           if (_isLoading)
             Positioned(
               top: 140, left: 0, right: 0,
@@ -341,6 +675,28 @@ class _MapTabState extends State<MapTab> {
                   ),
                 ),
               ),
+            ),
+
+          // Indicateur de mise à jour silencieuse (cache affiché, refresh en cours)
+          if (_isRefreshing && !_isLoading)
+            Positioned(
+              top: 100, right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.3), blurRadius: 8)],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                    const SizedBox(width: 8),
+                    Text('Mise à jour...', style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 300.ms),
             ),
 
           // Gradient overlay
@@ -373,9 +729,10 @@ class _MapTabState extends State<MapTab> {
                           Expanded(
                             child: TextField(
                               controller: _searchController,
+                              onChanged: _onSearch,
                               onSubmitted: _onSearch,
                               decoration: const InputDecoration(
-                                hintText: 'Rechercher un point de tri...',
+                                hintText: 'بحث / Rechercher un point de tri...',
                                 hintStyle: TextStyle(color: AppTheme.textMuted),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -399,50 +756,131 @@ class _MapTabState extends State<MapTab> {
           if (_routePoints.isNotEmpty && _routeDistance != null)
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 child: GlassCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.directions_car_rounded, color: AppTheme.primaryGreen),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Vers ${_routeDestinationName ?? 'Destination'}',
-                              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.deepNavy),
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: _selectedVehicle.color.withOpacity(0.12),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$_routeDuration • $_routeDistance',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.primaryGreen),
+                            child: Icon(_selectedVehicle.icon,
+                                color: _selectedVehicle.color, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Vers ${_routeDestinationName ?? 'Destination'}',
+                                  style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: AppTheme.deepNavy),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    if (_isGettingRoute)
+                                      const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppTheme.primaryGreen))
+                                    else
+                                      Text(
+                                        '$_routeDuration • $_routeDistance',
+                                        style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                            color: _selectedVehicle.color),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          IconButton(
+                            onPressed: _clearRoute,
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.close_rounded,
+                                  color: Colors.red, size: 18),
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        onPressed: _clearRoute,
-                        icon: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
-                          child: const Icon(Icons.close_rounded, color: Colors.red, size: 20),
-                        ),
+                      const SizedBox(height: 12),
+                      // Vehicle switcher inline
+                      Row(
+                        children: VehicleMode.values.map((mode) {
+                          final selected = _selectedVehicle == mode;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: _isGettingRoute
+                                  ? null
+                                  : () => _switchVehicle(mode),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.only(right: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? mode.color.withOpacity(0.13)
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: selected
+                                        ? mode.color
+                                        : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(mode.icon,
+                                        color: selected
+                                            ? mode.color
+                                            : Colors.grey.shade400,
+                                        size: 20),
+                                    const SizedBox(height: 4),
+                                    Text(mode.label,
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: selected
+                                                ? mode.color
+                                                : Colors.grey.shade400)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
                 ),
-              ).animate().slideY(begin: -0.5, end: 0, duration: 400.ms, curve: Curves.easeOutBack),
+              ).animate().slideY(
+                  begin: -0.5,
+                  end: 0,
+                  duration: 400.ms,
+                  curve: Curves.easeOutBack),
             ),
 
           // Results count badge
@@ -455,9 +893,22 @@ class _MapTabState extends State<MapTab> {
                   color: Colors.white, borderRadius: BorderRadius.circular(20),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
                 ),
-                child: Text(
-                  '${_points.length} point${_points.length != 1 ? 's' : ''} de tri',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.deepNavy),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isRefreshing)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: SizedBox(
+                          width: 10, height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.primaryGreen),
+                        ),
+                      ),
+                    Text(
+                      '${_points.length} point${_points.length != 1 ? 's' : ''} de tri',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.deepNavy),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -473,14 +924,22 @@ class _MapTabState extends State<MapTab> {
             ).animate().scale(delay: 1.seconds),
           ),
 
-          // Refresh button
+          // Refresh button — force un re-téléchargement complet et invalide le cache
           Positioned(
             bottom: 120, left: 24 + 120,
             child: FloatingActionButton.small(
               heroTag: 'fab_map_refresh',
-              onPressed: () => _loadPoints(type: _activeFilter),
+              onPressed: _isRefreshing ? null : () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setDouble(_kCacheVersion, 0.0);
+                if (mounted) setState(() => _isRefreshing = true);
+                await _fetchAndCachePoints();
+                if (mounted) setState(() => _isRefreshing = false);
+              },
               backgroundColor: Colors.white,
-              child: const Icon(Icons.refresh_rounded, color: AppTheme.primaryGreen, size: 20),
+              child: _isRefreshing
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen))
+                  : const Icon(Icons.refresh_rounded, color: AppTheme.primaryGreen, size: 20),
             ),
           ),
         ],
@@ -490,33 +949,63 @@ class _MapTabState extends State<MapTab> {
 
   Widget _buildCategories() {
     return SizedBox(
-      height: 40,
+      height: 44,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _filters.length,
+        itemCount: _typeMap.length,
         itemBuilder: (context, index) {
-          final isActive = (index == 0 && _activeFilter == null) ||
-              (index > 0 && _activeFilter == _filters[index].toLowerCase());
+          final entry = _typeMap[index];
+          final key = entry['key']!;
+          final isActive = (key == 'tous' && _activeFilter == null) ||
+              (_activeFilter == key);
           return GestureDetector(
-            onTap: () => _onFilterTap(index),
-            child: Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            onTap: () => _onFilterTap(key),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: isActive ? AppTheme.primaryGreen : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: AppTheme.premiumShadow,
-              ),
-              child: Center(
-                child: Text(
-                  _filters[index],
-                  style: TextStyle(
-                    color: isActive ? Colors.white : AppTheme.textMuted,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: isActive
+                    ? [BoxShadow(
+                        color: AppTheme.primaryGreen.withOpacity(0.35),
+                        blurRadius: 10, offset: const Offset(0, 4))]
+                    : AppTheme.premiumShadow,
+                border: Border.all(
+                  color: isActive ? AppTheme.primaryGreen : Colors.transparent,
+                  width: 1.5,
                 ),
               ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(
+                  entry['fr']!,
+                  style: TextStyle(
+                    color: isActive ? Colors.white : AppTheme.textMuted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+                if (key != 'tous') ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    width: 1, height: 12,
+                    color: isActive
+                        ? Colors.white.withOpacity(0.4)
+                        : Colors.grey.shade300,
+                  ),
+                  Text(
+                    entry['ar']!,
+                    style: TextStyle(
+                      color: isActive
+                          ? Colors.white.withOpacity(0.9)
+                          : AppTheme.textMuted,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ]),
             ),
           );
         },

@@ -92,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         email: userData['email'],
         role: role,
         globalScore: (userData['global_score'] as num?)?.toDouble() ?? 0.0,
-        avatarUrl: userData['avatar_url'] ?? 'https://i.pravatar.cc/300?u=${userData['email']}',
+        avatarUrl: userData['avatar_url'] ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(userData['full_name'] ?? 'User')}&background=10B981&color=fff&size=300',
         qrCode: userData['qr_code'] ?? '',
       );
 

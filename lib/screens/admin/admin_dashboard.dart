@@ -10,6 +10,7 @@ import '../../services/auth_service.dart';
 import '../client/profile_tab.dart';
 import 'user_management_screen.dart';
 import 'admin_proposals_screen.dart';
+import 'admin_analytics_tab.dart';
 
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -52,84 +53,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
+            automaticallyImplyLeading: false,
             expandedHeight: 200,
-            floating: true,
+            floating: false,
             pinned: true,
-            backgroundColor: Colors.white,
+            backgroundColor: const Color(0xFF0D1B2A),
             elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
+            title: Row(children: [
+              Container(
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blueGrey.shade900, Colors.blueGrey.shade800],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppTheme.primaryGreen,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -30,
-                      top: -30,
-                      child: Icon(Icons.security_rounded, size: 180, color: Colors.white.withOpacity(0.05)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 60.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('CENTRE DE COMMANDEMENT', 
-                            style: GoogleFonts.outfit(color: AppTheme.primaryGreen, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 10)),
-                          const SizedBox(height: 4),
-                          Text('Supervision Globale', 
-                            style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 28)),
-                        ],
-                      ),
-                    ),
+                child: const Icon(Icons.eco_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text('EcoRewind Admin',
+                style: GoogleFonts.outfit(
+                  color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+            ]),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
+              background: _AdminHeader(),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(46),
+              child: Container(
+                color: const Color(0xFF0D1B2A),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelColor: AppTheme.primaryGreen,
+                  unselectedLabelColor: Colors.white38,
+                  indicatorColor: AppTheme.primaryGreen,
+                  indicatorWeight: 2.5,
+                  indicatorPadding: const EdgeInsets.symmetric(horizontal: 2),
+                  labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 0.8),
+                  unselectedLabelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w500, fontSize: 12),
+                  tabs: const [
+                    Tab(text: 'INDICATEURS'),
+                    Tab(text: 'MODÉRATION'),
+                    Tab(text: 'CONTENUS'),
+                    Tab(text: 'PROPOSITIONS'),
+                    Tab(text: 'POINTS DE TRI'),
+                    Tab(text: 'UTILISATEURS'),
+                    Tab(text: 'MON PROFIL'),
                   ],
                 ),
               ),
-            ),
-            actions: [
-              IconButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Aucune nouvelle notification')),
-                  );
-                }, 
-                icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-              ),
-               IconButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'), 
-                icon: const Icon(Icons.power_settings_new_rounded, color: AppTheme.errorRed),
-              ),
-              const SizedBox(width: 8),
-            ],
-            bottom: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              labelColor: AppTheme.primaryGreen,
-              unselectedLabelColor: Colors.white60,
-              indicatorColor: AppTheme.primaryGreen,
-              indicatorWeight: 3,
-              labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
-              tabs: const [
-                Tab(text: 'VUE D\'ENSEMBLE'),
-                Tab(text: 'MODÉRATION'),
-                Tab(text: 'CONTENUS'),
-                Tab(text: 'PROPOSITIONS'),
-                Tab(text: 'POINTS DE TRI'),
-                Tab(text: 'UTILISATEURS'),
-                Tab(text: 'MON PROFIL'),
-              ],
             ),
           ),
         ],
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildOverviewTab(),
+            const AdminAnalyticsTab(),
             _PostsModerationTab(onStatsUpdated: _loadStats),
             _buildContentValidationTab(),
             const AdminProposalsScreen(),
@@ -151,139 +130,217 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('INDICATEURS DE PERFORMANCE', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
-          const SizedBox(height: 16),
-          _buildKpiGrid(),
-          const SizedBox(height: 32),
-          
-          Text('IMPACT ENVIRONNEMENTAL', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
-          const SizedBox(height: 16),
-          _buildImpactSection(),
+          _buildKpiGroup(
+            label: 'COMMUNAUTÉ & CROISSANCE',
+            color: Colors.blue,
+            icon: Icons.people_alt_rounded,
+            children: _buildCommunityKpis(),
+          ),
+          const SizedBox(height: 24),
+          _buildKpiGroup(
+            label: 'MODÉRATION & ACTIONS',
+            color: Colors.orange,
+            icon: Icons.pending_actions_rounded,
+            children: _buildModerationKpis(),
+          ),
+          const SizedBox(height: 24),
+          _buildKpiGroup(
+            label: 'IMPACT ENVIRONNEMENTAL',
+            color: AppTheme.primaryGreen,
+            icon: Icons.eco_rounded,
+            children: _buildEnvironmentKpis(),
+          ),
           const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  Widget _buildKpiGrid() {
+  Widget _buildKpiGroup({
+    required String label,
+    required Color color,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 14),
+            ),
+            const SizedBox(width: 10),
+            Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (_statsLoading) {
+              return const Center(child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+              ));
+            }
+            return Wrap(spacing: 12, runSpacing: 12, children: children);
+          },
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildCommunityKpis() {
     String fmt(dynamic v) {
       final n = (v as num?)?.toInt() ?? 0;
       if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
       return '$n';
     }
+    return [
+      _buildKpiCard(
+        title: 'Utilisateurs',
+        value: fmt(_adminStats['total_users']),
+        subtitle: 'Comptes actifs',
+        icon: Icons.group_rounded,
+        color: Colors.blue,
+      ),
+      _buildKpiCard(
+        title: 'Publications',
+        value: fmt(_adminStats['total_posts']),
+        subtitle: 'Posts soumis',
+        icon: Icons.library_books_rounded,
+        color: Colors.purple,
+      ),
+      _buildKpiCard(
+        title: 'Centres de Tri',
+        value: fmt(_adminStats['total_collection_points']),
+        subtitle: 'Points validés',
+        icon: Icons.map_rounded,
+        color: const Color(0xFFF59E0B),
+      ),
+      _buildKpiCard(
+        title: 'Témoignages',
+        value: fmt(_adminStats['total_testimonials']),
+        subtitle: 'Avis reçus',
+        icon: Icons.rate_review_rounded,
+        color: Colors.teal,
+      ),
+    ];
+  }
 
-    void showKpiDetail(String title, String value, String description, IconData icon, Color color) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          contentPadding: const EdgeInsets.all(28),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 36),
-              ),
-              const SizedBox(height: 20),
-              Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1.5, color: AppTheme.textMuted)),
-              const SizedBox(height: 8),
-              Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 42, color: AppTheme.deepSlate)),
-              const SizedBox(height: 12),
-              Text(description, style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted, height: 1.5), textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                  ),
-                  child: Text('Fermer', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  List<Widget> _buildModerationKpis() {
+    String fmt(dynamic v) {
+      final n = (v as num?)?.toInt() ?? 0;
+      if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+      return '$n';
     }
+    final pendingPosts = (_adminStats['pending_review'] ?? 0) as int;
+    final pendingTesti = (_adminStats['pending_testimonials'] ?? 0) as int;
+    return [
+      _buildKpiCard(
+        title: 'Posts en Attente',
+        value: fmt(_adminStats['pending_review']),
+        subtitle: pendingPosts > 0 ? '⚠️ À modérer' : '✅ File vide',
+        icon: Icons.pending_actions_rounded,
+        color: pendingPosts > 0 ? Colors.red : Colors.green,
+        urgent: pendingPosts > 0,
+      ),
+      _buildKpiCard(
+        title: 'Témoignages ⏳',
+        value: fmt(_adminStats['pending_testimonials']),
+        subtitle: pendingTesti > 0 ? '⚠️ À approuver' : '✅ À jour',
+        icon: Icons.reviews_rounded,
+        color: pendingTesti > 0 ? Colors.orange : Colors.green,
+        urgent: pendingTesti > 0,
+      ),
+    ];
+  }
 
+  List<Widget> _buildEnvironmentKpis() {
+    final co2 = (_adminStats['co2_saved_kg'] as num?)?.toDouble() ?? 0;
+    final waste = (_adminStats['waste_sorted_kg'] as num?)?.toDouble() ?? 0;
+    final trees = (_adminStats['trees_equivalent'] as num?)?.toInt() ?? 0;
+
+    String fmtKg(double v) {
+      if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)} T';
+      return '${v.toStringAsFixed(1)} kg';
+    }
+    return [
+      _buildKpiCard(
+        title: 'CO₂ Évité',
+        value: _statsLoading ? '...' : fmtKg(co2),
+        subtitle: 'Emissions évitées',
+        icon: Icons.cloud_done_rounded,
+        color: Colors.blueAccent,
+      ),
+      _buildKpiCard(
+        title: 'Déchets Triés',
+        value: _statsLoading ? '...' : fmtKg(waste),
+        subtitle: 'Correctement recyclés',
+        icon: Icons.recycling_rounded,
+        color: Colors.cyan.shade700,
+      ),
+      _buildKpiCard(
+        title: 'Arbres Équivalents',
+        value: _statsLoading ? '...' : '$trees 🌳',
+        subtitle: 'Préservés grâce au tri',
+        icon: Icons.forest_rounded,
+        color: AppTheme.primaryGreen,
+      ),
+    ];
+  }
+
+  Widget _buildKpiCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    bool urgent = false,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (_statsLoading) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(color: AppTheme.primaryGreen),
-          ));
-        }
-        return Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            _buildSummaryCard(
-              'Utilisateurs', fmt(_adminStats['total_users']),
-              '', Icons.group_rounded, Colors.blue, constraints.maxWidth,
-              onTap: () => showKpiDetail(
-                'UTILISATEURS', fmt(_adminStats['total_users']),
-                'Nombre total de comptes inscrits sur la plateforme EcoRewind, incluant citoyens, éducateurs et personnels.',
-                Icons.group_rounded, Colors.blue,
+        final parentWidth = constraints.maxWidth;
+        final cardWidth = parentWidth > 600 ? (parentWidth - 36) / 4 : (parentWidth - 12) / 2;
+        return Container(
+          width: cardWidth,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: AppTheme.tightShadow,
+            border: urgent ? Border.all(color: color.withOpacity(0.3), width: 1.5) : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                  if (urgent)
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                ],
               ),
-            ),
-            _buildSummaryCard(
-              'Publications', fmt(_adminStats['total_posts']),
-              '', Icons.library_books_rounded, Colors.purple, constraints.maxWidth,
-              onTap: () => showKpiDetail(
-                'PUBLICATIONS', fmt(_adminStats['total_posts']),
-                'Total des publications soumises sur le feed communautaire, tous statuts confondus (publiées, en attente, rejetées).',
-                Icons.library_books_rounded, Colors.purple,
-              ),
-            ),
-            _buildSummaryCard(
-              'Points de Tri', fmt(_adminStats['total_collection_points']),
-              '', Icons.map_rounded, Colors.orange, constraints.maxWidth,
-              onTap: () => showKpiDetail(
-                'POINTS DE TRI', fmt(_adminStats['total_collection_points']),
-                'Nombre de points de collecte référencés et validés sur la carte interactive de EcoRewind.',
-                Icons.map_rounded, Colors.orange,
-              ),
-            ),
-            _buildSummaryCard(
-              'En attente', fmt(_adminStats['pending_review']),
-              '', Icons.pending_actions_rounded,
-              (_adminStats['pending_review'] ?? 0) > 0 ? Colors.red : Colors.green,
-              constraints.maxWidth,
-              onTap: () => showKpiDetail(
-                'PUBLICATIONS EN ATTENTE', fmt(_adminStats['pending_review']),
-                (_adminStats['pending_review'] ?? 0) > 0
-                  ? 'Des publications nécessitent votre validation. Rendez-vous dans l\'onglet MODÉRATION.'
-                  : 'Aucune publication en attente. La file de modération est à jour.',
-                Icons.pending_actions_rounded,
-                (_adminStats['pending_review'] ?? 0) > 0 ? Colors.red : Colors.green,
-              ),
-            ),
-            _buildSummaryCard(
-              'Témoignages ⏳', fmt(_adminStats['pending_testimonials']),
-              '', Icons.rate_review_rounded,
-              (_adminStats['pending_testimonials'] ?? 0) > 0 ? Colors.indigo : Colors.teal,
-              constraints.maxWidth,
-              onTap: () {
-                showKpiDetail(
-                  'TÉMOIGNAGES EN ATTENTE', fmt(_adminStats['pending_testimonials']),
-                  (_adminStats['pending_testimonials'] ?? 0) > 0
-                    ? 'Des témoignages attendent votre validation. Allez dans l\'onglet CONTENUS pour les approuver ou rejeter et les publier sur la page d\'accueil.'
-                    : 'Aucun témoignage en attente. Tous les avis ont été traités.',
-                  Icons.rate_review_rounded,
-                  (_adminStats['pending_testimonials'] ?? 0) > 0 ? Colors.indigo : Colors.teal,
-                );
-              },
-            ),
-          ],
+              const SizedBox(height: 14),
+              Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 22, color: AppTheme.deepSlate)),
+              const SizedBox(height: 2),
+              Text(title, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+            ],
+          ),
         );
-      }
+      },
     );
   }
 
@@ -319,58 +376,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return card;
   }
 
-  Widget _buildImpactSection() {
-    final co2 = (_adminStats['co2_saved_kg'] as num?)?.toDouble() ?? 0;
-    final waste = (_adminStats['waste_sorted_kg'] as num?)?.toDouble() ?? 0;
-    final trees = (_adminStats['trees_equivalent'] as num?)?.toInt() ?? 0;
-
-    String fmtKg(double v) {
-      if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)} T';
-      return '${v.toStringAsFixed(1)} kg';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.deepSlate,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppTheme.premiumShadow,
-      ),
-      child: Column(
-        children: [
-          _buildImpactRow('CO₂ Évité', _statsLoading ? '...' : fmtKg(co2), Icons.cloud_done_rounded, Colors.blueAccent),
-          const Divider(color: Colors.white10, height: 32),
-          _buildImpactRow('Déchets Triés', _statsLoading ? '...' : fmtKg(waste), Icons.recycling_rounded, Colors.cyan),
-          const Divider(color: Colors.white10, height: 32),
-          _buildImpactRow('Arbres Équivalents', _statsLoading ? '...' : '$trees arbres', Icons.forest_rounded, Colors.green),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImpactRow(String label, String value, IconData icon, Color color) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
-              Text(value, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
-          ),
-        ),
-        const Icon(Icons.trending_up_rounded, color: Colors.green, size: 20),
-      ],
-    );
-  }
-
   Widget _buildContentValidationTab() {
     return _TestimonialsManagementTab();
   }
@@ -379,6 +384,152 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return _CollectionPointsManagementTab();
   }
 
+}
+
+// =========================================
+// HEADER ANIMÉ PINTEREST
+// =========================================
+
+class _AdminHeader extends StatefulWidget {
+  @override
+  State<_AdminHeader> createState() => _AdminHeaderState();
+}
+
+class _AdminHeaderState extends State<_AdminHeader> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final dateStr = '${now.day}/${now.month}/${now.year}';
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0A1628), Color(0xFF0D2137), Color(0xFF0F3460)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: [0.0, 0.5, 1.0],
+        ),
+      ),
+      child: Stack(children: [
+        // Grand cercle décoratif droit
+        Positioned(right: -80, top: -80, child: Container(
+          width: 280, height: 280,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: [
+              const Color(0xFF16DB93).withOpacity(0.12),
+              Colors.transparent,
+            ]),
+          ),
+        )),
+        // Petit cercle accent
+        Positioned(right: 60, bottom: 10, child: Container(
+          width: 80, height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: [
+              Colors.blue.withOpacity(0.15),
+              Colors.transparent,
+            ]),
+          ),
+        )),
+        // Ligne décorative verticale
+        Positioned(left: 0, top: 0, bottom: 0, child: Container(
+          width: 3,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.transparent, AppTheme.primaryGreen, Colors.transparent],
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            ),
+          ),
+        )),
+        // Points de grille discrets
+        Positioned.fill(child: Opacity(opacity: 0.025,
+          child: CustomPaint(painter: _GridPainter()))),
+        // Contenu animé
+        Padding(
+          padding: const EdgeInsets.fromLTRB(22, 56, 22, 10),
+          child: SlideTransition(
+            position: _slide,
+            child: FadeTransition(
+              opacity: _fade,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Titre principal avec accent coloré
+                  RichText(text: TextSpan(
+                    style: GoogleFonts.outfit(
+                      color: Colors.white, fontWeight: FontWeight.w900,
+                      fontSize: 22, height: 1.15, letterSpacing: -0.5),
+                    children: [
+                      const TextSpan(text: 'Tableau de '),
+                      TextSpan(text: 'Bord Admin',
+                        style: TextStyle(
+                          foreground: Paint()..shader = const LinearGradient(
+                            colors: [Color(0xFF16DB93), Color(0xFF00B4D8)],
+                          ).createShader(const Rect.fromLTWH(0, 0, 220, 28)),
+                        )),
+                    ],
+                  )),
+                  const SizedBox(height: 8),
+                  // Badges info
+                  Row(children: [
+                    _pill(Icons.calendar_today_rounded, dateStr, Colors.white24, Colors.white60),
+                    const SizedBox(width: 8),
+                    _pill(Icons.circle, '● Système actif', AppTheme.primaryGreen.withOpacity(0.2),
+                      AppTheme.primaryGreen),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _pill(IconData icon, String label, Color bg, Color fg) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 10, color: fg),
+      const SizedBox(width: 5),
+      Text(label, style: GoogleFonts.inter(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
+    ]),
+  );
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white..strokeWidth = 0.5;
+    const step = 28.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+  @override
+  bool shouldRepaint(_) => false;
 }
 
 // =========================================
@@ -600,6 +751,12 @@ class _CollectionPointsManagementTab extends StatefulWidget {
 class _CollectionPointsManagementTabState extends State<_CollectionPointsManagementTab> {
   final AuthService _authService = AuthService();
   List<Map<String, dynamic>> _points = [];
+  // Types pré-remplis (liste fixe du backend) + complétés par les centres chargés
+  List<String> _typesFromApi = [
+    'Plastique', 'Verre', 'Papier', 'Carton',
+    'Métal', 'Électronique', 'Batteries', 'Compost',
+    'Vêtements', 'Général',
+  ];
   bool _isLoading = true;
 
   @override
@@ -611,8 +768,37 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
   Future<void> _loadPoints() async {
     setState(() => _isLoading = true);
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final jwt = prefs.getString('jwt_token');
+      if (jwt != null) {
+        http.post(
+          Uri.parse('${AuthService.baseUrl}/admin/collection-points/backfill-addresses'),
+          headers: {'Authorization': 'Bearer $jwt'},
+        ).ignore();
+      }
       final points = await _authService.fetchCollectionPoints();
-      if (mounted) setState(() { _points = points; _isLoading = false; });
+
+      // Extraire dynamiquement les types uniques présents dans les centres chargés
+      final Set<String> typesSet = {};
+      for (final p in points) {
+        final raw = p['types'];
+        if (raw is List) {
+          for (final t in raw) {
+            final s = t.toString().trim();
+            if (s.isNotEmpty) typesSet.add(s);
+          }
+        }
+      }
+      // Si aucun type extrait → fallback liste statique
+      final types = typesSet.isEmpty
+          ? ['Plastique', 'Verre', 'Papier', 'Carton', 'Métal', 'Électronique', 'Batteries', 'Compost', 'Vêtements', 'Général']
+          : (typesSet.toList()..sort());
+
+      if (mounted) setState(() {
+        _points = points;
+        _typesFromApi = types;
+        _isLoading = false;
+      });
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -632,215 +818,395 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
     }
   }
 
-  void _showAddEditDialog({Map<String, dynamic>? existing}) {
-    final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
-    final addressCtrl = TextEditingController(text: existing?['address'] ?? '');
-    final latCtrl = TextEditingController(text: existing?['lat']?.toString() ?? '');
-    final lngCtrl = TextEditingController(text: existing?['lng']?.toString() ?? '');
-    final typesCtrl = TextEditingController(text: (existing?['types'] is List) ? (existing!['types'] as List).join(',') : (existing?['types'] ?? ''));
-    final hoursCtrl = TextEditingController(text: existing?['hours'] ?? '');
-    String status = existing?['status'] ?? 'disponible';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(existing == null ? 'Ajouter un point' : 'Modifier le point', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _field(nameCtrl, 'Nom', Icons.label),
-              _field(addressCtrl, 'Adresse', Icons.location_on),
-              Row(children: [
-                Expanded(child: _field(latCtrl, 'Latitude', Icons.explore)),
-                const SizedBox(width: 8),
-                Expanded(child: _field(lngCtrl, 'Longitude', Icons.explore)),
-              ]),
-              _field(typesCtrl, 'Types (virgule)', Icons.recycling),
-              _field(hoursCtrl, 'Horaires', Icons.access_time),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: status,
-                decoration: InputDecoration(
-                  labelText: 'Statut', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.info_outline),
-                ),
-                items: ['disponible', 'saturé', 'maintenance'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (v) => status = v ?? 'disponible',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final prefs = await SharedPreferences.getInstance();
-              final jwt = prefs.getString('jwt_token');
-              final body = json.encode({
-                'name': nameCtrl.text,
-                'address': addressCtrl.text,
-                'lat': latCtrl.text,
-                'lng': lngCtrl.text,
-                'types': typesCtrl.text,
-                'hours': hoursCtrl.text,
-                'status': status,
-              });
-              if (existing == null) {
-                await http.post(Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
-                  headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'}, body: body);
-              } else {
-                await http.put(Uri.parse('${AuthService.baseUrl}/admin/collection-points/${existing['id']}'),
-                  headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'}, body: body);
-              }
-              _loadPoints();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen),
-            child: Text(existing == null ? 'Ajouter' : 'Enregistrer'),
-          ),
-        ],
-      ),
+  Future<void> _openAddEditScreen({Map<String, dynamic>? existing}) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AddSortingCenterScreen(existingCenter: existing)),
     );
+    if (result == null || result is! Map) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final jwt = prefs.getString('jwt_token');
+    final location = result['location'];
+    final latStr = location.latitude.toString();
+    final lngStr = location.longitude.toString();
+
+    // Détecter si la position a changé pour forcer le re-géocodage
+    final bool locationChanged = existing != null &&
+      (existing['lat'].toString() != latStr || existing['lng'].toString() != lngStr);
+
+    final bodyMap = {
+      'name': result['name'],
+      'lat': latStr,
+      'lng': lngStr,
+      'types': result['types'],
+      'hours': result['hours'],
+      'status': result['status'],
+      // Si la position a changé → vider l'adresse pour forcer le re-géocodage backend
+      if (locationChanged) 'address': '',
+    };
+    final body = json.encode(bodyMap);
+
+    try {
+      http.Response response;
+      if (existing == null) {
+        response = await http.post(
+          Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
+          headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+          body: body,
+        );
+      } else {
+        response = await http.put(
+          Uri.parse('${AuthService.baseUrl}/admin/collection-points/${existing['id']}'),
+          headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+          body: body,
+        );
+      }
+      if (!mounted) return;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(existing == null
+            ? '✅ Point "${result['name']}" ajouté avec succès'
+            : '✅ Point "${result['name']}" mis à jour'),
+          backgroundColor: AppTheme.primaryGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+        _loadPoints();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('❌ Erreur ${response.statusCode} — Vérifiez les données'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('❌ Erreur de connexion : $e'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
   }
 
-  Widget _field(TextEditingController ctrl, String label, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: ctrl,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, size: 18),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          isDense: true,
-        ),
-      ),
-    );
+  String _filtreStatut = 'Tous';
+  String _filtreType = 'Tous';
+
+  List<String> get _typesDisponibles => ['Tous', ..._typesFromApi];
+
+  List<Map<String, dynamic>> get _pointsFiltres {
+    var liste = _points;
+    // Filtre statut
+    if (_filtreStatut != 'Tous') {
+      final map = {'Disponible': 'disponible', 'Saturé': 'saturé', 'Maintenance': 'maintenance'};
+      liste = liste.where((p) => (p['status'] ?? '').toLowerCase() == map[_filtreStatut]).toList();
+    }
+    // Filtre type de déchets
+    if (_filtreType != 'Tous') {
+      liste = liste.where((p) {
+        try {
+          final raw = p['types'];
+          List<String> types = [];
+          if (raw is List) {
+            types = raw.map((e) => e.toString()).toList();
+          } else if (raw is String && raw.isNotEmpty) {
+            final decoded = json.decode(raw);
+            if (decoded is List) types = decoded.cast<String>();
+            else if (decoded is Map) {
+              for (final v in decoded.values) {
+                if (v is List) types.addAll(v.cast<String>());
+              }
+            }
+          }
+          return types.any((t) => t.toLowerCase() == _filtreType.toLowerCase());
+        } catch (_) { return false; }
+      }).toList();
+    }
+    return liste;
   }
 
   @override
   Widget build(BuildContext context) {
+    final nbDispo = _points.where((p) => (p['status'] ?? '').toLowerCase() == 'disponible').length;
+    final nbSat = _points.where((p) => (p['status'] ?? '').toLowerCase() == 'saturé').length;
+    final nbMaint = _points.where((p) => (p['status'] ?? '').toLowerCase() == 'maintenance').length;
+
     return SingleChildScrollView(
       key: const PageStorageKey('admin_points'),
       primary: false,
       padding: const EdgeInsets.all(24),
       physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('RÉSEAU DE COLLECTE (${_points.length})',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 12, color: AppTheme.textMuted)),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddSortingCenterScreen()),
-                  );
-                  if (result != null && result is Map) {
-                    final prefs = await SharedPreferences.getInstance();
-                    final jwt = prefs.getString('jwt_token');
-                    
-                    final location = result['location']; // LatLng
-                    final latStr = location.latitude.toString();
-                    final lngStr = location.longitude.toString();
-                    
-                    final body = json.encode({
-                      'name': result['name'],
-                      'lat': latStr,
-                      'lng': lngStr,
-                      'types': (result['types'] as List).join(', '),
-                      'hours': result['hours'],
-                      'status': result['status'],
-                    });
-                    
-                    await http.post(
-                      Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
-                      headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'}, 
-                      body: body
-                    );
-                    _loadPoints();
-                  }
-                },
-                icon: const Icon(Icons.add_location_alt_rounded, size: 18),
-                label: const Text('AJOUTER (CARTE)'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
-            ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // En-tête
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('RÉSEAU DE COLLECTE', style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
+            Text('${_points.length} points recensés',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20, color: AppTheme.deepSlate)),
+          ]),
+          ElevatedButton.icon(
+            onPressed: () => _openAddEditScreen(),
+            icon: const Icon(Icons.add_location_alt_rounded, size: 18),
+            label: const Text('AJOUTER'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
           ),
-          const SizedBox(height: 8),
-          IconButton(onPressed: _loadPoints, icon: const Icon(Icons.refresh, color: AppTheme.primaryGreen)),
-          const SizedBox(height: 16),
-          if (_isLoading)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(40),
-              child: CircularProgressIndicator(color: AppTheme.primaryGreen),
-            ))
-          else if (_points.isEmpty)
-            Center(child: Padding(
-              padding: const EdgeInsets.all(40),
-              child: Text('Aucun point de collecte', style: GoogleFonts.inter(color: AppTheme.textMuted)),
-            ))
-          else
-            ..._points.map((p) => _buildPointCard(p)),
-          const SizedBox(height: 100),
+        ]),
+        const SizedBox(height: 16),
+
+        // Résumé statuts
+        Row(children: [
+          _statBadge('${nbDispo} Disponibles', Colors.green, Icons.check_circle_rounded),
+          const SizedBox(width: 8),
+          _statBadge('${nbSat} Saturés', Colors.red, Icons.warning_rounded),
+          const SizedBox(width: 8),
+          _statBadge('${nbMaint} Maintenance', Colors.orange, Icons.build_rounded),
+          const Spacer(),
+          IconButton(onPressed: _loadPoints,
+            icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryGreen, size: 20),
+            tooltip: 'Actualiser'),
+        ]),
+        const SizedBox(height: 12),
+
+        // Filtres statut
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: ['Tous','Disponible','Saturé','Maintenance'].map((f) =>
+            GestureDetector(
+              onTap: () => setState(() => _filtreStatut = f),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _filtreStatut == f ? _filtreColor(f) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(f, style: GoogleFonts.inter(
+                  fontSize: 12, fontWeight: FontWeight.w700,
+                  color: _filtreStatut == f ? Colors.white : AppTheme.textMuted)),
+              ),
+            )
+          ).toList()),
+        ),
+        const SizedBox(height: 10),
+
+        // Filtres type de déchets (dynamique)
+        if (_typesDisponibles.length > 1) ...[
+          Text('Type de déchets', style: GoogleFonts.inter(
+            fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.textMuted,
+            letterSpacing: 0.5)),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: _typesDisponibles.map((t) =>
+              GestureDetector(
+                onTap: () => setState(() => _filtreType = t),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(right: 7),
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _filtreType == t ? AppTheme.primaryGreen : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _filtreType == t ? AppTheme.primaryGreen : Colors.grey.shade200),
+                  ),
+                  child: Text(t, style: GoogleFonts.inter(
+                    fontSize: 11, fontWeight: FontWeight.w700,
+                    color: _filtreType == t ? Colors.white : AppTheme.deepSlate)),
+                ),
+              )
+            ).toList()),
+          ),
         ],
+        const SizedBox(height: 16),
+
+        if (_isLoading)
+          const Center(child: Padding(padding: EdgeInsets.all(40),
+            child: CircularProgressIndicator(color: AppTheme.primaryGreen)))
+        else if (_pointsFiltres.isEmpty)
+          Center(child: Padding(padding: const EdgeInsets.all(40),
+            child: Column(children: [
+              Icon(Icons.location_off_rounded, size: 40, color: Colors.grey.shade300),
+              const SizedBox(height: 12),
+              Text('Aucun point $_filtreStatut'.trim(),
+                style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 14)),
+            ])))
+        else
+          ..._pointsFiltres.map((p) => _buildPointCard(p)),
+        const SizedBox(height: 80),
+      ]),
+    );
+  }
+
+  Color _filtreColor(String f) {
+    switch (f) {
+      case 'Disponible': return Colors.green;
+      case 'Saturé': return Colors.red;
+      case 'Maintenance': return Colors.orange;
+      default: return AppTheme.primaryGreen;
+    }
+  }
+
+  Widget _statBadge(String label, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: color, size: 13),
+        const SizedBox(width: 5),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+      ]),
     );
   }
 
   Widget _buildPointCard(Map<String, dynamic> p) {
-    final status = p['status'] ?? 'disponible';
-    final statusColor = status == 'disponible' ? Colors.green : (status == 'saturé' ? Colors.red : Colors.orange);
-    final load = double.tryParse(p['load_level']?.toString() ?? '0') ?? 0.0;
+    final rawStatus = (p['status'] ?? 'disponible').toString().toLowerCase();
+    final Color couleur = rawStatus == 'disponible' ? Colors.green
+      : rawStatus == 'saturé' ? Colors.red : Colors.orange;
+    final IconData iconeStatut = rawStatus == 'disponible' ? Icons.check_circle_rounded
+      : rawStatus == 'saturé' ? Icons.warning_rounded : Icons.build_rounded;
+    final String libelle = rawStatus == 'disponible' ? 'Disponible'
+      : rawStatus == 'saturé' ? 'Saturé' : 'Maintenance';
+
+    final address = p['address']?.toString() ?? '';
+    final hours = p['hours']?.toString() ?? '';
+
+    // Types de déchets acceptés
+    List<String> types = [];
+    try {
+      final raw = p['types'];
+      if (raw is String && raw.isNotEmpty) {
+        final decoded = json.decode(raw);
+        if (decoded is Map) {
+          for (final entry in decoded.entries) {
+            if ((entry.value as List?)?.isNotEmpty ?? false) {
+              types.addAll((entry.value as List).cast<String>());
+            }
+          }
+        } else if (decoded is List) {
+          types = decoded.cast<String>();
+        }
+      }
+    } catch (_) {}
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: AppTheme.tightShadow),
-      child: Column(
-        children: [
-          Row(
-            children: [
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border(left: BorderSide(color: couleur, width: 4)),
+        boxShadow: [BoxShadow(color: couleur.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Icône
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: couleur.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.location_on_rounded, color: couleur, size: 22),
+            ),
+            const SizedBox(width: 14),
+            // Nom + statut + adresse
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p['name'] ?? '', style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w900, fontSize: 16, color: AppTheme.deepSlate)),
+              const SizedBox(height: 4),
+              // Badge statut
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.location_on_rounded, color: statusColor, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(p['name'] ?? '', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(status[0].toUpperCase() + status.substring(1), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
-                    if (p['address'] != null && p['address'].toString().isNotEmpty)
-                      Text(p['address'], style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11)),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: couleur.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(iconeStatut, color: couleur, size: 11),
+                  const SizedBox(width: 4),
+                  Text(libelle, style: GoogleFonts.inter(
+                    color: couleur, fontWeight: FontWeight.w800, fontSize: 11)),
+                ]),
               ),
-              PopupMenuButton(
-                icon: const Icon(Icons.more_vert, color: AppTheme.textMuted),
-                itemBuilder: (ctx) => [
-                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 16), SizedBox(width: 8), Text('Modifier')])),
-                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 16, color: Colors.red), SizedBox(width: 8), Text('Supprimer', style: TextStyle(color: Colors.red))])),
-                ],
-                onSelected: (val) {
-                  if (val == 'edit') _showAddEditDialog(existing: p);
-                  if (val == 'delete') _deletePoint(p['id']);
-                },
-              ),
-            ],
-          ),
-          if (load > 0) ...[
-            const SizedBox(height: 16),
-            LinearProgressIndicator(value: load, backgroundColor: Colors.grey.shade100, color: statusColor, minHeight: 6,
-              borderRadius: BorderRadius.circular(3)),
+              if (address.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(children: [
+                  Icon(Icons.place_outlined, size: 12, color: AppTheme.textMuted),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(address, style: GoogleFonts.inter(
+                    color: AppTheme.textMuted, fontSize: 11), maxLines: 2,
+                    overflow: TextOverflow.ellipsis)),
+                ]),
+              ],
+              if (hours.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Row(children: [
+                  Icon(Icons.access_time_rounded, size: 12, color: AppTheme.textMuted),
+                  const SizedBox(width: 4),
+                  Text(hours, style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11)),
+                ]),
+              ],
+            ])),
+            // Menu actions
+            PopupMenuButton(
+              tooltip: 'Options',
+              icon: const Icon(Icons.more_vert, color: AppTheme.textMuted),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              itemBuilder: (ctx) => [
+                PopupMenuItem(value: 'edit', child: Row(children: [
+                  Icon(Icons.edit_rounded, size: 16, color: Colors.blue.shade600),
+                  const SizedBox(width: 10),
+                  Text('Modifier', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                ])),
+                PopupMenuItem(value: 'delete', child: Row(children: [
+                  const Icon(Icons.delete_rounded, size: 16, color: Colors.red),
+                  const SizedBox(width: 10),
+                  Text('Supprimer', style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, color: Colors.red)),
+                ])),
+              ],
+              onSelected: (val) {
+                if (val == 'edit') _openAddEditScreen(existing: p);
+                if (val == 'delete') _deletePoint(p['id']);
+              },
+            ),
+          ]),
+
+          // Types de déchets
+          if (types.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 6, runSpacing: 5, children: types.take(6).map((t) =>
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Text(t, style: GoogleFonts.inter(fontSize: 10, color: AppTheme.deepSlate,
+                  fontWeight: FontWeight.w600)),
+              )
+            ).toList()),
           ],
-        ],
+
+        ]),
       ),
     );
   }

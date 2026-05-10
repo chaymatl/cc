@@ -196,8 +196,116 @@ class _FeedTabState extends State<FeedTab> {
                       if (result['success'] == true) {
                         _postController.clear();
                         Navigator.pop(context);
+
+                        final isPending = result['ai_flagged'] == true ||
+                            result['status'] == 'pending_review';
+
+                        if (isPending) {
+                          // ── Publication en attente de validation admin ──
+                          final title  = result['rejection_title'] as String? ??
+                              'Publication en attente';
+                          final body   = result['rejection_body'] as String? ??
+                              'Votre publication sera visible après validation par un administrateur.';
+
+                          if (mounted) {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24)),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.pending_actions_rounded,
+                                      color: Colors.orange, size: 40),
+                                ),
+                                title: Text(title,
+                                    style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
+                                    textAlign: TextAlign.center),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(body,
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            color: AppTheme.textMuted,
+                                            height: 1.5),
+                                        textAlign: TextAlign.center),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.07),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                            color:
+                                                Colors.orange.withOpacity(0.2)),
+                                      ),
+                                      child: Row(children: [
+                                        const Icon(Icons.info_outline_rounded,
+                                            color: Colors.orange, size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Publiez du contenu lié à l\'environnement ou au recyclage pour une publication immédiate.',
+                                            style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                color: Colors.orange.shade700),
+                                          ),
+                                        ),
+                                      ]),
+                                    ),
+                                  ],
+                                ),
+                                actionsAlignment: MainAxisAlignment.center,
+                                actions: [
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(14)),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 32, vertical: 12),
+                                    ),
+                                    child: Text('Compris',
+                                        style: GoogleFonts.outfit(
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        } else {
+                          // ── Publication directe ──
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Row(children: [
+                                const Icon(Icons.check_circle_rounded,
+                                    color: Colors.white, size: 20),
+                                const SizedBox(width: 10),
+                                Text('Publication publiée !',
+                                    style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w600)),
+                              ]),
+                              backgroundColor: AppTheme.primaryGreen,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                            ));
+                          }
+                        }
                         _loadPosts();
                       }
+
                     } finally {
                       if (mounted) setModalState(() => isUploading = false);
                     }
@@ -379,12 +487,16 @@ class _RealPostCard extends StatefulWidget {
 class _RealPostCardState extends State<_RealPostCard> {
   late bool _isLiked;
   late int _likeCount;
+  late bool _isBookmarked;
+  late int _commentCount;
 
   @override
   void initState() {
     super.initState();
-    _likeCount = widget.post['likes_count'] ?? 0;
-    _isLiked = widget.post['is_liked'] == true;
+    _likeCount    = widget.post['likes_count']    ?? 0;
+    _commentCount = widget.post['comments_count'] ?? 0;
+    _isLiked      = widget.post['is_liked']    == true;
+    _isBookmarked = widget.post['is_saved']    == true;
   }
 
   Future<void> _handleLike() async {
@@ -396,6 +508,20 @@ class _RealPostCardState extends State<_RealPostCard> {
     final result = await widget.authService.toggleLikePost(widget.post['id'].toString());
     if (result['success'] == true) {
       if (mounted) setState(() { _isLiked = result['liked'] ?? _isLiked; _likeCount = result['count'] ?? _likeCount; });
+    }
+  }
+
+  Future<void> _handleBookmark() async {
+    if (!AuthState.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connectez-vous pour sauvegarder')));
+      return;
+    }
+    setState(() => _isBookmarked = !_isBookmarked);
+    final result = await widget.authService.toggleSavePost(widget.post['id'].toString());
+    if (result['success'] == true) {
+      if (mounted) setState(() => _isBookmarked = result['saved'] ?? _isBookmarked);
+    } else {
+      if (mounted) setState(() => _isBookmarked = !_isBookmarked); // rollback
     }
   }
 
@@ -508,17 +634,44 @@ class _RealPostCardState extends State<_RealPostCard> {
 
           // Footer actions
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
             child: Row(
               children: [
+                // Like
                 _buildActionIcon(
                   _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                   '$_likeCount',
-                  _isLiked ? Colors.pink : AppTheme.textMuted,
+                  _isLiked ? const Color(0xFFFF6B8A) : AppTheme.textMuted,
                   onTap: _handleLike,
                 ),
+                const SizedBox(width: 20),
+                // Commentaires
+                _buildActionIcon(
+                  Icons.chat_bubble_outline_rounded,
+                  '$_commentCount',
+                  AppTheme.textMuted,
+                  onTap: null, // lecture seule (navigation vers PostDetailScreen à implémenter)
+                ),
                 const Spacer(),
-                Icon(Icons.bookmark_border_rounded, color: AppTheme.textMuted, size: 24),
+                // Bookmark animé
+                GestureDetector(
+                  onTap: _handleBookmark,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, anim) =>
+                        ScaleTransition(scale: anim, child: child),
+                    child: Icon(
+                      _isBookmarked
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      key: ValueKey(_isBookmarked),
+                      color: _isBookmarked
+                          ? AppTheme.primaryGreen
+                          : AppTheme.textMuted,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

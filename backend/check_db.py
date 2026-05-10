@@ -1,24 +1,16 @@
 import sqlite3
 
-# Connexion à la bd
 conn = sqlite3.connect('sql_app.db')
-cursor = conn.cursor()
+tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+print('Tables:', [t[0] for t in tables])
 
-# Récupérer tous les utilisateurs
-cursor.execute("SELECT id, email, full_name, role, is_active FROM users")
-users = cursor.fetchall()
-
-print(f"\n=== Utilisateurs dans la base de données ({len(users)} total) ===\n")
-
-if not users:
-    print("Aucun utilisateur trouvé dans la base de données.\n")
-else:
-    for user in users:
-        print(f"ID: {user[0]}")
-        print(f"Email: {user[1]}")
-        print(f"Nom: {user[2]}")
-        print(f"Rôle: {user[3]}")
-        print(f"Actif: {user[4]}")
-        print("-" * 50)
+for t in tables:
+    name = t[0]
+    if 'collect' in name.lower() or 'point' in name.lower():
+        rows = conn.execute(f'SELECT id, name, address FROM "{name}" ORDER BY id').fetchall()
+        print(f'\nTable [{name}] — {len(rows)} lignes:')
+        for r in rows:
+            addr = (r[2] or 'NULL')[:70]
+            print(f'  [{r[0]}] {r[1]} | {addr}')
 
 conn.close()

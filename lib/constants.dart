@@ -6,7 +6,7 @@ class ApiConstants {
   // - Pour ÉMULATEUR Android  → utiliser 10.0.2.2 (adresse spéciale)
   // - Pour APPAREIL PHYSIQUE  → utiliser l'IP locale de votre PC (ex: 192.168.1.X)
   //   Trouvez votre IP avec: ipconfig (Windows) → cherchez "Adresse IPv4" (Wi-Fi)
-  static const String _physicalDeviceIp = "192.168.253.158"; // ← Mettez votre IP Wi-Fi ici
+  static const String _physicalDeviceIp = "127.0.0.1"; // ← ADB Reverse (USB) — voir ci-dessous
 
   // Mettez à true si vous testez sur un APPAREIL PHYSIQUE (pas un émulateur)
   static const bool usePhysicalDevice = true;

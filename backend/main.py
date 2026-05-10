@@ -62,7 +62,7 @@ app.add_middleware(
 )
 
 # ── Include routers ────────────────────────────────────────────────────────────
-from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz, educator_videos, qr_bins  # noqa: E402
+from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz, educator_videos, qr_bins, meetings, groups, analytics  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -74,6 +74,9 @@ app.include_router(moderation.router)
 app.include_router(quiz.router)
 app.include_router(educator_videos.router)
 app.include_router(qr_bins.router)
+app.include_router(meetings.router)
+app.include_router(groups.router)
+app.include_router(analytics.router)
 
 # Note: /uploads est déjà monté ci-dessus (ligne 44). Pas de doublon.
 

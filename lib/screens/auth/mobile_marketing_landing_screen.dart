@@ -10,6 +10,7 @@ import 'section_impact.dart';
 import '../client/feed_tab.dart';
 import '../client/rewards_tab.dart';
 import '../client/map_tab.dart';
+import '../../services/auth_service.dart';
 
 class MobileMarketingLandingScreen extends StatefulWidget {
   const MobileMarketingLandingScreen({Key? key}) : super(key: key);
@@ -21,6 +22,8 @@ class MobileMarketingLandingScreen extends StatefulWidget {
 class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScreen> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late AnimationController _bgAnimationController;
+  
+  String _impactSubtitle = '...';
 
   @override
   void initState() {
@@ -30,6 +33,22 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+    
+    _loadStats();
+  }
+
+  void _loadStats() async {
+    try {
+      final stats = await AuthService().fetchPlatformStats();
+      if (mounted && stats.isNotEmpty) {
+        setState(() {
+          final co2 = (stats['co2_saved_kg'] ?? 0).toDouble();
+          _impactSubtitle = '${co2.toStringAsFixed(1)} kg CO₂';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading stats: $e');
+    }
   }
 
   @override
@@ -260,7 +279,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
               children: [
                 _buildPinCard(
                   title: 'Impact Réel',
-                  subtitle: '1200 kg CO₂',
+                  subtitle: _impactSubtitle,
                   imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&q=80',
                   height: 260,
                   page: const SectionImpact(),

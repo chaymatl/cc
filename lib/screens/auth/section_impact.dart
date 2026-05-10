@@ -73,13 +73,13 @@ class _SectionImpactState extends State<SectionImpact>
         final data = json.decode(utf8.decode(response.bodyBytes));
         if (mounted) {
           setState(() {
-            _targetCO2 = (data['co2_saved_kg'] as num?)?.toDouble() ?? 1200;
-            _targetUsers = (data['total_users'] as num?)?.toInt() ?? 850;
+            _targetCO2 = (data['co2_saved_kg'] as num?)?.toDouble() ?? 0;
+            _targetUsers = (data['total_users'] as num?)?.toInt() ?? 0;
             _targetCenters =
-                (data['total_collection_points'] as num?)?.toInt() ?? 15;
+                (data['total_collection_points'] as num?)?.toInt() ?? 0;
             _targetWaste =
-                (data['waste_sorted_kg'] as num?)?.toDouble() ?? 850000;
-            _targetTrees = (data['trees_equivalent'] as num?)?.toInt() ?? 12;
+                (data['waste_sorted_kg'] as num?)?.toDouble() ?? 0;
+            _targetTrees = (data['trees_equivalent'] as num?)?.toInt() ?? 0;
             _isLoading = false;
           });
           Future.delayed(const Duration(milliseconds: 300), () {
@@ -97,11 +97,11 @@ class _SectionImpactState extends State<SectionImpact>
   void _useFallback() {
     if (mounted) {
       setState(() {
-        _targetCO2 = 1200;
-        _targetUsers = 850;
-        _targetCenters = 15;
-        _targetWaste = 850000;
-        _targetTrees = 12;
+        _targetCO2 = 0;
+        _targetUsers = 0;
+        _targetCenters = 0;
+        _targetWaste = 0;
+        _targetTrees = 0;
         _isLoading = false;
       });
       Future.delayed(const Duration(milliseconds: 300), () {

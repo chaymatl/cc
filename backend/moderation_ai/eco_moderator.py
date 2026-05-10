@@ -219,6 +219,19 @@ class EcoCNNModerator(AIModerator):
         # Exécuter le pipeline parent (règles + Detoxify + scoring de base)
         result = super().moderate(text=text, image_local_path=image_local_path)
 
+        # ── GARDE CRITIQUE : respect de la décision parente forte ────────────
+        # Si le parent a signalé pending_review avec un score élevé (>= 0.50),
+        # le CNN NE PEUT PAS améliorer le statut vers "published".
+        # Le CNN peut uniquement maintenir ou aggraver la décision parente.
+        # Cela empêche les faux positifs CNN d'annuler une détection correcte
+        # du pipeline parent (règles + Detoxify).
+        _parent_status = result.status
+        _parent_score  = result.score
+        _parent_is_strict_pending = (
+            _parent_status == ModerationStatus.PENDING_REVIEW.value
+            and _parent_score >= 0.50
+        )
+
         # ── Récupérer les décisions CNN ───────────────────────────────────────
         cnn_text_decision = result.text_analysis.get("cnn_decision", "uncertain")
         cnn_img_decision  = result.image_analysis.get("resnet_decision", "uncertain")
@@ -257,13 +270,14 @@ class EcoCNNModerator(AIModerator):
             return result
 
         # ── Rescue salutation simple ──────────────────────────────────────
-        # Si le texte est une salutation courte et propre (pas de profanité,
+        # Si le texte est une salutation courte et propre (pas de profanite,
         # pas d'anti-env), on le publie directement quel que soit le score parent.
-        # Ex: "Salam les amis", "Bonjour !", "Hello", "Coucou tout le monde"
+        # MAIS : seulement si l'image n'est pas hors-sujet par ResNet18.
+        # Ex: "Salam les amis" + photo de recyclage -> PUBLISHED
+        # Ex: "Bonjour" + photo de moto -> PENDING_REVIEW (image hors sujet)
         from services.ai_moderator import _normalize as _norm, _tokenize as _tok
         norm_text_full = _norm(text or "")
         text_tokens = set(_tok(text or ""))
-
         _GREETINGS_SET = {
             "bonjour", "bonsoir", "salut", "salam", "hello",
             "hi", "hey", "marhaba", "ahlan", "coucou",
@@ -273,12 +287,32 @@ class EcoCNNModerator(AIModerator):
             result.text_analysis.get("categories", {}).get("profanity", {}).get("score", 0.0) == 0.0
             and result.text_analysis.get("categories", {}).get("anti_environmental", {}).get("score", 0.0) == 0.0
         )
+        # Une image est considérée hors-sujet si :
+        #   - explicitement classée off_topic PAR LE CNN
+        #   - classée "eco" mais avec faible confiance (< 0.60) → ResNet incertain
+        #   - classée autre chose que eco et eco_img < 0.40
+        image_is_clearly_eco = (cnn_img_decision == "eco" and eco_img >= 0.60)
+        image_is_off_topic = (
+            cnn_img_decision == "off_topic"
+            or (cnn_img_decision == "eco" and eco_img < 0.60)   # eco mais peu confiant
+            or (cnn_img_decision not in ("eco",) and self._img_resnet is not None and eco_img < 0.40)
+        )
         if _has_greeting and len(text_tokens) <= 10 and _text_clean and toxic_txt < CNN_TOXIC_THRESHOLD:
+            if image_is_off_topic:
+                # Image hors-sujet ou insuffisamment éco → ne pas publier automatiquement
+                result.score  = max(result.score, 0.45)
+                result.status = ModerationStatus.PENDING_REVIEW.value
+                off_img_reason = "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"
+                if off_img_reason not in result.reasons:
+                    result.reasons.append(off_img_reason)
+                result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+                return result
             result.score  = min(result.score, 0.10)
             result.status = ModerationStatus.PUBLISHED.value
             result.reasons = [r for r in result.reasons if "précaution" not in r.lower()]
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
+
 
         # --- Racines d'ACTION éco (nettoyage, recyclage, protection...) ---
         _ECO_ACTION_STEMS = [
@@ -341,6 +375,24 @@ class EcoCNNModerator(AIModerator):
             "dechets", "dechet", "ordure", "plastique", "verre",
             "papier", "carton", "ecologi", "environnement",
             "nature", "biodiversite", "pollution", "pollu",
+            # ── Adjectifs et descriptions éco ─────────────────────────────────
+            # Couleur verte / verdure (ex: "une Tunisie verte", "ville verte")
+            "vert", "verte", "verts", "vertes", "verdur", "verdoy",
+            # Propreté (ex: "une ville propre", "gardons notre pays propre")
+            "propre", "propret",
+            # Beauté naturelle (ex: "belle nature", "magnifique paysage")
+            "beaute", "beau", "belle", "magnifique", "splendide",
+            "paysage", "paysag",
+            # Aspirations territoriales (ex: "une Tunisie verte", "un pays vert")
+            "tunisie", "algerie", "maroc", "pays",  # contexte local fréquent
+            "ville", "region", "quartier",           # espaces verts urbains
+            # Nature / faune / flore
+            "foret", "arbr", "fleur", "prairie", "montagne",
+            "mer", "ocean", "lac", "riviere",
+            "oiseau", "faune", "flore",
+            # Énergie et durabilité
+            "durable", "durabilit", "renouvelab",
+            "ecologique", "ecolo",
         ]
 
         text_promotes_action = any(
@@ -351,6 +403,7 @@ class EcoCNNModerator(AIModerator):
         )
         # Le texte est "éco-pertinent" s'il promeut une action OU donne un conseil/encouragement
         text_is_eco_relevant = text_promotes_action or text_has_eco_advice
+
 
         # --- Détection salutation ---
         GREETINGS = {
@@ -373,6 +426,7 @@ class EcoCNNModerator(AIModerator):
         if (
             cnn_img_decision == "eco"
             and eco_img > off_img          # eco EST dominant
+            and eco_img >= 0.60           # éco clairement majoritaire (seuil durci anti-faux positifs)
             and has_greeting
             and is_safe_text
             and is_safe_image
@@ -427,18 +481,73 @@ class EcoCNNModerator(AIModerator):
             return result
 
         # ══════════════════════════════════════════════════════════════════════
-        # CAS 4 : Image éco SANS texte éco ni salutation → PENDING_REVIEW
+        # CAS 4 : Image éco + texte sans mots-clés éco → PUBLISHED si texte neutre
         # ══════════════════════════════════════════════════════════════════════
-        # L'image est pertinente mais le texte ne contient ni encouragement,
-        # ni salutation, ni conseil. Admin vérifie par précaution.
+        # PRINCIPE : on punit le NÉGATIF, pas l'absence de vocabulaire éco.
+        # Une photo de nature + texte neutre/positif = contenu légitime.
+        # On envoie en pending si :
+        #   - texte commercial/spam ("achetez", "prix", "livraison"...)
+        #   - CNN texte dit "off_topic" (le modèle détecte du hors-sujet)
+        #   - signaux anti-environnementaux explicites
+        # Ex PUBLIÉ   : nature + "une Tunisie verte"  → pas de signaux négatifs
+        # Ex PUBLIÉ   : nature + "magnifique !"       → neutre
+        # Ex PENDING  : nature + "achetez chez nous" → commercial détecté
         if cnn_img_decision == "eco" and not text_is_eco_relevant and not has_greeting:
-            result.score  = max(result.score, 0.40)
+            anti_env_score = result.text_analysis.get("categories", {}).get(
+                "anti_environmental", {}
+            ).get("score", 0.0)
+
+            # ── Détection de contenu commercial/spam ─────────────────────────
+            _COMMERCIAL_STEMS = [
+                "achetez", "achet", "vente", "vend", "vendez",
+                "promotion", "promo", "solde", "offre speciale",
+                "prix", "livraison", "commandez", "commander",
+                "boutique", "magasin", "shop", "buy", "sell",
+                "discount", "reduction", "euro", "dinar", "tnd",
+                "cod", "delivery", "together for better",
+                "gratuit", "cadeau", "gagnez", "gagner",
+            ]
+            is_commercial = any(stem in norm_text_full for stem in _COMMERCIAL_STEMS)
+
+            # ── Texte clairement hors-sujet selon le CNN texte ───────────────
+            text_cnn_is_offtopic = (cnn_text_decision == "off_topic")
+
+            # ── Décision ─────────────────────────────────────────────────────
+            # Publier SEULEMENT si : texte neutre + pas commercial + CNN pas off_topic
+            if (
+                is_safe_text
+                and is_safe_image
+                and anti_env_score < 0.35
+                and profanity_sc < 0.30
+                and not is_commercial        # pas de spam/pub commerciale
+                and not text_cnn_is_offtopic # CNN texte ne crie pas "off_topic"
+            ):
+                result.reasons = [
+                    r for r in result.reasons
+                    if "sans contexte environnemental" not in r
+                    and "hors sujet" not in r.lower()
+                    and "sans action eco" not in r.lower()
+                    and "sans encouragement" not in r.lower()
+                ]
+                result.score  = min(result.score, 0.25)
+                result.status = ModerationStatus.PUBLISHED.value
+                result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+                return result
+
+            # Texte avec signaux négatifs ou commercial → admin valide
+            result.score  = max(result.score, 0.45)
             result.status = ModerationStatus.PENDING_REVIEW.value
-            pending_reason = "Image eco-pertinente mais texte sans encouragement ni salutation (validation admin requise)"
+            if is_commercial:
+                pending_reason = "Contenu commercial ou publicitaire detecte : non conforme a la plateforme eco-citoyenne"
+            elif text_cnn_is_offtopic:
+                pending_reason = "Texte hors sujet detecte par l'IA : publication envoyee a l'administrateur"
+            else:
+                pending_reason = "Image eco-pertinente avec texte potentiellement problematique (validation admin requise)"
             if pending_reason not in result.reasons:
                 result.reasons.append(pending_reason)
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
+
 
         # ══════════════════════════════════════════════════════════════════════
         # CAS 5 : Texte seul éco-pertinent (sans image ou image neutre)
@@ -489,7 +598,21 @@ class EcoCNNModerator(AIModerator):
             result.processing_time_ms = round((time.time() - t0) * 1000, 2)
             return result
 
+        # ── GARDE FINALE : le CNN ne peut pas publier ce que le parent a bloqué ─
+        # Si le parent a rendu un verdict fort (pending_review, score >= 0.50)
+        # ET que le CNN veut publier → on revient à pending_review.
+        # Exemple concret : image hors-sujet détectée par les règles (score 0.6),
+        # mais le CNN voit "eco" dans l'image → SANS cette garde, il publie.
         result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+        if (
+            _parent_is_strict_pending
+            and result.status == ModerationStatus.PUBLISHED.value
+        ):
+            result.status = ModerationStatus.PENDING_REVIEW.value
+            result.score  = max(result.score, _parent_score)
+            lock_reason = "Validation admin requise : signal fort du pipeline de regles (score parent >= 0.50)"
+            if lock_reason not in result.reasons:
+                result.reasons.append(lock_reason)
         return result
 
 

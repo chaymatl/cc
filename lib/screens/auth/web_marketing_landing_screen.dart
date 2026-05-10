@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/premium_widgets.dart';
 import '../../widgets/auth_prompt_dialog.dart';
+import '../../services/auth_service.dart';
 import 'section_impact.dart';
 import 'section_testimonials.dart';
 import 'section_advantages.dart';
@@ -34,9 +35,17 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
   int _animUsers = 0;
   int _animCenters = 0;
 
+  int _targetCO2 = 0;
+  int _targetUsers = 0;
+  int _targetCenters = 0;
+  String _heroMembers = '...';
+  String _heroKilos = '...';
+  String _heroCenters = '...';
+
   @override
   void initState() {
     super.initState();
+    _loadStats();
     _floatingController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -60,15 +69,44 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
     super.dispose();
   }
 
+  void _loadStats() async {
+    try {
+      final stats = await AuthService().fetchPlatformStats();
+      if (mounted && stats.isNotEmpty) {
+        setState(() {
+          _targetCO2 = (stats['co2_saved_kg'] ?? 0).toInt();
+          _targetUsers = (stats['total_users'] ?? 0).toInt();
+          _targetCenters = (stats['total_collection_points'] ?? 0).toInt();
+          
+          _heroMembers = '$_targetUsers';
+          if (_targetUsers >= 1000) {
+            _heroMembers = '${(_targetUsers / 1000).toStringAsFixed(1)}K+';
+          }
+          
+          final waste = (stats['waste_sorted_kg'] ?? 0).toInt();
+          _heroKilos = '$waste';
+          if (waste >= 1000) {
+            _heroKilos = '${(waste / 1000).toStringAsFixed(1)}K+';
+          }
+          
+          _heroCenters = '$_targetCenters';
+        });
+        _startCounterAnimation();
+      }
+    } catch (e) {
+      debugPrint('Error loading stats: $e');
+    }
+  }
+
   void _startCounterAnimation() {
     if (_counterController.isCompleted || _counterController.isAnimating) return;
     _counterController.forward();
     _counterController.addListener(() {
       if (mounted) {
         setState(() {
-          _animCO2 = (1200 * _counterController.value).toInt();
-          _animUsers = (850 * _counterController.value).toInt();
-          _animCenters = (15 * _counterController.value).toInt();
+          _animCO2 = (_targetCO2 * _counterController.value).toInt();
+          _animUsers = (_targetUsers * _counterController.value).toInt();
+          _animCenters = (_targetCenters * _counterController.value).toInt();
         });
       }
     });
@@ -93,6 +131,24 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
           );
         },
         transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  /// Petit avatar circulaire avec initiale — pas de réseau, pas de CORS
+  Widget _miniAvatar(String initial, Color color) {
+    return Container(
+      width: 32, height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
@@ -203,7 +259,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
                     ),
                     const SizedBox(height: 8),
                     // Benefits list
-                    ...['✓ 100% gratuit', '🎁 Bonus de bienvenue', '🏆 Classements & récompenses'].map(
+                    ...['✓ 100% gratuit', '🎁 Bonus de bienvenue (10 pts)', '🏆 Classements & récompenses'].map(
                       (benefit) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Text(
@@ -306,7 +362,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
     final sections = [
       _SectionCard(
         title: 'Notre Impact',
-        subtitle: '1200 kg CO2 évités',
+        subtitle: '$_targetCO2 points distribués',
         icon: Icons.public_rounded,
         color: const Color(0xFF3B82F6),
         gradient: [const Color(0xFF1E40AF), const Color(0xFF3B82F6)],
@@ -703,28 +759,6 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Glassmorphism Badge pill
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.star_rounded, color: AppTheme.secondaryGold, size: 16),
-                        const SizedBox(width: 8),
-                        Text('Application #1 en Tunisie', style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                      ]),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
-
                 const SizedBox(height: 24),
 
                 // Gradient title
@@ -848,11 +882,11 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildHeroStat('12K+', 'Membres', AppTheme.primaryGreen),
+                          _buildHeroStat(_heroMembers, 'Membres', AppTheme.primaryGreen),
                           Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2)),
-                          _buildHeroStat('5000+', 'Kilos Triés', AppTheme.accentTeal),
+                          _buildHeroStat(_heroKilos, 'Kilos Triés', AppTheme.accentTeal),
                           Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2)),
-                          _buildHeroStat('500+', 'Cadeaux', AppTheme.secondaryGold),
+                          _buildHeroStat(_heroCenters, 'Centres de Tri', AppTheme.secondaryGold),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -860,21 +894,15 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
                       const SizedBox(height: 16),
                       Row(children: [
                         SizedBox(width: 80, height: 32, child: Stack(
-                          children: List.generate(3, (index) => Positioned(
-                            left: index * 22.0,
-                            child: Container(
-                              width: 32, height: 32,
-                              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
-                              child: ClipOval(child: SafeNetworkImage(
-                                'https://i.pravatar.cc/150?u=user${index + 10}',
-                                fit: BoxFit.cover, placeholder: Container(color: Colors.grey.shade700),
-                              )),
-                            ),
-                          )),
+                          children: [
+                            Positioned(left: 0, child: _miniAvatar('S', const Color(0xFF10B981))),
+                            Positioned(left: 22, child: _miniAvatar('L', const Color(0xFF3B82F6))),
+                            Positioned(left: 44, child: _miniAvatar('Y', const Color(0xFFF59E0B))),
+                          ],
                         )),
                         const SizedBox(width: 12),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('+850 éco-citoyens actifs', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                          Text('+$_heroMembers éco-citoyens actifs', style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
                           Row(children: [
                             ...List.generate(5, (i) => Icon(Icons.star_rounded, color: const Color(0xFFFBBF24), size: 14)),
                             const SizedBox(width: 6),
@@ -1439,7 +1467,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildCounterStat(
-                _animCO2 > 0 ? '$_animCO2' : '1,200',
+                '$_animCO2',
                 'KG CO2 ÉVITÉS',
                 Icons.cloud_done_rounded,
               ),
@@ -1449,7 +1477,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
                 color: Colors.white.withOpacity(0.1),
               ),
               _buildCounterStat(
-                _animUsers > 0 ? '$_animUsers' : '850',
+                '$_animUsers',
                 'CITOYENS ACTIFS',
                 Icons.people_alt_rounded,
               ),
@@ -1459,7 +1487,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
                 color: Colors.white.withOpacity(0.1),
               ),
               _buildCounterStat(
-                _animCenters > 0 ? '$_animCenters' : '15',
+                '$_animCenters',
                 'CENTRES DE TRI',
                 Icons.location_on_rounded,
               ),
@@ -1507,19 +1535,19 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
         'Samir B.',
         'Citoyen, Tunis',
         'J\'ai accumulé 2000 points en 2 semaines ! EcoRewind a changé ma façon de voir le recyclage.',
-        'https://i.pravatar.cc/150?u=samir',
+        'https://ui-avatars.com/api/?name=Samir+B&background=10B981&color=fff&size=150',
       ),
       _Testimonial(
         'Leila M.',
         'Étudiante, Sousse',
         'L\'appli est tellement intuitive. Le scanner IA est bluffant, il reconnaît tout !',
-        'https://i.pravatar.cc/150?u=leila',
+        'https://ui-avatars.com/api/?name=Leila+M&background=3B82F6&color=fff&size=150',
       ),
       _Testimonial(
         'Youssef K.',
         'Entrepreneur, Sfax',
         'Gr├óce à l\'aspect communautaire, mes voisins sont désormais engagés. C\'est motivant.',
-        'https://i.pravatar.cc/150?u=youssef',
+        'https://ui-avatars.com/api/?name=Youssef+K&background=F59E0B&color=fff&size=150',
       ),
     ];
 
@@ -1765,7 +1793,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
           ),
           const SizedBox(height: 16),
           Text(
-            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 200 éco-points offerts. 🎁',
+            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 10 éco-points offerts. 🎁',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: Colors.white.withOpacity(0.85),

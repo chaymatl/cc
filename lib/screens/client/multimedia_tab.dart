@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import '../../services/auth_service.dart';
 import '../../constants.dart';
+import '../../widgets/meetings_section.dart';
 import 'quiz_play_screen.dart';
 
 // Écran principal gérant l'affichage des contenus éducatifs (Vidéos, Articles, Quiz)
@@ -160,6 +161,11 @@ class _MultimediaTabState extends State<MultimediaTab> {
               child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
             )
           else ...[
+            // ── Séances Google Meet ──────────────────────────────────────
+            if (_selectedCategory == 'Tout')
+              const SliverToBoxAdapter(
+                child: MeetingsSection(),
+              ),
             // Section Dossiers Vidéos (catégories)
             if ((_selectedCategory == 'Tout' || _selectedCategory == 'Vidéos') && (_videoCategories.isNotEmpty || _educatorVideos.isNotEmpty))
               SliverToBoxAdapter(

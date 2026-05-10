@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'theme/app_theme.dart';
 import 'theme/platform_ui.dart';
 import 'theme/web_theme.dart';
@@ -20,18 +22,29 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'models/post_model.dart';
 import 'models/user_model.dart';
+import 'services/auth_service.dart';
+
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // ── Initialisation Firebase (Score temps réel — QR Poubelle) ──────────────
-  // Si google-services.json n'est pas encore configuré, l'app continue
-  // normalement sans Firebase (pas de crash).
+  // DefaultFirebaseOptions fournit la config correcte selon la plateforme
+  // (Web, Android, iOS). Si le Web App ID n'est pas encore configuré,
+  // Firebase est ignoré silencieusement (app continue en mode dégradé).
   try {
-    await Firebase.initializeApp();
+    final webAppId = DefaultFirebaseOptions.web.appId;
+    final webReady = !webAppId.contains('REMPLACER');
+    if (!kIsWeb || webReady) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      debugPrint('[Firebase] Web App ID non configuré → mode dégradé (pas de RTDB temps réel)');
+    }
   } catch (e) {
-    // Firebase non configuré ou google-services.json absent — mode dégradé
-    debugPrint('[Firebase] Non configuré : $e');
+    debugPrint('[Firebase] Initialisation échouée : $e');
   }
 
   // Initialiser le SDK Facebook pour le web
@@ -45,7 +58,88 @@ void main() async {
   }
   
   await PostRegistry.loadSavedStates();
+
+  // ── Restauration de session (reload navigateur / cold start) ──────────────
+  // Lire le token JWT sauvegardé et reconstruire AuthState.currentUser AVANT
+  // que Flutter rende la première route. Sans cela, un reload sur /#/home
+  // trouvait AuthState.currentUser == null et affichait le dialog de connexion.
+  await _restoreSessionIfAvailable();
+
   runApp(const EcoRewindApp());
+}
+
+/// Restaure la session utilisateur depuis SharedPreferences.
+/// Appelé une seule fois au démarrage, avant runApp().
+Future<void> _restoreSessionIfAvailable() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token == null) return; // Pas de session sauvegardée
+
+    // Mettre le token en mémoire pour les requêtes HTTP
+    AuthState.authToken = token;
+
+    // Vérifier que le token est encore valide côté backend
+    final authService = AuthService();
+    final result = await authService.getCurrentUserDetails();
+
+    if (result['success'] == true) {
+      final userData = result['user'] as Map<String, dynamic>;
+      final roleStr = userData['role'] as String? ?? 'user';
+      final role = UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == roleStr,
+        orElse: () => UserRole.user,
+      );
+      AuthState.currentUser = User(
+        id: userData['id'].toString(),
+        name: userData['full_name'] ?? 'Utilisateur',
+        email: userData['email'] ?? '',
+        role: role,
+        globalScore: (userData['global_score'] as num?)?.toDouble() ?? 0.0,
+        avatarUrl: userData['avatar_url'] ?? '',
+        qrCode: userData['qr_code'] ?? '',
+      );
+      debugPrint('[Session] Restaurée : ${AuthState.currentUser?.name}');
+    } else {
+      if (result['message']?.toString().contains('Erreur réseau') == true || result['message']?.toString().contains('Erreur serveur') == true) {
+        debugPrint('[Session] Erreur réseau ignorée. Décodage local du token en fallback.');
+        try {
+          final parts = token.split('.');
+          if (parts.length == 3) {
+            final payload = parts[1];
+            final normalized = base64Url.normalize(payload);
+            final resp = utf8.decode(base64Url.decode(normalized));
+            final payloadData = json.decode(resp);
+            
+            final roleStr = payloadData['role'] as String? ?? 'user';
+            final role = UserRole.values.firstWhere(
+              (e) => e.toString().split('.').last == roleStr,
+              orElse: () => UserRole.user,
+            );
+            
+            AuthState.currentUser = User(
+              id: payloadData['id']?.toString() ?? '0',
+              name: payloadData['full_name'] ?? payloadData['sub'] ?? 'Utilisateur (Hors ligne)',
+              email: payloadData['sub'] ?? '',
+              role: role,
+            );
+            debugPrint('[Session] Fallback local réussi pour : ${AuthState.currentUser?.email}');
+          }
+        } catch (e) {
+          debugPrint('[Session] Échec du fallback local : $e');
+        }
+      } else {
+        // Token expiré ou invalide → nettoyer
+        AuthState.authToken = null;
+        AuthState.currentUser = null;
+        await prefs.remove('jwt_token');
+        await prefs.remove('refresh_token');
+        debugPrint('[Session] Token invalide, session effacée');
+      }
+    }
+  } catch (e) {
+    debugPrint('[Session] Erreur restauration : $e');
+  }
 }
 
 class EcoRewindApp extends StatelessWidget {
@@ -89,10 +183,15 @@ class EcoRewindApp extends StatelessWidget {
           case '/map':
             return _tabRoute(3);
 
-          // Onglet Profil — index 2 pour éducateur (3 onglets), 4 pour les autres
+          // Onglet 4 — Communauté (citoyens uniquement)
+          case '/community':
+            return _tabRoute(4);
+
+          // Onglet Profil — index 2 pour éducateur, 5 pour citoyen, 4 pour autres
           case '/profile':
             final role = AuthState.currentUser?.role ?? UserRole.user;
-            return _tabRoute(role == UserRole.educator ? 2 : 4);
+            final profileIdx = role == UserRole.educator ? 2 : (role == UserRole.user ? 5 : 4);
+            return _tabRoute(profileIdx);
 
           // ─── Routes statiques (avec animation de transition normale) ────────
           case '/':

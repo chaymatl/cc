@@ -8,10 +8,10 @@ class PinterestBackground extends StatefulWidget {
   State<PinterestBackground> createState() => _PinterestBackgroundState();
 }
 
-class _PinterestBackgroundState extends State<PinterestBackground> with SingleTickerProviderStateMixin {
+class _PinterestBackgroundState extends State<PinterestBackground>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
-  // Images for the columns
   final List<String> col1 = [
     'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&q=80',
     'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=500&q=80',
@@ -34,7 +34,9 @@ class _PinterestBackgroundState extends State<PinterestBackground> with SingleTi
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 40))
+          ..repeat();
   }
 
   @override
@@ -43,28 +45,43 @@ class _PinterestBackgroundState extends State<PinterestBackground> with SingleTi
     super.dispose();
   }
 
+  /// Colonne d'images animée en défilement vertical.
+  /// ClipRect + OverflowBox empêchent le débordement de layout tout en
+  /// laissant la translation dépasser les limites logiques du parent.
   Widget _buildColumn(List<String> images, bool reverse, double width) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final double offset = _controller.value * 786; // Approx height of 3 images
-        return Transform.translate(
-          offset: Offset(0, reverse ? -786 + offset : -offset),
-          child: Column(
-            children: images.map((url) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                height: 250,
-                width: width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+    return Expanded(
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final double offset = _controller.value * 786;
+            return OverflowBox(
+              maxHeight: double.infinity,
+              alignment: Alignment.topCenter,
+              child: Transform.translate(
+                offset: Offset(0, reverse ? -786 + offset : -offset),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: images.map((url) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      height: 250,
+                      width: width,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        image: DecorationImage(
+                          image: NetworkImage(url),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
-        );
-      },
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 

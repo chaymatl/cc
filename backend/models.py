@@ -174,6 +174,7 @@ class CollectionPointResponse(BaseModel):
     lng: str
     is_verified: bool
     types: str
+    types_detail: dict = {}
     address: Optional[str] = None
     hours: Optional[str] = None
     status: str
