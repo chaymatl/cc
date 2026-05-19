@@ -32,14 +32,14 @@ class SafeNetworkImage extends StatelessWidget {
     // Calcul du cacheWidth optimal basé sur la densité d'écran
     // (évite le flou sur les écrans haute densité)
     final double dpr = MediaQuery.of(context).devicePixelRatio;
-    final int? cacheW = width != null ? (width! * dpr).toInt() : null;
-    final int? cacheH = height != null ? (height! * dpr).toInt() : null;
+    final int? cacheW = (width != null && width!.isFinite) ? (width! * dpr).toInt() : null;
+    final int? cacheH = (height != null && height!.isFinite) ? (height! * dpr).toInt() : null;
 
-    String finalUrl = url;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && ApiConstants.usePhysicalDevice) {
-      if (finalUrl.contains('localhost') || finalUrl.contains('127.0.0.1')) {
-        finalUrl = finalUrl.replaceAll('localhost', '192.168.253.158').replaceAll('127.0.0.1', '192.168.253.158');
-      }
+    // Résout les chemins relatifs (/uploads/...) → URL absolue sur mobile
+    String finalUrl = ApiConstants.resolveUrl(url);
+    // Sur Android : normalise aussi localhost → 127.0.0.1 (ADB reverse)
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      finalUrl = finalUrl.replaceAll('//localhost:', '//127.0.0.1:');
     }
 
     return Image.network(

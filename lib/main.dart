@@ -153,9 +153,26 @@ class EcoRewindApp extends StatelessWidget {
       theme: PlatformUI.isWeb ? WebTheme.theme : AppTheme.seniorTheme,
       initialRoute: '/',
       onGenerateRoute: (settings) {
+        // ─── Sur Web : pas d'historique Flutter — Chrome gère Retour/Avancer ───
+        // Sur Mobile : MaterialPageRoute classique avec animation
+        Route<T> buildRoute<T>(WidgetBuilder builder, {bool fullscreen = false}) {
+          if (kIsWeb) {
+            return PageRouteBuilder<T>(
+              settings: settings,
+              pageBuilder: (context, _, __) => builder(context),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            );
+          }
+          return MaterialPageRoute<T>(
+            settings: settings,
+            builder: builder,
+            fullscreenDialog: fullscreen,
+          );
+        }
+
         // ─── Routes d'onglets : chaque onglet = sa propre route ──────────────
-        // Transition sans animation pour simuler un vrai changement d'onglet
-        Route<dynamic> _tabRoute(int tabIndex) => PageRouteBuilder(
+        Route<dynamic> tabRoute(int tabIndex) => PageRouteBuilder(
               settings: settings,
               pageBuilder: (context, _, __) =>
                   MainNavigationShell(initialTab: tabIndex),
@@ -164,101 +181,53 @@ class EcoRewindApp extends StatelessWidget {
             );
 
         switch (settings.name) {
-          // Onglet 0 — Fil d'actualités
           case '/home':
           case '/feed':
             final args = settings.arguments as Map<String, dynamic>?;
             final initialTab = args?['initialTab'] as int? ?? 0;
-            return _tabRoute(initialTab);
-
-          // Onglet 1 — Formation / Espace pro (éducateur, collecteur, etc.)
+            return tabRoute(initialTab);
           case '/multimedia':
-            return _tabRoute(1);
-
-          // Onglet 2 — Impact / Récompenses
+            return tabRoute(1);
           case '/rewards':
-            return _tabRoute(2);
-
-          // Onglet 3 — Carte
+            return tabRoute(2);
           case '/map':
-            return _tabRoute(3);
-
-          // Onglet 4 — Communauté (citoyens uniquement)
+            return tabRoute(3);
           case '/community':
-            return _tabRoute(4);
-
-          // Onglet Profil — index 2 pour éducateur, 5 pour citoyen, 4 pour autres
+            return tabRoute(4);
           case '/profile':
             final role = AuthState.currentUser?.role ?? UserRole.user;
             final profileIdx = role == UserRole.educator ? 2 : (role == UserRole.user ? 5 : 4);
-            return _tabRoute(profileIdx);
+            return tabRoute(profileIdx);
 
-          // ─── Routes statiques (avec animation de transition normale) ────────
+          // ─── Routes statiques ─────────────────────────────────────────────
           case '/':
           case '/marketing':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const MarketingLandingScreen(),
-            );
+            return buildRoute((_) => const MarketingLandingScreen());
           case '/onboarding':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const OnboardingScreen(),
-            );
+            return buildRoute((_) => const OnboardingScreen());
           case '/login':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const LoginScreen(),
-            );
+            return buildRoute((_) => const LoginScreen());
           case '/signup':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SignUpScreen(),
-            );
+            return buildRoute((_) => const SignUpScreen());
           case '/admin':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const AdminDashboardScreen(),
-            );
+            return buildRoute((_) => const AdminDashboardScreen());
           case '/scanner':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const WasteScannerScreen(),
-            );
+            return buildRoute((_) => const WasteScannerScreen());
           case '/guide':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SortingGuideScreen(),
-            );
+            return buildRoute((_) => const SortingGuideScreen());
           case '/how-it-works':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SectionHowItWorks(),
-            );
+            return buildRoute((_) => const SectionHowItWorks());
           case '/impact':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SectionImpact(),
-            );
+            return buildRoute((_) => const SectionImpact());
           case '/testimonials':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SectionTestimonials(),
-            );
+            return buildRoute((_) => const SectionTestimonials());
           case '/advantages':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const SectionAdvantages(),
-            );
+            return buildRoute((_) => const SectionAdvantages());
           case '/bin-scanner':
-            return MaterialPageRoute(
-              settings: settings,
-              builder: (_) => const BinScannerScreen(),
-              fullscreenDialog: true,
-            );
+            return buildRoute((_) => const BinScannerScreen(), fullscreen: true);
         }
 
-        return null; // Route inconnue → Flutter affiche une page d'erreur
+        return null;
       },
     );
   }

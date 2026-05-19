@@ -9,6 +9,7 @@ import '../../models/user_model.dart';
 import '../../models/post_model.dart';
 import '../../services/auth_service.dart';
 import '../../constants.dart';
+import '../../widgets/auth_prompt_dialog.dart';
 import 'notifications_screen.dart';
 
 class HomeDashboardTab extends StatefulWidget {
@@ -209,9 +210,9 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                   )],
                 ),
                 child: ClipOval(
-                  child: (user?.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-                      ? Image.network(user.avatarUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _avatarFallback(user.name))
+                  child: (user?.avatarUrl != null && user?.avatarUrl!.isNotEmpty == true)
+                      ? Image.network(user!.avatarUrl!, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _avatarFallback(user?.name ?? 'E'))
                       : _avatarFallback(user?.name ?? 'E'),
                 ),
               ),
@@ -541,10 +542,15 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   }) {
     return GestureDetector(
       onTap: () {
+        // Garde d'authentification : les visiteurs non connectés voient le dialogue
+        if (!AuthState.isLoggedIn) {
+          AuthPromptDialog.show(context: context);
+          return;
+        }
         if (title.contains('Scanner')) {
           Navigator.pushNamed(context, '/scanner');
         } else if (title.contains('Apprendre')) {
-          Navigator.pushNamed(context, '/multimedia'); // not used in tab route directly by string, handled by onNavigate
+          Navigator.pushNamed(context, '/multimedia');
         }
         widget.onNavigate(targetTab);
       },

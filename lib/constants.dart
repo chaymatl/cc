@@ -62,14 +62,19 @@ class ApiConstants {
     return "http://localhost:8000";
   }
 
-  /// URL alternative pour appareil physique Android (Wi-Fi)
-  /// Utilisé comme fallback en cas d'échec de baseUrl
-  static String get physicalDeviceUrl {
-    return "http://$_physicalDeviceIp:8000";
-  }
+  /// URL alternative pour appareil physique Android (fallback Facebook auth)
+  static String get physicalDeviceUrl => 'http://$_physicalDeviceIp:8000';
 
-  /// URL de l'émulateur (utilitaire)
-  static String get emulatorUrl {
-    return "http://10.0.2.2:8000";
+  /// URL de l'émulateur Android
+  static String get emulatorUrl => 'http://10.0.2.2:8000';
+
+  /// Résout une URL partielle (ex: /uploads/img.jpg) en URL absolue.
+  /// - Sur Web  : retournée telle quelle (le navigateur la résout depuis window.location).
+  /// - Sur Mobile : préfixe avec baseUrl → http://127.0.0.1:8000/uploads/img.jpg
+  static String resolveUrl(String url) {
+    if (url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (kIsWeb) return url;
+    return '${baseUrl.replaceAll(RegExp(r'/$'), '')}$url';
   }
 }

@@ -30,7 +30,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   late int _currentIndex;
   late final List<Widget> _pages;
   late final bool _isLoggedIn;
-  bool _hasShownAuthPrompt = false;
+
 
   // GlobalKeys pour accéder aux states des tabs et appeler refresh()
   final GlobalKey<ProfileTabState> _profileKey = GlobalKey<ProfileTabState>();
@@ -44,11 +44,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     _currentIndex = widget.initialTab.clamp(0, _pages.length - 1);
 
     if (!_isLoggedIn) {
-      _hasShownAuthPrompt = true;
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) {
-          AuthPromptDialog.show(context: context);
-        }
+      Future.delayed(const Duration(milliseconds: 700), () {
+        if (mounted) AuthPromptDialog.show(context: context);
       });
     }
   }
@@ -213,11 +210,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     if (PlatformUI.shouldUseWebLayout(context)) {
       return WebShell(
         currentIndex: _currentIndex,
-        onTabSelected: (index) {
-          if (_currentIndex == index) return;
-          setState(() => _currentIndex = index);
-        },
+        onTabSelected: _onTabSelected,
         pages: _pages,
+        isLoggedIn: _isLoggedIn,
       );
     }
 
@@ -234,9 +229,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         destinations: destinations,
         onTap: (index) {
           _onTabSelected(index);
-          if (!_isLoggedIn && !_hasShownAuthPrompt) {
-            _hasShownAuthPrompt = true;
-            Future.delayed(const Duration(milliseconds: 400), () {
+          if (!_isLoggedIn && mounted) {
+            Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted) AuthPromptDialog.show(context: context);
             });
           }
@@ -263,83 +257,58 @@ class _PremiumBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = destinations.length;
+    final sw = MediaQuery.of(context).size.width - 32; // largeur nette (marges 16*2)
     return SafeArea(
+      top: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        height: 64,
+        height: 68,
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A),
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.25),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: AppTheme.primaryGreen.withOpacity(0.08),
-              blurRadius: 40,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.22), blurRadius: 20, offset: const Offset(0, 8)),
+            BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.07), blurRadius: 36, offset: const Offset(0, 4)),
           ],
         ),
         child: Row(
           children: List.generate(count, (i) {
             final dest = destinations[i];
             final active = i == currentIndex;
-            return Expanded(
+            final itemW = sw / count;
+            return SizedBox(
+              width: itemW,
               child: GestureDetector(
                 onTap: () => onTap(i),
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
-                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
                   decoration: BoxDecoration(
-                    color: active
-                        ? AppTheme.primaryGreen.withOpacity(0.15)
-                        : Colors.transparent,
+                    color: active ? AppTheme.primaryGreen.withOpacity(0.13) : Colors.transparent,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Icon with gradient when active
                       AnimatedScale(
-                        scale: active ? 1.15 : 1.0,
+                        scale: active ? 1.12 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         child: active
-                            ? ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
-                                  colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
-                                ).createShader(bounds),
-                                child: IconTheme(
-                                  data: const IconThemeData(color: Colors.white, size: 20),
-                                  child: dest.icon,
-                                ),
-                              )
-                            : IconTheme(
-                                data: const IconThemeData(
-                                  color: Color(0xFF64748B), size: 18),
-                                child: dest.icon,
-                              ),
+                          ? ShaderMask(
+                              shaderCallback: (b) => const LinearGradient(colors: [AppTheme.primaryGreen, AppTheme.accentTeal]).createShader(b),
+                              child: IconTheme(data: const IconThemeData(color: Colors.white, size: 20), child: dest.icon),
+                            )
+                          : IconTheme(data: const IconThemeData(color: Color(0xFF64748B), size: 18), child: dest.icon),
                       ),
                       const SizedBox(height: 3),
-                      // Label
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
                         style: active
-                            ? GoogleFonts.outfit(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.primaryGreen,
-                              )
-                            : GoogleFonts.inter(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
-                              ),
-                        child: Text(dest.label, overflow: TextOverflow.ellipsis),
+                          ? GoogleFonts.outfit(fontSize: count > 4 ? 9.0 : 10.0, fontWeight: FontWeight.w800, color: AppTheme.primaryGreen)
+                          : GoogleFonts.inter(fontSize: count > 4 ? 8.5 : 9.5, fontWeight: FontWeight.w500, color: const Color(0xFF64748B)),
+                        child: Text(dest.label, overflow: TextOverflow.ellipsis, maxLines: 1),
                       ),
                     ],
                   ),

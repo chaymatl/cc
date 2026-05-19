@@ -22,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
-  late AnimationController _bgController;
 
   @override
   void initState() {
@@ -428,7 +427,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 }
 
-// ══════════ Forgot Password Dialog ══════════
+// ══════════ Forgot Password Dialog — 3 étapes ══════════
 class _ForgotPasswordDialog extends StatefulWidget {
   final AuthService authService;
   const _ForgotPasswordDialog({required this.authService});

@@ -209,7 +209,7 @@ class _AdminProposalsScreenState extends State<AdminProposalsScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
                   color: (cfg['color'] as Color).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -217,9 +217,9 @@ class _AdminProposalsScreenState extends State<AdminProposalsScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(cfg['icon'] as IconData, size: 14, color: cfg['color'] as Color),
-                    const SizedBox(width: 4),
-                    Text(cfg['label'] as String, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w800, color: cfg['color'] as Color)),
+                    Icon(cfg['icon'] as IconData, size: 12, color: cfg['color'] as Color),
+                    const SizedBox(width: 3),
+                    Text(cfg['label'] as String, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: cfg['color'] as Color)),
                   ],
                 ),
               ),
@@ -318,7 +318,7 @@ class _AdminProposalsScreenState extends State<AdminProposalsScreen> {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? 8 : 10, vertical: 9),
           decoration: BoxDecoration(
             color: color.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
@@ -328,10 +328,17 @@ class _AdminProposalsScreenState extends State<AdminProposalsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: isCompact ? MainAxisSize.min : MainAxisSize.max,
             children: [
-              Icon(icon, size: 16, color: color),
+              Icon(icon, size: 15, color: color),
               if (label.isNotEmpty) ...[
-                const SizedBox(width: 6),
-                Text(label, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
               ],
             ],
           ),

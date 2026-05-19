@@ -6,11 +6,14 @@ import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
+import '../../widgets/auth_prompt_dialog.dart';
 import '../../constants.dart';
 
 class MapTab extends StatefulWidget {
@@ -24,20 +27,12 @@ class MapTab extends StatefulWidget {
 enum VehicleMode { foot, moto, car }
 
 extension VehicleModeExtension on VehicleMode {
-  String get osrmProfile {
+  /// Mode de transport pour Google Maps URL
+  String get googleMapsMode {
     switch (this) {
       case VehicleMode.foot: return 'walking';
       case VehicleMode.moto: return 'driving';
       case VehicleMode.car:  return 'driving';
-    }
-  }
-
-  // Moto is ~20% faster than car in urban areas (filtering traffic)
-  double get durationFactor {
-    switch (this) {
-      case VehicleMode.foot: return 1.0;
-      case VehicleMode.moto: return 0.80;
-      case VehicleMode.car:  return 1.0;
     }
   }
 
@@ -76,18 +71,8 @@ class _MapTabState extends State<MapTab> {
   String? _activeFilter; // clé interne ex: 'plastique'
   String _searchQuery = '';
   LatLng? _currentLocation;
-  List<LatLng> _routePoints = [];
-  bool _isGettingRoute = false;
-
   // Vehicle selection
   VehicleMode _selectedVehicle = VehicleMode.car;
-
-  // Route Info
-  String? _routeDistance;
-  String? _routeDuration;
-  String? _routeDestinationName;
-  double? _routeDestLat;
-  double? _routeDestLng;
 
   // ── Dictionnaire bilingue FR / AR ─────────────────────────────────────────
   static const List<Map<String, String>> _typeMap = [
@@ -194,14 +179,15 @@ class _MapTabState extends State<MapTab> {
       final raw = prefs.getString(_kCachePoints);
       if (raw != null && raw.isNotEmpty) {
         final List<dynamic> decoded = json.decode(raw);
-        if (mounted) {
+        if (decoded.isNotEmpty && mounted) {
           _allPoints = decoded.cast<Map<String, dynamic>>();
           _applyFilters();
           setState(() => _isLoading = false);
+          return; // Cache valide et non-vide → OK
         }
-      } else {
-        await _fetchAndCachePoints();
       }
+      // Cache vide ou absent → fetch réseau obligatoire
+      await _fetchAndCachePoints();
     } catch (_) {
       await _fetchAndCachePoints();
     }
@@ -235,14 +221,16 @@ class _MapTabState extends State<MapTab> {
   Future<void> _fetchAndCachePoints({double? newVersion}) async {
     if (_allPoints.isEmpty && mounted) setState(() => _isLoading = true);
     try {
-      // Toujours charger TOUS les points (pas de filtre backend)
       final points = await _authService.fetchCollectionPoints();
       if (!mounted) return;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kCachePoints, json.encode(points));
-      if (newVersion != null) await prefs.setDouble(_kCacheVersion, newVersion);
-      _allPoints = points;
-      _applyFilters();
+      // Ne jamais cacher un résultat vide (erreur réseau, tunnel inactif, etc.)
+      if (points.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_kCachePoints, json.encode(points));
+        if (newVersion != null) await prefs.setDouble(_kCacheVersion, newVersion);
+        _allPoints = points;
+        _applyFilters();
+      }
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -320,88 +308,49 @@ class _MapTabState extends State<MapTab> {
     }
   }
 
-  Future<void> _getRouteToPoint(
+  /// Ouvre Google Maps avec l'itinéraire vers le point de tri
+  Future<void> _openGoogleMapsRoute(
     double destLat,
     double destLng,
-    String destName, {
-    bool closeModal = true,
-  }) async {
+    String destName,
+  ) async {
+    // Obtenir la localisation si nécessaire
     if (_currentLocation == null) {
       await _fetchCurrentLocation();
       if (_currentLocation == null) return;
     }
 
-    setState(() => _isGettingRoute = true);
-    if (closeModal && Navigator.canPop(context)) Navigator.pop(context);
+    if (Navigator.canPop(context)) Navigator.pop(context);
 
-    try {
-      final startLat = _currentLocation!.latitude;
-      final startLng = _currentLocation!.longitude;
-      final profile = _selectedVehicle.osrmProfile;
-      final url =
-          'https://router.project-osrm.org/route/v1/$profile/$startLng,$startLat;$destLng,$destLat?overview=full&geometries=geojson';
+    final startLat = _currentLocation!.latitude;
+    final startLng = _currentLocation!.longitude;
+    final mode = _selectedVehicle.googleMapsMode;
 
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final route = data['routes'][0];
-        final coords = route['geometry']['coordinates'] as List;
-
-        final distanceMeters = route['distance'] as num;
-        final rawDuration = (route['duration'] as num).toDouble();
-        final adjustedDuration = rawDuration * _selectedVehicle.durationFactor;
-
-        final distStr = distanceMeters > 1000
-            ? '${(distanceMeters / 1000).toStringAsFixed(1)} km'
-            : '${distanceMeters.toInt()} m';
-
-        final durStr = adjustedDuration > 3600
-            ? '${(adjustedDuration / 3600).floor()}h ${((adjustedDuration % 3600) / 60).round()}min'
-            : '${(adjustedDuration / 60).round()} min';
-
-        setState(() {
-          _routePoints =
-              coords.map((c) => LatLng(c[1] as double, c[0] as double)).toList();
-          _routeDistance = distStr;
-          _routeDuration = durStr;
-          _routeDestinationName = destName;
-          _routeDestLat = destLat;
-          _routeDestLng = destLng;
-          _isGettingRoute = false;
-        });
-
-        final bounds = LatLngBounds.fromPoints(
-            [_currentLocation!, LatLng(destLat, destLng)]);
-        _mapController.fitCamera(
-            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)));
-      }
-    } catch (e) {
-      setState(() => _isGettingRoute = false);
-    }
-  }
-
-  Future<void> _switchVehicle(VehicleMode mode) async {
-    if (_routeDestLat == null || _routeDestLng == null) return;
-    setState(() => _selectedVehicle = mode);
-    await _getRouteToPoint(
-      _routeDestLat!,
-      _routeDestLng!,
-      _routeDestinationName ?? '',
-      closeModal: false,
+    // URL Google Maps universelle (web + app)
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1'
+      '&origin=$startLat,$startLng'
+      '&destination=$destLat,$destLng'
+      '&travelmode=$mode',
     );
-  }
 
-  void _clearRoute() {
-    setState(() {
-      _routePoints = [];
-      _routeDistance = null;
-      _routeDuration = null;
-      _routeDestinationName = null;
-      _routeDestLat = null;
-      _routeDestLng = null;
-    });
-    if (_currentLocation != null) {
-      _mapController.move(_currentLocation!, 12);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback : schéma geo Android
+      final geoUri = Uri.parse('geo:$destLat,$destLng?q=$destLat,$destLng');
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Impossible d\'ouvrir Google Maps'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        );
+      }
     }
   }
 
@@ -416,20 +365,35 @@ class _MapTabState extends State<MapTab> {
   }
 
   void _showPointDetails(BuildContext context, Map<String, dynamic> point) {
+    // Garde d'authentification : visiteurs non connectés → dialogue de connexion
+    if (!AuthState.isLoggedIn) {
+      AuthPromptDialog.show(context: context);
+      return;
+    }
     final types = (point['types'] as List<dynamic>?)?.join(', ') ?? '';
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Center(
               child: Container(
                 width: 40, height: 4,
@@ -543,24 +507,24 @@ class _MapTabState extends State<MapTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isGettingRoute
-                    ? null
-                    : () => _getRouteToPoint(
-                          (point['lat'] as num).toDouble(),
-                          (point['lng'] as num).toDouble(),
-                          point['name'] ?? 'Point de tri',
-                        ),
-                icon: _isGettingRoute
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Icon(_selectedVehicle.icon, color: Colors.white),
-                label: Text('ITINÉRAIRE',
+                onPressed: () => _openGoogleMapsRoute(
+                  (point['lat'] as num).toDouble(),
+                  (point['lng'] as num).toDouble(),
+                  point['name'] ?? 'Point de tri',
+                ),
+                icon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.map_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 4),
+                    Icon(_selectedVehicle.icon, color: Colors.white, size: 18),
+                  ],
+                ),
+                label: Text('OUVRIR DANS GOOGLE MAPS',
                     style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
+                        fontSize: 13,
+                        letterSpacing: 0.5,
                         color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _selectedVehicle.color,
@@ -573,17 +537,33 @@ class _MapTabState extends State<MapTab> {
             const SizedBox(height: 12),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: AppTheme.primaryGreen),
         const SizedBox(width: 10),
-        Text('$label : ', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.deepNavy)),
-        Flexible(child: Text(value, style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted))),
+        Flexible(
+          child: RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label : ',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.deepNavy),
+                ),
+                TextSpan(
+                  text: value,
+                  style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -610,27 +590,7 @@ class _MapTabState extends State<MapTab> {
                 userAgentPackageName: 'com.ecorewind.app',
                 tileProvider: CancellableNetworkTileProvider(),
               ),
-              if (_routePoints.isNotEmpty)
-                PolylineLayer(
-                  polylines: [
-                    // Border (white)
-                    Polyline(
-                      points: _routePoints,
-                      color: Colors.white,
-                      strokeWidth: 8.0,
-                      strokeCap: StrokeCap.round,
-                      strokeJoin: StrokeJoin.round,
-                    ),
-                    // Inner line (green)
-                    Polyline(
-                      points: _routePoints,
-                      color: AppTheme.primaryGreen,
-                      strokeWidth: 4.0,
-                      strokeCap: StrokeCap.round,
-                      strokeJoin: StrokeJoin.round,
-                    ),
-                  ],
-                ),
+
               MarkerLayer(
                 markers: [
                   ..._points.map((p) => _buildMapMarker(
@@ -713,175 +673,49 @@ class _MapTabState extends State<MapTab> {
             ),
           ),
 
-          // Search + filters
-          if (_routePoints.isEmpty)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    GlassCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search, color: AppTheme.primaryGreen),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: _onSearch,
-                              onSubmitted: _onSearch,
-                              decoration: const InputDecoration(
-                                hintText: 'بحث / Rechercher un point de tri...',
-                                hintStyle: TextStyle(color: AppTheme.textMuted),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                fillColor: Colors.transparent,
-                              ),
+          // Search + filters (toujours visible)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GlassCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, color: AppTheme.primaryGreen, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _onSearch,
+                            onSubmitted: _onSearch,
+                            style: GoogleFonts.inter(fontSize: 14),
+                            decoration: const InputDecoration(
+                              hintText: 'بحث / Rechercher un point de tri...',
+                              hintStyle: TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              fillColor: Colors.transparent,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                          const Icon(Icons.tune_rounded, color: AppTheme.textMuted, size: 20),
-                        ],
-                      ),
-                    ).animate().fadeIn().slideY(begin: -0.2),
-                    const SizedBox(height: 16),
-                    _buildCategories().animate().fadeIn(delay: 400.ms),
-                  ],
-                ),
+                        ),
+                        const Icon(Icons.tune_rounded, color: AppTheme.textMuted, size: 18),
+                      ],
+                    ),
+                  ).animate().fadeIn().slideY(begin: -0.2),
+                  const SizedBox(height: 10),
+                  _buildCategories().animate().fadeIn(delay: 400.ms),
+                ],
               ),
             ),
+          ),
 
-          // Route info overlay
-          if (_routePoints.isNotEmpty && _routeDistance != null)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: GlassCard(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: _selectedVehicle.color.withOpacity(0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(_selectedVehicle.icon,
-                                color: _selectedVehicle.color, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Vers ${_routeDestinationName ?? 'Destination'}',
-                                  style: GoogleFonts.outfit(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: AppTheme.deepNavy),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 3),
-                                Row(
-                                  children: [
-                                    if (_isGettingRoute)
-                                      const SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppTheme.primaryGreen))
-                                    else
-                                      Text(
-                                        '$_routeDuration • $_routeDistance',
-                                        style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                            color: _selectedVehicle.color),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: _clearRoute,
-                            icon: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
-                                  shape: BoxShape.circle),
-                              child: const Icon(Icons.close_rounded,
-                                  color: Colors.red, size: 18),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Vehicle switcher inline
-                      Row(
-                        children: VehicleMode.values.map((mode) {
-                          final selected = _selectedVehicle == mode;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: _isGettingRoute
-                                  ? null
-                                  : () => _switchVehicle(mode),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.only(right: 6),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? mode.color.withOpacity(0.13)
-                                      : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: selected
-                                        ? mode.color
-                                        : Colors.transparent,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(mode.icon,
-                                        color: selected
-                                            ? mode.color
-                                            : Colors.grey.shade400,
-                                        size: 20),
-                                    const SizedBox(height: 4),
-                                    Text(mode.label,
-                                        style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            color: selected
-                                                ? mode.color
-                                                : Colors.grey.shade400)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ).animate().slideY(
-                  begin: -0.5,
-                  end: 0,
-                  duration: 400.ms,
-                  curve: Curves.easeOutBack),
-            ),
+
 
           // Results count badge
           if (!_isLoading)

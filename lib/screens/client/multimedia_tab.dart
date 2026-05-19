@@ -7,6 +7,8 @@ import 'package:chewie/chewie.dart';
 import '../../services/auth_service.dart';
 import '../../constants.dart';
 import '../../widgets/meetings_section.dart';
+import '../../widgets/auth_prompt_dialog.dart';
+import '../../models/user_model.dart';
 import 'quiz_play_screen.dart';
 
 // Écran principal gérant l'affichage des contenus éducatifs (Vidéos, Articles, Quiz)
@@ -74,6 +76,11 @@ class _MultimediaTabState extends State<MultimediaTab> {
   }
 
   void _openQuiz(Map<String, dynamic> quiz) {
+    // Garde d'authentification
+    if (!AuthState.isLoggedIn) {
+      AuthPromptDialog.show(context: context);
+      return;
+    }
     final id = quiz['id'] as int?;
     if (id != null && _completedQuizIds.contains(id)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -432,6 +439,11 @@ class _MultimediaTabState extends State<MultimediaTab> {
   }
 
   void _openCategoryDetail(int catId, String title) {
+    // Garde d'authentification
+    if (!AuthState.isLoggedIn) {
+      AuthPromptDialog.show(context: context);
+      return;
+    }
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => _CategoryDetailPage(catId: catId, title: title),
     ));
@@ -528,6 +540,11 @@ class _MultimediaTabState extends State<MultimediaTab> {
 
   /// Ouvre le lecteur vidéo intégré dans un bottom sheet
   void _openVideoPlayer(String videoUrl, String title, String educatorName, String dateLabel) {
+    // Garde d'authentification
+    if (!AuthState.isLoggedIn) {
+      AuthPromptDialog.show(context: context);
+      return;
+    }
     // Build full URL from relative path
     String fullUrl = videoUrl;
     if (videoUrl.startsWith('/')) {
@@ -639,7 +656,7 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
                     Row(children: [
                       const Icon(Icons.person, size: 14, color: Colors.teal),
                       const SizedBox(width: 4),
-                      Text(widget.educatorName, style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
+                      Flexible(child: Text(widget.educatorName, style: GoogleFonts.inter(color: Colors.white70, fontSize: 12), overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 12),
                       const Icon(Icons.access_time_rounded, size: 12, color: Colors.white54),
                       const SizedBox(width: 4),
@@ -783,7 +800,7 @@ class _CategoryDetailPageState extends State<_CategoryDetailPage> {
                         if (educator.isNotEmpty) ...[
                           const Icon(Icons.person, size: 12, color: Colors.teal),
                           const SizedBox(width: 4),
-                          Text(educator, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                          Flexible(child: Text(educator, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                           const SizedBox(width: 8),
                         ],
                         if (dateLabel.isNotEmpty) Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),

@@ -277,14 +277,59 @@ async def facebook_auth(fb_data: models.FacebookAuth, db: Session = Depends(get_
 async def forgot_password(data: models.ForgotPassword, db: Session = Depends(get_db)):
     user = db.query(db_models.User).filter(db_models.User.email == data.email).first()
     if not user:
-        return {"message": "Si l'email existe, un lien de réinitialisation sera envoyé"}
-    token = secrets.token_urlsafe(32)
-    user.reset_token = token
+        # Toujours retourner succès pour éviter l'énumération d'emails
+        return {"message": "Si l'email existe, un code a été envoyé.", "success": True}
+
+    # Code à 6 chiffres : plus facile à saisir sur mobile
+    code = _generate_otp()
+    user.reset_token = code
     user.token_expires = (datetime.utcnow() + timedelta(hours=1)).isoformat()
     db.commit()
-    if IS_DEV:
-        print(f"[DEV] Reset token for {data.email}: {token}")
-    return {"message": "Si l'email existe, un code a été envoyé."}
+
+    # Envoi de l'email avec le code de réinitialisation
+    try:
+        html = f"""<html><body style="font-family:Arial;padding:40px;">
+        <div style="max-width:480px;margin:auto;background:#fff;border-radius:20px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <h1 style="color:#1E293B;text-align:center;">EcoRewind 🌿</h1>
+        <p style="color:#64748B;text-align:center;">Code de réinitialisation du mot de passe :</p>
+        <div style="background:linear-gradient(135deg,#00BFA6,#00E5A0);border-radius:16px;padding:24px;text-align:center;margin:24px 0;">
+        <span style="font-size:40px;font-weight:900;color:white;letter-spacing:14px;font-family:monospace;">{code}</span>
+        </div>
+        <p style="color:#94A3B8;text-align:center;">Ce code expire dans <strong>1 heure</strong>.</p>
+        <p style="color:#CBD5E1;text-align:center;font-size:12px;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+        </div></body></html>"""
+        await FastMail(_mail_conf()).send_message(
+            MessageSchema(
+                subject="🔐 EcoRewind - Code de réinitialisation",
+                recipients=[data.email],
+                body=html,
+                subtype=MessageType.html,
+            )
+        )
+        print(f"[AUTH] Code réinitialisation envoyé à {data.email}")
+    except Exception as e:
+        print(f"[AUTH] Erreur envoi email à {data.email}: {e}")
+        if IS_DEV:
+            print(f"[DEV] Code reset pour {data.email}: {code}")
+
+    return {"message": "Code de réinitialisation envoyé par email.", "success": True}
+
+
+
+@router.post("/verify-reset-code")
+async def verify_reset_code(data: models.VerifyResetCode, db: Session = Depends(get_db)):
+    """Vérifie le code sans le consommer — permet de passer à l'étape mot de passe."""
+    user = db.query(db_models.User).filter(
+        db_models.User.email == data.email,
+        db_models.User.reset_token == data.code,
+    ).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Code invalide ou email incorrect")
+    if not user.token_expires:
+        raise HTTPException(status_code=400, detail="Code invalide")
+    if datetime.fromisoformat(user.token_expires) < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Code expiré — demandez un nouveau code")
+    return {"success": True, "message": "Code valide"}
 
 
 @router.post("/reset-password")

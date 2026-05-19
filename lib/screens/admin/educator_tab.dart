@@ -137,6 +137,7 @@ class _EducatorTabState extends State<EducatorTab> {
     final durationCtrl = TextEditingController();
     int? selectedCatId;
 
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
@@ -226,6 +227,7 @@ class _EducatorTabState extends State<EducatorTab> {
 
     // Demander le titre
     final titleController = TextEditingController(text: file.name.replaceAll('.pdf', ''));
+    if (!mounted) return;
     final title = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -689,11 +691,11 @@ class _EducatorTabState extends State<EducatorTab> {
                     Row(children: [
                       const Icon(Icons.help_outline, size: 13, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                      Text('$total questions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-                      const SizedBox(width: 12),
+                      Flexible(child: Text('$total questions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 10),
                       const Icon(Icons.people_outline, size: 13, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                      Text('$subs soumissions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
+                      Flexible(child: Text('$subs soumissions', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                     ]),
                   ],
                 )),

@@ -258,7 +258,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
                     ),
                   ).animate().fadeIn(delay: 1000.ms),
                   
-                  const SizedBox(height: 120), // Space for bottom bar
+                  SizedBox(height: MediaQuery.of(context).size.height < 700 ? 60 : 120), // Space for bottom bar
                 ],
               ),
             ),
@@ -560,7 +560,7 @@ class _ContinuousKenBurnsState extends State<_ContinuousKenBurns> with TickerPro
         animation: _scaleController,
         builder: (context, child) {
           return Transform.scale(
-            scale: 1.0 + (_scaleController.value * 0.15), // Scale from 1.0 to 1.15
+            scale: 1.0 + (_scaleController.value * 0.15),
             child: child,
           );
         },

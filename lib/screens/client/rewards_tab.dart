@@ -4,43 +4,102 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import '../../theme/app_theme.dart';
 import '../../widgets/safe_network_image.dart';
+import '../../models/user_model.dart';
+import '../../services/auth_service.dart';
 
-class RewardsTab extends StatelessWidget {
+class RewardsTab extends StatefulWidget {
   const RewardsTab({Key? key}) : super(key: key);
 
   @override
+  State<RewardsTab> createState() => _RewardsTabState();
+}
+
+class _RewardsTabState extends State<RewardsTab> {
+  final AuthService _authService = AuthService();
+  double _score = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadScore();
+  }
+
+  Future<void> _loadScore() async {
+    // 1. Affichage immédiat depuis le cache local
+    final cached = AuthState.currentUser?.globalScore ?? 0;
+    if (mounted) setState(() { _score = cached; _loaded = true; });
+
+    // 2. Rafraîchissement depuis l'API (si connecté)
+    if (!AuthState.isLoggedIn) return;
+    try {
+      final userData = await _authService.fetchUserProfile();
+      if (userData != null && mounted) {
+        final fresh = (userData['global_score'] as num?)?.toDouble() ?? cached;
+        // Mettre à jour le cache AuthState
+        final u = AuthState.currentUser;
+        if (u != null && fresh != u.globalScore) {
+          AuthState.currentUser = User(
+            id: u.id, name: u.name, email: u.email,
+            role: u.role, points: u.points,
+            globalScore: fresh,
+            avatarUrl: u.avatarUrl, qrCode: u.qrCode,
+          );
+        }
+        if (mounted) setState(() => _score = fresh);
+      }
+    } catch (_) {}
+  }
+
+  // ── Calcul du niveau ─────────────────────────────────────────────────────
+  _LevelInfo _computeLevel(double score) {
+    if (score >= 5000) {
+      return const _LevelInfo('Légende Éco', Icons.workspace_premium_rounded, Color(0xFF8B5CF6), 5000, null);
+    } else if (score >= 2000) {
+      return const _LevelInfo('Champion Vert', Icons.emoji_events_rounded, Color(0xFFF59E0B), 2000, 5000);
+    } else {
+      return const _LevelInfo('Éco-Citoyen', Icons.eco_rounded, Color(0xFF10B981), 0, 2000);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final level = _computeLevel(_score);
     return Scaffold(
       backgroundColor: Colors.white,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildScoreCard(),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle('Niveaux & Avantages'),
-                  const SizedBox(height: 16),
-                  _buildLevelCarousel(),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle('Vos Badges'),
-                  const SizedBox(height: 16),
-                  _buildBadgesGrid(context),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle('Récompenses Exclusives'),
-                  const SizedBox(height: 16),
-                  _buildRewardsGrid(),
-                  const SizedBox(height: 40),
-                ],
+      body: RefreshIndicator(
+        color: AppTheme.primaryGreen,
+        onRefresh: _loadScore,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildScoreCard(level),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Niveaux & Avantages'),
+                    const SizedBox(height: 16),
+                    _buildLevelCarousel(level),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Vos Badges'),
+                    const SizedBox(height: 16),
+                    _buildBadgesGrid(context),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Récompenses Exclusives'),
+                    const SizedBox(height: 16),
+                    _buildRewardsGrid(),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -84,7 +143,13 @@ class RewardsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildScoreCard() {
+  Widget _buildScoreCard(_LevelInfo level) {
+    final nextScore = level.nextThreshold;
+    final prevScore = level.currentThreshold;
+    final progress = nextScore == null
+        ? 1.0
+        : ((_score - prevScore) / (nextScore - prevScore)).clamp(0.0, 1.0);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -118,10 +183,10 @@ class RewardsTab extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.stars_rounded, color: Colors.white, size: 16),
+                    Icon(level.icon, color: Colors.white, size: 16),
                     const SizedBox(width: 6),
                     Text(
-                      'Éco-Citoyen',
+                      level.label,
                       style: GoogleFonts.inter(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -155,7 +220,7 @@ class RewardsTab extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '1,250',
+                _loaded ? _score.toStringAsFixed(0) : '—',
                 style: GoogleFonts.spaceGrotesk(
                   color: Colors.white,
                   fontSize: 48,
@@ -174,9 +239,57 @@ class RewardsTab extends StatelessWidget {
               ),
             ],
           ),
+          // Barre de progression vers le niveau suivant
+          if (nextScore != null) ...[
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Vers ${_nextLevelLabel(nextScore)}',
+                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 11),
+                ),
+                Text(
+                  '${(_score).toStringAsFixed(0)} / $nextScore pts',
+                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: Colors.white.withOpacity(0.25),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                Text('Niveau Maximum atteint ! 🎉',
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              ]),
+            ),
+          ],
         ],
       ),
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+  }
+
+  String _nextLevelLabel(double nextThreshold) {
+    if (nextThreshold >= 5000) return 'Légende Éco';
+    if (nextThreshold >= 2000) return 'Champion Vert';
+    return 'Éco-Citoyen';
   }
 
   Widget _buildSectionTitle(String title) {
@@ -190,32 +303,40 @@ class RewardsTab extends StatelessWidget {
     ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.05);
   }
 
-  Widget _buildLevelCarousel() {
+  Widget _buildLevelCarousel(_LevelInfo current) {
+    const levels = [
+      _LevelData('Éco-Citoyen', 'Niveau de départ', Icons.eco_rounded, Color(0xFF10B981), 0),
+      _LevelData('Champion Vert', '2 000 pts', Icons.emoji_events_rounded, Color(0xFFF59E0B), 2000),
+      _LevelData('Légende Éco', '5 000 pts', Icons.workspace_premium_rounded, Color(0xFF8B5CF6), 5000),
+    ];
     return SizedBox(
       height: 180,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         clipBehavior: Clip.none,
-        children: [
-          _buildMobileLevelCard('Éco-Citoyen', 'Niveau Actuel', Icons.eco_rounded, const Color(0xFF10B981), true),
-          const SizedBox(width: 16),
-          _buildMobileLevelCard('Champion Vert', '2000 pts', Icons.emoji_events_rounded, const Color(0xFFF59E0B), false),
-          const SizedBox(width: 16),
-          _buildMobileLevelCard('Légende Éco', '5000 pts', Icons.workspace_premium_rounded, const Color(0xFF8B5CF6), false),
-        ],
+        itemCount: levels.length,
+        itemBuilder: (_, i) {
+          final lvl = levels[i];
+          final isCurrent = current.label == lvl.name;
+          final isUnlocked = _score >= lvl.threshold;
+          return Padding(
+            padding: EdgeInsets.only(right: i < levels.length - 1 ? 16 : 0),
+            child: _buildLevelCard(lvl.name, lvl.subtitle, lvl.icon, lvl.color, isCurrent, isUnlocked),
+          );
+        },
       ),
     ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1);
   }
 
-  Widget _buildMobileLevelCard(String title, String subtitle, IconData icon, Color color, bool isCurrent) {
+  Widget _buildLevelCard(String title, String subtitle, IconData icon, Color color, bool isCurrent, bool isUnlocked) {
     return Container(
       width: 150,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isCurrent ? color : Colors.white,
+        color: isCurrent ? color : (isUnlocked ? color.withOpacity(0.08) : Colors.white),
         borderRadius: BorderRadius.circular(28),
-        border: isCurrent ? null : Border.all(color: Colors.grey.shade200),
+        border: isCurrent ? null : Border.all(color: isUnlocked ? color.withOpacity(0.3) : Colors.grey.shade200),
         boxShadow: isCurrent ? [
           BoxShadow(
             color: color.withOpacity(0.3),
@@ -228,13 +349,25 @@ class RewardsTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isCurrent ? Colors.white.withOpacity(0.2) : color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: isCurrent ? Colors.white : color, size: 28),
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isCurrent ? Colors.white.withOpacity(0.2) : color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: isCurrent ? Colors.white : color, size: 28),
+              ),
+              if (!isUnlocked && !isCurrent)
+                Positioned(right: 0, top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle),
+                    child: const Icon(Icons.lock, color: Colors.white, size: 10),
+                  ),
+                ),
+            ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,15 +375,15 @@ class RewardsTab extends StatelessWidget {
               Text(
                 title,
                 style: GoogleFonts.spaceGrotesk(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isCurrent ? Colors.white : AppTheme.deepNavy,
+                  color: isCurrent ? Colors.white : (isUnlocked ? color : AppTheme.deepNavy),
                   height: 1.1,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                subtitle,
+                isCurrent ? 'Niveau Actuel ✓' : subtitle,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -266,47 +399,55 @@ class RewardsTab extends StatelessWidget {
 
   Widget _buildBadgesGrid(BuildContext context) {
     final badges = [
-      {'icon': Icons.recycling_rounded, 'color': const Color(0xFF3B82F6), 'title': 'Premier Tri'},
-      {'icon': Icons.local_fire_department_rounded, 'color': const Color(0xFFF59E0B), 'title': 'Série 7J'},
-      {'icon': Icons.quiz_rounded, 'color': const Color(0xFF8B5CF6), 'title': 'Expert Quiz'},
-      {'icon': Icons.groups_rounded, 'color': Colors.grey.shade300, 'title': 'Communauté', 'locked': true},
+      _BadgeData(Icons.recycling_rounded, const Color(0xFF3B82F6), 'Premier Tri', _score >= 10),
+      _BadgeData(Icons.local_fire_department_rounded, const Color(0xFFF59E0B), 'Série 7J', _score >= 100),
+      _BadgeData(Icons.quiz_rounded, const Color(0xFF8B5CF6), 'Expert Quiz', _score >= 500),
+      _BadgeData(Icons.groups_rounded, const Color(0xFF10B981), 'Communauté', _score >= 1000), // ignore: prefer_const_constructors
     ];
 
     return Wrap(
       spacing: 16,
       runSpacing: 16,
       children: badges.map((b) {
-        final isLocked = b['locked'] == true;
-        final color = isLocked ? Colors.grey.shade400 : b['color'] as Color;
+        final color = b.unlocked ? b.color : Colors.grey.shade400;
         return Container(
-          width: (MediaQuery.of(context).size.width - 40 - 16) / 2, // 2 columns
+          width: (MediaQuery.of(context).size.width - 40 - 16) / 2,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isLocked ? Colors.grey.shade50 : color.withOpacity(0.05),
+            color: b.unlocked ? color.withOpacity(0.05) : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isLocked ? Colors.grey.shade200 : color.withOpacity(0.1)),
+            border: Border.all(color: b.unlocked ? color.withOpacity(0.1) : Colors.grey.shade200),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isLocked ? Colors.grey.shade200 : color.withOpacity(0.15),
+                  color: b.unlocked ? color.withOpacity(0.15) : Colors.grey.shade200,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(b['icon'] as IconData, color: color, size: 20),
+                child: Icon(b.icon, color: color, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  b['title'] as String,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isLocked ? Colors.grey.shade500 : AppTheme.deepNavy,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      b.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: b.unlocked ? AppTheme.deepNavy : Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (b.unlocked)
+                      Text('Débloqué ✓', style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w600))
+                    else
+                      Text('Verrouillé', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey.shade400)),
+                  ],
                 ),
               ),
             ],
@@ -328,6 +469,7 @@ class RewardsTab extends StatelessWidget {
                 points: '1000 pts',
                 imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80',
                 height: 220,
+                unlocked: _score >= 1000,
               ),
               const SizedBox(height: 16),
               _buildRewardCard(
@@ -335,6 +477,7 @@ class RewardsTab extends StatelessWidget {
                 points: '1500 pts',
                 imageUrl: 'https://images.unsplash.com/photo-1597348989645-46b190ce4918?w=400&q=80',
                 height: 260,
+                unlocked: _score >= 1500,
               ),
             ],
           ),
@@ -348,6 +491,7 @@ class RewardsTab extends StatelessWidget {
                 points: '2500 pts',
                 imageUrl: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80',
                 height: 260,
+                unlocked: _score >= 2500,
               ),
               const SizedBox(height: 16),
               _buildRewardCard(
@@ -355,6 +499,7 @@ class RewardsTab extends StatelessWidget {
                 points: '3000 pts',
                 imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80',
                 height: 220,
+                unlocked: _score >= 3000,
               ),
             ],
           ),
@@ -368,6 +513,7 @@ class RewardsTab extends StatelessWidget {
     required String points,
     required String imageUrl,
     required double height,
+    required bool unlocked,
   }) {
     return Container(
       height: height,
@@ -391,6 +537,12 @@ class RewardsTab extends StatelessWidget {
               fit: BoxFit.cover,
               placeholder: Container(color: Colors.grey.shade200),
             ),
+            // Overlay flouté si verrouillé
+            if (!unlocked)
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: Container(color: Colors.black.withOpacity(0.35)),
+              ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -410,16 +562,24 @@ class RewardsTab extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
+                  color: unlocked ? Colors.white.withOpacity(0.95) : Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
-                  points,
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.primaryGreen,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!unlocked)
+                      const Icon(Icons.lock, color: Colors.white70, size: 10),
+                    if (!unlocked) const SizedBox(width: 4),
+                    Text(
+                      points,
+                      style: GoogleFonts.outfit(
+                        color: unlocked ? AppTheme.primaryGreen : Colors.white70,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -444,4 +604,32 @@ class RewardsTab extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Data classes ──────────────────────────────────────────────────────────────
+
+class _LevelInfo {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final double currentThreshold;
+  final double? nextThreshold;
+  const _LevelInfo(this.label, this.icon, this.color, this.currentThreshold, this.nextThreshold);
+}
+
+class _LevelData {
+  final String name;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final double threshold;
+  const _LevelData(this.name, this.subtitle, this.icon, this.color, this.threshold);
+}
+
+class _BadgeData {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final bool unlocked;
+  const _BadgeData(this.icon, this.color, this.title, this.unlocked);
 }

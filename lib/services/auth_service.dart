@@ -355,6 +355,24 @@ class AuthService {
     }
   }
 
+  /// Vérifie le code de réinitialisation sans le consommer
+  Future<Map<String, dynamic>> verifyResetCode(String email, String code) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/verify-reset-code'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'code': code}),
+      );
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      return {
+        'success': response.statusCode == 200,
+        'message': data['message'] ?? data['detail'] ?? 'Erreur',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
   /// Reinitialisation du mot de passe avec le token
   Future<Map<String, dynamic>> resetPassword(String token, String newPassword) async {
     try {
@@ -1820,4 +1838,32 @@ class AuthService {
       return false;
     }
   }
+
+  // ===========================================
+  // PROFIL UTILISATEUR
+  // ===========================================
+
+  /// Met à jour le nom complet de l'utilisateur connecté
+  Future<Map<String, dynamic>> updateProfile({required String fullName}) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'full_name': fullName}),
+      );
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        return {'success': true, 'full_name': data['full_name']};
+      }
+      return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
 }
+

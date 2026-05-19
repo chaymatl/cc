@@ -64,5 +64,14 @@
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
         </intent>
+        <!-- Pour url_launcher : ouverture Google Maps (http + geo) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
     </queries>
 </manifest>

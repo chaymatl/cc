@@ -50,6 +50,10 @@ class ResetPassword(BaseModel):
     token: str
     new_password: str
 
+class VerifyResetCode(BaseModel):
+    email: str
+    code: str
+
 class PostBase(BaseModel):
     user_name: str
     user_avatar_url: str

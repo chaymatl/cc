@@ -17,6 +17,10 @@ class AvatarUpdate(BaseModel):
     avatar_url: str
 
 
+class ProfileUpdate(BaseModel):
+    full_name: str
+
+
 # ── Admin user management ─────────────────────────────────────────────────────
 
 @router.get("/users", response_model=List[models.User])
@@ -84,6 +88,19 @@ async def get_me(current_user: db_models.User = Depends(get_current_user)):
         "points": getattr(current_user, "points", 0),
         "global_score": getattr(current_user, "global_score", 0.0) or 0.0,
     }
+
+
+@router.put("/users/me")
+async def update_me(data: ProfileUpdate, db: Session = Depends(get_db),
+                    current_user: db_models.User = Depends(get_current_user)):
+    """Met à jour le profil de l'utilisateur connecté (nom complet)."""
+    full_name = data.full_name.strip()
+    if not full_name:
+        raise HTTPException(status_code=422, detail="Le nom ne peut pas être vide")
+    current_user.full_name = full_name
+    db.commit()
+    db.refresh(current_user)
+    return {"message": "Profil mis à jour", "full_name": current_user.full_name}
 
 
 @router.put("/users/me/avatar")

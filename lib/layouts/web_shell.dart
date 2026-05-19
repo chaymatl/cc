@@ -14,12 +14,14 @@ class WebShell extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
   final List<Widget> pages;
+  final bool isLoggedIn;
 
   const WebShell({
     Key? key,
     required this.currentIndex,
     required this.onTabSelected,
     required this.pages,
+    this.isLoggedIn = true,
   }) : super(key: key);
 
   @override
@@ -36,6 +38,7 @@ class WebShell extends StatelessWidget {
             items: items,
             currentIndex: currentIndex,
             onItemSelected: onTabSelected,
+            isLoggedIn: isLoggedIn,
           ),
 
           // ── Contenu principal ──────────────────────────────────────────
@@ -58,6 +61,15 @@ class WebShell extends StatelessWidget {
   }
 
   List<_NavItem> _getNavItems(UserRole role) {
+    // ── Visiteur non connecté ──
+    if (!isLoggedIn) {
+      return const [
+        _NavItem(icon: FontAwesomeIcons.house, label: 'Fil d\'actualités', section: 'PRINCIPAL'),
+        _NavItem(icon: FontAwesomeIcons.graduationCap, label: 'Formation'),
+        _NavItem(icon: FontAwesomeIcons.chartLine, label: 'Impact', section: 'DÉCOUVRIR'),
+        _NavItem(icon: FontAwesomeIcons.mapLocationDot, label: 'Carte'),
+      ];
+    }
     if (role == UserRole.educator) {
       return const [
         _NavItem(icon: FontAwesomeIcons.house, label: 'Fil d\'actualités', section: 'PRINCIPAL'),
@@ -88,7 +100,7 @@ class WebShell extends StatelessWidget {
 class _NavItem {
   final IconData icon;
   final String label;
-  final String? section; // label de section (optionnel)
+  final String? section;
   const _NavItem({required this.icon, required this.label, this.section});
 }
 
@@ -99,25 +111,23 @@ class _Sidebar extends StatelessWidget {
   final List<_NavItem> items;
   final int currentIndex;
   final ValueChanged<int> onItemSelected;
+  final bool isLoggedIn;
 
   const _Sidebar({
     required this.items,
     required this.currentIndex,
     required this.onItemSelected,
+    this.isLoggedIn = true,
   });
 
-  static const _sidebarBg = Color(0xFF0F172A);
+  static const _sidebarBg     = Color(0xFF0F172A);
   static const _sidebarBorder = Color(0xFF1E293B);
-  static const _sectionLabel = Color(0xFF475569);
-  static const _activeGreen = AppTheme.primaryGreen;
-  static const _inactiveIcon = Color(0xFF94A3B8);
-  static const _inactiveText = Color(0xFFCBD5E1);
-  static const _hoverBg = Color(0xFF1E293B);
+  static const _sectionLabel  = Color(0xFF475569);
+  static const _hoverBg       = Color(0xFF1E293B);
 
   @override
   Widget build(BuildContext context) {
     final user = AuthState.currentUser;
-    final score = user?.points ?? 0;
 
     return Container(
       width: 252,
@@ -134,25 +144,35 @@ class _Sidebar extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Row(children: [
               Container(
-                width: 34, height: 34,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(10),
-                  boxShadow: [BoxShadow(
-                    color: AppTheme.primaryGreen.withOpacity(0.4),
-                    blurRadius: 8, offset: const Offset(0, 3),
-                  )],
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryGreen.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: const Icon(Icons.eco_rounded, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 12),
-              Text('EcoRewind', style: GoogleFonts.outfit(
-                fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white,
-                letterSpacing: -0.3,
-              )),
+              Text(
+                'EcoRewind',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.3,
+                ),
+              ),
             ]),
           ),
 
@@ -169,14 +189,20 @@ class _Sidebar extends StatelessWidget {
                     if (i > 0) const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
-                      child: Text(items[i].section!, style: GoogleFonts.inter(
-                        fontSize: 10, fontWeight: FontWeight.w700,
-                        color: _sectionLabel, letterSpacing: 1.2,
-                      )),
+                      child: Text(
+                        items[i].section!,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: _sectionLabel,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                     ),
                   ],
                   _NavTile(
-                    item: items[i], index: i,
+                    item: items[i],
+                    index: i,
                     isActive: i == currentIndex,
                     onTap: () => onItemSelected(i),
                   ),
@@ -187,58 +213,127 @@ class _Sidebar extends StatelessWidget {
 
           Container(height: 1, color: _sidebarBorder),
 
-          // ── User card ─────────────────────────────────────────────────
+          // ── Bas : user card ou bouton connexion ────────────────────────
           Container(
             padding: const EdgeInsets.all(16),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _hoverBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _sidebarBorder),
-              ),
-              child: Row(children: [
-                // Avatar
-                Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.primaryGreen, AppTheme.accentTeal]),
-                  ),
-                  child: Center(
-                    child: Text(
-                      (user?.name ?? 'U')[0].toUpperCase(),
-                      style: GoogleFonts.outfit(
-                        color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(user?.name ?? 'Utilisateur', style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                      overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 2),
-                    Row(children: [
-                      Container(
-                        width: 6, height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.primaryGreen, shape: BoxShape.circle),
-                      ),
-                      const SizedBox(width: 5),
-                      Text('$score pts', style: GoogleFonts.inter(
-                        fontSize: 11, color: AppTheme.primaryGreen, fontWeight: FontWeight.w700)),
-                    ]),
-                  ],
-                )),
-              ]),
-            ),
+            child: _buildBottomCard(context, user),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBottomCard(BuildContext context, User? user) {
+    // ── Visiteur non connecté → CTA Se connecter ──
+    if (user == null) {
+      return GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/login'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryGreen.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.login_rounded, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Se connecter',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Utilisateur connecté → carte profil ──
+    final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
+    final displayName = user.name.isNotEmpty ? user.name : 'Utilisateur';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _hoverBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _sidebarBorder),
+      ),
+      child: Row(children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+            ),
+          ),
+          child: Center(
+            child: Text(
+              initial,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Row(children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '${user.points} pts',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppTheme.primaryGreen,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -249,7 +344,12 @@ class _NavTile extends StatefulWidget {
   final int index;
   final bool isActive;
   final VoidCallback onTap;
-  const _NavTile({required this.item, required this.index, required this.isActive, required this.onTap});
+  const _NavTile({
+    required this.item,
+    required this.index,
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   State<_NavTile> createState() => _NavTileState();
@@ -257,7 +357,7 @@ class _NavTile extends StatefulWidget {
 
 class _NavTileState extends State<_NavTile> {
   bool _hovered = false;
-  static const _hoverBg = Color(0xFF1E293B);
+  static const _hoverBg  = Color(0xFF1E293B);
   static const _activeBg = Color(0xFF1E3A5F);
 
   @override
@@ -267,7 +367,7 @@ class _NavTileState extends State<_NavTile> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
+        onExit:  (_) => setState(() => _hovered = false),
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: widget.onTap,
@@ -282,31 +382,40 @@ class _NavTileState extends State<_NavTile> {
                   : null,
             ),
             child: Row(children: [
-              // Active indicator
               AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                width: 3, height: active ? 20 : 0,
+                width: 3,
+                height: active ? 20 : 0,
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGreen,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               SizedBox(width: active ? 10 : 13),
-              FaIcon(widget.item.icon, size: 15,
-                color: active ? AppTheme.primaryGreen : const Color(0xFF94A3B8)),
+              FaIcon(
+                widget.item.icon,
+                size: 15,
+                color: active ? AppTheme.primaryGreen : const Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(widget.item.label, style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                  color: active ? Colors.white : const Color(0xFFCBD5E1),
-                )),
+                child: Text(
+                  widget.item.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active ? Colors.white : const Color(0xFFCBD5E1),
+                  ),
+                ),
               ),
               if (active)
                 Container(
-                  width: 6, height: 6,
+                  width: 6,
+                  height: 6,
                   decoration: const BoxDecoration(
-                    color: AppTheme.primaryGreen, shape: BoxShape.circle),
+                    color: AppTheme.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
                 ),
             ]),
           ),
@@ -328,6 +437,10 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = AuthState.currentUser;
     final pageName = (currentIndex < items.length) ? items[currentIndex].label : '';
+    final firstName = user?.name.split(' ').first ?? 'Visiteur';
+    final initial = (user != null && user.name.isNotEmpty)
+        ? user.name[0].toUpperCase()
+        : 'V';
 
     return Container(
       height: 64,
@@ -336,7 +449,11 @@ class _TopBar extends StatelessWidget {
         color: Colors.white,
         border: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(children: [
@@ -346,8 +463,10 @@ class _TopBar extends StatelessWidget {
           const SizedBox(width: 6),
           Text('EcoRewind', style: GoogleFonts.inter(
             fontSize: 13, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFFCBD5E1))),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFFCBD5E1)),
+          ),
           Text(pageName, style: GoogleFonts.outfit(
             fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
         ]),
@@ -376,33 +495,74 @@ class _TopBar extends StatelessWidget {
 
         const SizedBox(width: 12),
 
-        // ── User chip ────────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(20),
+        // ── User chip ou bouton connexion ──────────────────────────────
+        user == null
+            ? _buildLoginChip(context)
+            : _buildUserChip(initial, firstName),
+      ]),
+    );
+  }
+
+  Widget _buildLoginChip(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/login'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
           ),
-          child: Row(children: [
-            Container(
-              width: 24, height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryGreen, AppTheme.accentTeal]),
-              ),
-              child: Center(
-                child: Text((user?.name ?? 'U')[0].toUpperCase(),
-                  style: GoogleFonts.outfit(
-                    color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          'Se connecter',
+          style: GoogleFonts.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserChip(String initial, String firstName) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+            ),
+          ),
+          child: Center(
+            child: Text(
+              initial,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
               ),
             ),
-            const SizedBox(width: 8),
-            Text(user?.name?.split(' ').first ?? 'Utilisateur',
-              style: GoogleFonts.inter(
-                fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
-          ]),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          firstName,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.deepSlate,
+          ),
         ),
       ]),
     );

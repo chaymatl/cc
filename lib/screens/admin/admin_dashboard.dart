@@ -963,17 +963,23 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
         const SizedBox(height: 16),
 
         // Résumé statuts
-        Row(children: [
-          _statBadge('${nbDispo} Disponibles', Colors.green, Icons.check_circle_rounded),
-          const SizedBox(width: 8),
-          _statBadge('${nbSat} Saturés', Colors.red, Icons.warning_rounded),
-          const SizedBox(width: 8),
-          _statBadge('${nbMaint} Maintenance', Colors.orange, Icons.build_rounded),
-          const Spacer(),
-          IconButton(onPressed: _loadPoints,
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryGreen, size: 20),
-            tooltip: 'Actualiser'),
-        ]),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _statBadge('$nbDispo Disponibles', Colors.green, Icons.check_circle_rounded),
+            _statBadge('$nbSat Saturés', Colors.red, Icons.warning_rounded),
+            _statBadge('$nbMaint Maintenance', Colors.orange, Icons.build_rounded),
+            IconButton(
+              onPressed: _loadPoints,
+              icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryGreen, size: 20),
+              tooltip: 'Actualiser',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // Filtres statut

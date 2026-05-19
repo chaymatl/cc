@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/meetings_service.dart';
 
@@ -27,7 +28,7 @@ class _MeetingsSectionState extends State<MeetingsSection> {
   @override
   void initState() {
     super.initState();
-    _load();
+    initializeDateFormatting('fr', null).then((_) => _load());
   }
 
   Future<void> _load() async {

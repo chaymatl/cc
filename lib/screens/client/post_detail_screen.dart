@@ -408,10 +408,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(userName, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(timeStr, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
-                  ]),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(userName, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16), overflow: TextOverflow.ellipsis),
+                      Text(timeStr, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
                 ]),
               ),
 

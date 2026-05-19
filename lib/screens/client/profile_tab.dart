@@ -297,14 +297,15 @@ class ProfileTabState extends State<ProfileTab> {
     final showStats = user?.role == UserRole.user;
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Fond géré par le parent ou par défaut
-      body: SingleChildScrollView(
-        primary: false,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
+      backgroundColor: const Color(0xFFF8F7F5),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
 
             Animate(
               effects: const [FadeEffect(), ScaleEffect()],
@@ -407,25 +408,31 @@ class ProfileTabState extends State<ProfileTab> {
 
             Animate(
               effects: [FadeEffect(delay: 1.seconds)],
-              child: ElevatedButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
-                  foregroundColor: Colors.red,
-                  elevation: 0,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  minimumSize: const Size(double.infinity, 60),
+              child: GestureDetector(
+                onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.red.shade100),
+                  ),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 10),
+                    Text('Déconnexion', style: GoogleFonts.outfit(color: Colors.red.shade400, fontWeight: FontWeight.w700, fontSize: 15)),
+                  ]),
                 ),
-                child: const Text('DÉCONNEXION'),
               ),
             ),
 
-            const SizedBox(height: 120),
-          ],
-        ),
-      ),
-    );
+            const SizedBox(height: 100),
+            ],  // children Column
+          ),   // Column
+        ),     // SingleChildScrollView
+      ),       // SafeArea
+    );         // Scaffold
   }
 
   Widget _buildProfessionalBadge() {
