@@ -1,0 +1,121 @@
+<mxfile host="app.diagrams.net" modified="2026-08-15T23:15:00.000Z" agent="5.0" etag="corrected_s1" version="1.0" type="device">
+  <diagram id="sprint1_classes" name="Sprint 1 - Authentification et Profils">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" background="#FEFEFE" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- TITLE -->
+        <mxCell id="title" value="Sprint 1: Authentification, Profils et Gestion des Rôles" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="0" y="10" width="1400" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="subtitle" value="Diagramme de classes validé contre backend/app/users et backend/app/auth" style="text;html=1;fontSize=11;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1976D2;" vertex="1" parent="1">
+          <mxGeometry x="0" y="50" width="1400" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- PACKAGE DOMAIN::USERS -->
+        <mxCell id="pkg1" value="&lt;b&gt;Domain::Users&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="550" height="700" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS USER -->
+        <mxCell id="class_user" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="480" height="650" as="geometry" />
+        </mxCell>
+        
+        <!-- Attributes -->
+        <mxCell id="user_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=10;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_user">
+          <mxGeometry y="30" width="480" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_user">
+          <mxGeometry y="55" width="480" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_attrs" value="- email: String &lt;UK&gt;&#xa;- full_name: String&#xa;- hashed_password: String&#xa;- is_active: Boolean = True&#xa;- is_verified: Boolean = False&#xa;- role: String = &quot;user&quot;&#xa;- google_id: String &lt;nullable&gt;&#xa;- facebook_id: String &lt;nullable&gt;&#xa;- qr_code: String &lt;UK&gt;&#xa;- reset_token: String &lt;nullable&gt;&#xa;- token_expires: String &lt;nullable&gt;&#xa;- avatar_url: String &lt;nullable&gt;&#xa;- global_score: Float = 0.0&#xa;- created_at: DateTime&#xa;- fcm_token: String &lt;nullable&gt;&#xa;- mfa_enabled: Boolean = False&#xa;- mfa_secret: String &lt;nullable&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_user">
+          <mxGeometry y="55" width="480" height="305" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_user">
+          <mxGeometry y="360" width="480" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_methods" value="+ generate_unique_qr_token(): String" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=0;" vertex="1" parent="class_user">
+          <mxGeometry y="360" width="480" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_relations" value="relationships (SQLAlchemy):&#xa;- posts: List[Post]&#xa;- saved_posts: List[SavedPost]&#xa;- likes: List[Like]&#xa;- rewards: List[UserReward]" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=2;fillColor=#F0F0F0;" vertex="1" parent="class_user">
+          <mxGeometry y="385" width="480" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_notes" value="✓ Inclut score global pour suivi impact&#xa;✓ Inclut tokens Firebase (fcm_token)&#xa;✓ Inclut MFA avec secret TOTP&#xa;✓ QR code unique par utilisateur (UUID4)" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;borderColor=#FFD700;strokeWidth=1;" vertex="1" parent="class_user">
+          <mxGeometry y="445" width="480" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_source" value="📍 Source: backend/app/users/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_user">
+          <mxGeometry y="505" width="480" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_validation" value="✓ VALIDÉ | Tous les attributs correspondent au code réel | 18 colonnes dans la table users" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="class_user">
+          <mxGeometry y="525" width="480" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_indices" value="Index: email, role, is_active, global_score, created_at&#xa;Timestamps: created_at (auto), token_expires (manual)" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=0;fillColor=#F5F5F5;" vertex="1" parent="class_user">
+          <mxGeometry y="550" width="480" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- PACKAGE DOMAIN::AUTH -->
+        <mxCell id="pkg2" value="&lt;b&gt;Domain::Auth&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="700" y="110" width="500" height="350" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS OTPCODE -->
+        <mxCell id="class_otp" value="OTPCode" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="730" y="140" width="420" height="300" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=10;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_otp">
+          <mxGeometry y="30" width="420" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_otp">
+          <mxGeometry y="55" width="420" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_attrs" value="- identifier: String&#xa;- code: String&#xa;- purpose: String = &quot;register&quot;&#xa;- created_at: DateTime&#xa;- expires_at: DateTime&#xa;- is_used: Boolean = False" style="text;html=1;fontSize=10;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_otp">
+          <mxGeometry y="55" width="420" height="130" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_otp">
+          <mxGeometry y="185" width="420" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_notes" value="Purpose: &quot;register&quot; | &quot;reset&quot;&#xa;Code: 6 chiffres, généré aléatoirement&#xa;Validité: 10-15 minutes&#xa;Statut: Marqué comme utilisé après vérification" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_otp">
+          <mxGeometry y="185" width="420" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_source" value="📍 Source: backend/app/auth/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_otp">
+          <mxGeometry y="245" width="420" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="otp_validation" value="✓ VALIDÉ | Modèle complet et fonctionnel | 6 colonnes" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="class_otp">
+          <mxGeometry y="265" width="420" height="25" as="geometry" />
+        </mxCell>
+        
+        <!-- LEGEND -->
+        <mxCell id="legend_title" value="LÉGENDE" style="text;html=1;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="830" width="1300" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend" value="&lt;b&gt;PK&lt;/b&gt; = Primary Key (Clé primaire)  |  &lt;b&gt;FK&lt;/b&gt; = Foreign Key (Clé étrangère)  |  &lt;b&gt;UK&lt;/b&gt; = Unique Key (Unique)  |  &lt;nullable&gt; = Peut être NULL&#xa;&lt;b&gt;Release 1 Sprint 1&lt;/b&gt; couvre: Inscription, vérification OTP, authentification JWT, MFA, récupération mot de passe, auth sociales (Google/Facebook), gestion profils, contrôle d'accès par rôles" style="text;html=1;fontSize=9;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#ECEFF1;borderColor=#455A64;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="850" width="1300" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="metadata" value="Validé: 2026-08-15 | Source: backend/app/users/models.py + backend/app/auth/models.py | Format: UML 2.5 | Outils: Draw.io + Code Source" style="text;html=1;fontSize=8;align=center;verticalAlign=middle;fontStyle=3;fillColor=#FAFAFA;" vertex="1" parent="1">
+          <mxGeometry x="50" y="920" width="1300" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
