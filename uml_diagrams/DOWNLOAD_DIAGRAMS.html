@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoRewind - Diagrammes UML Corrigés - Release 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .diagrams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .diagram-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .diagram-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .diagram-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        
+        .diagram-header h2 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+        
+        .diagram-type {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .diagram-body {
+            padding: 20px;
+        }
+        
+        .diagram-body p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        
+        .diagram-body ul {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .diagram-body li {
+            color: #555;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .diagram-body li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .icon {
+            font-size: 1.2em;
+        }
+        
+        .footer {
+            background: #f5f5f5;
+            padding: 30px 40px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .footer h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .corrections-list {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 5px;
+        }
+        
+        .corrections-list h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .corrections-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .corrections-list li {
+            color: #856404;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .corrections-list li:before {
+            content: "⚠";
+            position: absolute;
+            left: 0;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .diagrams-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 EcoRewind - Release 1</h1>
+            <p>Diagrammes UML Corrigés et Validés</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Info Box -->
+            <div class="info-box">
+                <h3>📌 À propos de cette page</h3>
+                <p>
+                    Ces diagrammes UML ont été corrigés et validés directement contre le code source de l'application EcoRewind. 
+                    Ils remplacent les versions antérieures du rapport et reflètent fidèlement l'architecture réelle de Release 1 
+                    (Sprint 1 et Sprint 2).
+                </p>
+            </div>
+            
+            <!-- Corrections -->
+            <div class="corrections-list">
+                <h3>✅ Corrections Apportées</h3>
+                <ul>
+                    <li><strong>Sprint 1:</strong> Ajout de tous les attributs du modèle User (global_score, mfa_enabled, fcm_token, etc.)</li>
+                    <li><strong>Sprint 1:</strong> Complétude du modèle OTPCode avec tous les champs réels</li>
+                    <li><strong>Sprint 2:</strong> Représentation correcte des associations (Like, SavedPost) comme classes d'association</li>
+                    <li><strong>Sprint 2:</strong> Modélisation complète du modèle Post avec tous les champs de modération IA</li>
+                    <li><strong>Sprint 2:</strong> Relation réflexive de Comment pour les réponses (replies)</li>
+                    <li><strong>Sprint 2:</strong> Entités manquantes ajoutées: Testimonial, CenterProposal, Notification complète</li>
+                    <li><strong>Notation UML:</strong> Respect strict de la notation UML 2.5 (PK, FK, UK, multiplicité)</li>
+                </ul>
+            </div>
+            
+            <!-- Diagrams Grid -->
+            <div class="diagrams-grid">
+                <!-- Sprint 1 Diagram -->
+                <div class="diagram-card">
+                    <div class="diagram-header">
+                        <h2>Sprint 1</h2>
+                        <p class="diagram-type">Authentification, Profils et Gestion des Rôles</p>
+                    </div>
+                    <div class="diagram-body">
+                        <p><strong>Contenu du diagramme:</strong></p>
+                        <ul>
+                            <li>Classe User (15 attributs)</li>
+                            <li>Classe OTPCode (6 attributs)</li>
+                            <li>Toutes les associations</li>
+                            <li>Signature des méthodes</li>
+                        </ul>
+                        <p style="margin-top: 15px; color: #999; font-size: 0.85em;">
+                            ✓ Validé contre: <code>backend/app/users/models.py</code><br>
+                            ✓ Validé contre: <code>backend/app/auth/models.py</code>
+                        </p>
+                        <div class="download-buttons">
+                            <a href="https://raw.githubusercontent.com/chaymatl/cc/main/uml_diagrams/sprint1_class_diagram.drawio" 
+                               class="btn btn-primary" download="Sprint1_ClassDiagram.drawio">
+                                <span class="icon">⬇️</span> Draw.io
+                            </a>
+                            <a href="https://app.diagrams.net/?title=Sprint1&url=https://raw.githubusercontent.com/chaymatl/cc/main/uml_diagrams/sprint1_class_diagram.drawio" 
+                               class="btn btn-secondary" target="_blank">
+                                <span class="icon">🔗</span> Ouvrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 2 Diagram -->
+                <div class="diagram-card">
+                    <div class="diagram-header">
+                        <h2>Sprint 2</h2>
+                        <p class="diagram-type">Participation Citoyenne et Publications</p>
+                    </div>
+                    <div class="diagram-body">
+                        <p><strong>Contenu du diagramme:</strong></p>
+                        <ul>
+                            <li>Classe Post (14 attributs)</li>
+                            <li>Classe Comment (réflexive)</li>
+                            <li>Like & SavedPost (associations)</li>
+                            <li>Notification (11 attributs)</li>
+                            <li>Testimonial & CenterProposal</li>
+                            <li>CollectionPoint (consultation)</li>
+                        </ul>
+                        <p style="margin-top: 15px; color: #999; font-size: 0.85em;">
+                            ✓ Validé contre: <code>backend/app/posts/models.py</code><br>
+                            ✓ Validé contre: <code>backend/app/notifications/models.py</code><br>
+                            ✓ Validé contre: <code>backend/app/community/models.py</code>
+                        </p>
+                        <div class="download-buttons">
+                            <a href="https://raw.githubusercontent.com/chaymatl/cc/main/uml_diagrams/sprint2_class_diagram.drawio" 
+                               class="btn btn-primary" download="Sprint2_ClassDiagram.drawio">
+                                <span class="icon">⬇️</span> Draw.io
+                            </a>
+                            <a href="https://app.diagrams.net/?title=Sprint2&url=https://raw.githubusercontent.com/chaymatl/cc/main/uml_diagrams/sprint2_class_diagram.drawio" 
+                               class="btn btn-secondary" target="_blank">
+                                <span class="icon">🔗</span> Ouvrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>📝 Comment utiliser ces fichiers?</h3>
+            <p>
+                <strong>Option 1 - Télécharger:</strong> Cliquez sur le bouton "Draw.io" pour télécharger le fichier .drawio 
+                sur votre ordinateur. Vous pourrez ensuite l'ouvrir dans <a href="https://app.diagrams.net" target="_blank">diagrams.net</a> 
+                ou tout autre outil supportant le format.
+            </p>
+            <p>
+                <strong>Option 2 - Éditer en ligne:</strong> Cliquez sur le bouton "Ouvrir" pour éditer directement le diagramme 
+                dans diagrams.net sans avoir besoin de télécharger.
+            </p>
+            <p>
+                <strong>Format:</strong> Les fichiers sont au format Draw.io standard (.drawio) compatible avec 
+                <a href="https://app.diagrams.net" target="_blank">diagrams.net</a>, 
+                <a href="https://www.lucidchart.com/" target="_blank">Lucidchart</a>, et d'autres outils UML.
+            </p>
+            <p style="margin-top: 20px; color: #999; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+                <strong>Génération:</strong> EcoRewind Release 1 | Validés contre le code source du 15/08/2026<br>
+                <strong>Référentiel:</strong> <a href="https://github.com/chaymatl/cc" target="_blank">github.com/chaymatl/cc</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
