@@ -1,0 +1,145 @@
+<mxfile host="app.diagrams.net" modified="2026-08-15T00:00:00.000Z" agent="5.0" etag="abc123" version="1.0">
+  <diagram id="sprint1-class" name="Sprint 1 - Authentification et Profils">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#FEFEFE" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Release 1 — Sprint 1: Authentification, Profils et Gestion des Rôles" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="50" y="20" width="1069" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="subtitle" value="Diagramme de classes validé contre backend/app/users et backend/app/auth" style="text;html=1;fontSize=11;fontStyle=0;align=center;verticalAlign=top;fillColor=#E8F4F8;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="1069" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Package: Domain::Users -->
+        <mxCell id="pkg-users" value="Domain::Users" style="shape=folder;tabWidth=120;tabHeight=30;tabPosition=left;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=2;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="300" height="450" as="geometry" />
+        </mxCell>
+
+        <!-- Class: User -->
+        <mxCell id="class-user" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="70" y="130" width="260" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-pk" value="+ id: Integer (PK)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="26" width="260" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr1" value="- email: String (UK)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="46" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr2" value="- full_name: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="64" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr3" value="- hashed_password: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="82" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr4" value="- is_active: Boolean = True" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="100" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr5" value="- is_verified: Boolean = False" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="118" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr6" value="- role: String = &#34;user&#34;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="136" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr7" value="- google_id: String (nullable)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="154" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr8" value="- facebook_id: String (nullable)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="172" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr9" value="- qr_code: String (UK)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="190" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr10" value="- global_score: Float = 0.0" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="208" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr11" value="- avatar_url: String (nullable)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="226" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr12" value="- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="244" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr13" value="- fcm_token: String (nullable)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="262" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr14" value="- mfa_enabled: Boolean = False" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="280" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-attr15" value="- mfa_secret: String (nullable)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="298" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-line" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class-user">
+          <mxGeometry y="316" width="260" height="0" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-op1" value="+ generate_unique_qr_token(): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-user">
+          <mxGeometry y="316" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Package: Domain::Auth -->
+        <mxCell id="pkg-auth" value="Domain::Auth" style="shape=folder;tabWidth=120;tabHeight=30;tabPosition=left;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=2;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="100" width="300" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Class: OTPCode -->
+        <mxCell id="class-otp" value="OTPCode" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="420" y="130" width="260" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-pk" value="+ id: Integer (PK)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="26" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr1" value="- identifier: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="44" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr2" value="- code: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="62" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr3" value="- purpose: String = &#34;register&#34;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="80" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr4" value="- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="98" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr5" value="- expires_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="116" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="otp-attr6" value="- is_used: Boolean = False" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="class-otp">
+          <mxGeometry y="134" width="260" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Note -->
+        <mxCell id="note" value="Release 1 — Sprint 1 couvre:&#xa;• Inscription et vérification OTP&#xa;• Authentification sécurisée (JWT)&#xa;• Gestion MFA (TOTP)&#xa;• Récupération de mot de passe&#xa;• Authentification sociale (Google, Facebook)&#xa;• Gestion des profils utilisateur&#xa;• Contrôle d'accès basé sur les rôles" style="shape=note;whiteSpace=wrap;html=1;rounded=1;shadow=1;comic=0;labelBackgroundColor=none;strokeWidth=2;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="400" y="330" width="300" height="220" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
