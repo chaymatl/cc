@@ -1,0 +1,197 @@
+<mxfile host="app.diagrams.net" modified="2026-08-15T00:00:00.000Z" agent="5.0" etag="abc124" version="1.0">
+  <diagram id="sprint2-class" name="Sprint 2 - Participation Citoyenne">
+    <mxGraphModel dx="1200" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1200" background="#FEFEFE" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Release 1 — Sprint 2: Participation Citoyenne, Publications, Notifications" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="50" y="20" width="1300" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- User Class (from Sprint 1) -->
+        <mxCell id="class-user-s2" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="220" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-s2-attrs" value="+ id: Integer (PK)&#xa;+ email: String (UK)&#xa;+ full_name: String&#xa;+ role: String&#xa;+ qr_code: String (UK)&#xa;+ global_score: Float = 0.0&#xa;+ is_active: Boolean&#xa;+ is_verified: Boolean&#xa;+ created_at: DateTime&#xa;+ avatar_url: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10;" vertex="1" parent="class-user-s2">
+          <mxGeometry y="26" width="220" height="154" as="geometry" />
+        </mxCell>
+
+        <!-- Post Class -->
+        <mxCell id="class-post" value="Post" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="330" y="80" width="240" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="post-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK)&#xa;+ user_name: String&#xa;+ user_avatar_url: String&#xa;- description: Text&#xa;- image_url: String&#xa;- created_at: DateTime&#xa;- likes_count: Integer = 0&#xa;- status: String = &#34;pending_review&#34;&#xa;- moderation_score: Float&#xa;- moderation_reason: String&#xa;- moderation_details: Text&#xa;- moderated_at: DateTime&#xa;- moderation_model_version: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-post">
+          <mxGeometry y="26" width="240" height="194" as="geometry" />
+        </mxCell>
+
+        <!-- Comment Class -->
+        <mxCell id="class-comment" value="Comment" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="240" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="comment-attrs" value="+ id: Integer (PK)&#xa;+ post_id: Integer (FK)&#xa;+ user_id: Integer (FK)&#xa;+ parent_id: Integer (FK, nullable)&#xa;- user_name: String&#xa;- user_avatar_url: String&#xa;- content: Text&#xa;- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-comment">
+          <mxGeometry y="26" width="240" height="154" as="geometry" />
+        </mxCell>
+
+        <!-- Like Class (Association) -->
+        <mxCell id="class-like" value="«Association»&#xa;Like" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#FFE8E8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="950" y="80" width="140" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="like-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK)&#xa;+ post_id: Integer (FK)&#xa;+ created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-like">
+          <mxGeometry y="40" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- SavedPost Class (Association) -->
+        <mxCell id="class-saved" value="«Association»&#xa;SavedPost" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#FFE8E8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="80" width="150" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="saved-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK)&#xa;+ post_id: Integer (FK)&#xa;+ saved_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-saved">
+          <mxGeometry y="40" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Notification Class -->
+        <mxCell id="class-notif" value="Notification" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="330" width="280" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="notif-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK)&#xa;+ sender_id: Integer (FK, nullable)&#xa;- type: String&#xa;- title: String&#xa;- body: Text&#xa;- from_user_name: String&#xa;- post_id: Integer (nullable)&#xa;- comment_id: Integer (nullable)&#xa;- source_notification_id: Integer (FK, nullable)&#xa;- is_read: Boolean = False&#xa;- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-notif">
+          <mxGeometry y="26" width="280" height="174" as="geometry" />
+        </mxCell>
+
+        <!-- CollectionPoint Class -->
+        <mxCell id="class-cp" value="CollectionPoint" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="400" y="330" width="240" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cp-attrs" value="+ id: Integer (PK)&#xa;- name: String&#xa;- lat: Float&#xa;- lng: Float&#xa;- is_verified: Boolean&#xa;- types: String&#xa;- address: String (nullable)&#xa;- hours: String (nullable)&#xa;- status: String = &#34;disponible&#34;&#xa;- load_level: Float = 0.0&#xa;- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-cp">
+          <mxGeometry y="26" width="240" height="154" as="geometry" />
+        </mxCell>
+
+        <!-- Testimonial Class -->
+        <mxCell id="class-test" value="Testimonial" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="720" y="330" width="250" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="test-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK, nullable)&#xa;- user_name: String&#xa;- user_avatar_url: String&#xa;- content: Text&#xa;- rating: Integer = 5&#xa;- is_approved: Boolean&#xa;- is_featured: Boolean&#xa;- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-test">
+          <mxGeometry y="26" width="250" height="134" as="geometry" />
+        </mxCell>
+
+        <!-- CenterProposal Class -->
+        <mxCell id="class-cp-prop" value="CenterProposal" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fillColor=#E8F4F8;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="330" width="240" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cp-prop-attrs" value="+ id: Integer (PK)&#xa;+ user_id: Integer (FK)&#xa;- user_name: String&#xa;- name: String&#xa;- address: String&#xa;- lat: String (nullable)&#xa;- lng: String (nullable)&#xa;- waste_types: String&#xa;- description: Text&#xa;- status: String = &#34;pending&#34;&#xa;- created_at: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=9;" vertex="1" parent="class-cp-prop">
+          <mxGeometry y="26" width="240" height="154" as="geometry" />
+        </mxCell>
+
+        <!-- RELATIONSHIPS -->
+        <!-- User -> Post -->
+        <mxCell id="rel-user-post" edge="1" parent="1" source="class-user-s2" target="class-post">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="170" as="sourcePoint" />
+            <mxPoint x="330" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label-user-post" value="author" style="text;html=1;fontSize=10;align=center;" vertex="1" parent="rel-user-post">
+          <mxGeometry x="-30" y="0" width="60" height="20" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User -> Comment -->
+        <mxCell id="rel-user-comment" edge="1" parent="1" source="class-user-s2" target="class-comment">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="170" as="sourcePoint" />
+            <mxPoint x="640" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -> Like -->
+        <mxCell id="rel-user-like" edge="1" parent="1" source="class-user-s2" target="class-like">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="170" as="sourcePoint" />
+            <mxPoint x="950" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -> SavedPost -->
+        <mxCell id="rel-user-saved" edge="1" parent="1" source="class-user-s2" target="class-saved">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="170" as="sourcePoint" />
+            <mxPoint x="1130" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Post -> Comment -->
+        <mxCell id="rel-post-comment" edge="1" parent="1" source="class-post" target="class-comment">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="170" as="sourcePoint" />
+            <mxPoint x="640" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Post -> Like -->
+        <mxCell id="rel-post-like" edge="1" parent="1" source="class-post" target="class-like">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="150" as="sourcePoint" />
+            <mxPoint x="950" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Post -> SavedPost -->
+        <mxCell id="rel-post-saved" edge="1" parent="1" source="class-post" target="class-saved">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="150" as="sourcePoint" />
+            <mxPoint x="1130" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -> Notification -->
+        <mxCell id="rel-user-notif" edge="1" parent="1" source="class-user-s2" target="class-notif">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="260" as="sourcePoint" />
+            <mxPoint x="160" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -> Testimonial -->
+        <mxCell id="rel-user-test" edge="1" parent="1" source="class-user-s2" target="class-test">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="260" as="sourcePoint" />
+            <mxPoint x="720" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -> CenterProposal -->
+        <mxCell id="rel-user-proposal" edge="1" parent="1" source="class-user-s2" target="class-cp-prop">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="260" as="sourcePoint" />
+            <mxPoint x="1050" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Comment Reflexive (replies) -->
+        <mxCell id="rel-comment-reply" edge="1" parent="1" source="class-comment" target="class-comment">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="130" as="sourcePoint" />
+            <mxPoint x="880" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label-comment-reply" value="replies" style="text;html=1;fontSize=10;align=center;" vertex="1" parent="rel-comment-reply">
+          <mxGeometry x="30" y="0" width="60" height="20" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="Légende:&#xa;(PK) = Primary Key | (FK) = Foreign Key | (UK) = Unique Key&#xa;«Association» = Classe d'association (lien many-to-many)&#xa;(nullable) = Colonne nullable" style="shape=note;whiteSpace=wrap;html=1;rounded=1;shadow=1;comic=0;labelBackgroundColor=none;strokeWidth=2;fontSize=9;align=left;" vertex="1" parent="1">
+          <mxGeometry x="50" y="570" width="500" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
