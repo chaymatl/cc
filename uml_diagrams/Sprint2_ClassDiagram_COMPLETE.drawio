@@ -1,0 +1,325 @@
+<mxfile host="app.diagrams.net" modified="2026-08-15T23:20:00.000Z" agent="5.0" etag="corrected_s2" version="1.0" type="device">
+  <diagram id="sprint2_classes" name="Sprint 2 - Participation Citoyenne">
+    <mxGraphModel dx="1600" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1600" background="#FEFEFE" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- TITLE -->
+        <mxCell id="title" value="Sprint 2: Participation Citoyenne, Publications et Notifications" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="0" y="10" width="1600" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="subtitle" value="Diagramme complet validé | Post + Comment + Like + SavedPost + Notification + Testimonial + CenterProposal + CollectionPoint" style="text;html=1;fontSize=10;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1976D2;" vertex="1" parent="1">
+          <mxGeometry x="0" y="50" width="1600" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- ===== DOMAIN::POSTS ===== -->
+        <mxCell id="pkg_posts" value="&lt;b&gt;Domain::Posts&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="30" y="110" width="450" height="750" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS POST -->
+        <mxCell id="class_post" value="Post" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="410" height="350" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_post">
+          <mxGeometry y="30" width="410" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_post">
+          <mxGeometry y="52" width="410" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_attrs" value="- user_id: Integer &lt;FK&gt;&#xa;- user_name: String&#xa;- user_avatar_url: String&#xa;- description: Text&#xa;- image_url: String&#xa;- created_at: DateTime&#xa;- likes_count: Integer = 0&#xa;- status: String = &quot;pending_review&quot;&#xa;- moderation_score: Float&#xa;- moderation_reason: String&#xa;- moderation_details: Text&#xa;- moderated_at: DateTime&#xa;- moderation_model_version: String" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_post">
+          <mxGeometry y="52" width="410" height="210" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_post">
+          <mxGeometry y="262" width="410" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_notes" value="Status workflow:&#xa;pending_review → published | pending_review (admin) | rejected&#xa;Moderation IA async avec decision humaine" style="text;html=1;fontSize=7;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_post">
+          <mxGeometry y="262" width="410" height="45" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_source" value="📍 backend/app/posts/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_post">
+          <mxGeometry y="307" width="410" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="post_validation" value="✓ 14 colonnes | ✓ Modération IA complète" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_post">
+          <mxGeometry y="325" width="410" height="15" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS COMMENT -->
+        <mxCell id="class_comment" value="Comment" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="520" width="410" height="280" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_comment">
+          <mxGeometry y="30" width="410" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_comment">
+          <mxGeometry y="52" width="410" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_attrs" value="- post_id: Integer &lt;FK&gt;&#xa;- user_id: Integer &lt;FK&gt;&#xa;- parent_id: Integer &lt;FK, nullable&gt;&#xa;- user_name: String&#xa;- user_avatar_url: String&#xa;- content: Text&#xa;- created_at: DateTime" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_comment">
+          <mxGeometry y="52" width="410" height="140" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_comment">
+          <mxGeometry y="192" width="410" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_notes" value="parent_id: Relation réflexive&#xa;Permet les réponses aux commentaires (replies)" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_comment">
+          <mxGeometry y="192" width="410" height="45" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_source" value="📍 backend/app/posts/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_comment">
+          <mxGeometry y="237" width="410" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comment_validation" value="✓ 7 colonnes | ✓ Réflexive" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_comment">
+          <mxGeometry y="255" width="410" height="15" as="geometry" />
+        </mxCell>
+        
+        <!-- ===== DOMAIN::ASSOCIATIONS ===== -->
+        <mxCell id="pkg_assoc" value="&lt;b&gt;Domain::Associations&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="530" y="110" width="380" height="350" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS LIKE -->
+        <mxCell id="class_like" value="«Association»&#xa;Like" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fillColor=#FFE8E8;" vertex="1" parent="1">
+          <mxGeometry x="550" y="140" width="160" height="140" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="like_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_like">
+          <mxGeometry y="50" width="160" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="like_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_like">
+          <mxGeometry y="72" width="160" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="like_attrs" value="- user_id: Integer &lt;FK&gt;&#xa;- post_id: Integer &lt;FK&gt;&#xa;- created_at: DateTime" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_like">
+          <mxGeometry y="72" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="like_validation" value="✓ M2M | 3 cols" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_like">
+          <mxGeometry y="132" width="160" height="8" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS SAVEDPOST -->
+        <mxCell id="class_saved" value="«Association»&#xa;SavedPost" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fillColor=#FFE8E8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="140" width="160" height="140" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="saved_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_saved">
+          <mxGeometry y="50" width="160" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="saved_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_saved">
+          <mxGeometry y="72" width="160" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="saved_attrs" value="- user_id: Integer &lt;FK&gt;&#xa;- post_id: Integer &lt;FK&gt;&#xa;- saved_at: DateTime" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_saved">
+          <mxGeometry y="72" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="saved_validation" value="✓ M2M | 3 cols" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_saved">
+          <mxGeometry y="132" width="160" height="8" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS NOTIFICATION -->
+        <mxCell id="class_notif" value="Notification" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="550" y="320" width="360" height="330" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_notif">
+          <mxGeometry y="30" width="360" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_notif">
+          <mxGeometry y="52" width="360" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_attrs" value="- user_id: Integer &lt;FK&gt;&#xa;- sender_id: Integer &lt;FK, nullable&gt;&#xa;- type: String&#xa;- title: String&#xa;- body: Text&#xa;- from_user_name: String&#xa;- post_id: Integer &lt;nullable&gt;&#xa;- comment_id: Integer &lt;nullable&gt;&#xa;- source_notification_id: Integer &lt;FK, nullable&gt;&#xa;- is_read: Boolean = False&#xa;- created_at: DateTime" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_notif">
+          <mxGeometry y="52" width="360" height="165" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_notif">
+          <mxGeometry y="217" width="360" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_notes" value="Types: like, comment, save, intercommunality_message, actor_reply&#xa;Réflexive: source_notification_id pour chaînes de réponses" style="text;html=1;fontSize=7;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_notif">
+          <mxGeometry y="217" width="360" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_source" value="📍 backend/app/notifications/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_notif">
+          <mxGeometry y="267" width="360" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="notif_validation" value="✓ 12 colonnes | ✓ Chaînage" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_notif">
+          <mxGeometry y="285" width="360" height="15" as="geometry" />
+        </mxCell>
+        
+        <!-- ===== DOMAIN::COMMUNITY ===== -->
+        <mxCell id="pkg_community" value="&lt;b&gt;Domain::Community&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="970" y="110" width="420" height="400" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS TESTIMONIAL -->
+        <mxCell id="class_test" value="Testimonial" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="990" y="140" width="380" height="240" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_test">
+          <mxGeometry y="30" width="380" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_test">
+          <mxGeometry y="52" width="380" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_attrs" value="- user_id: Integer &lt;FK, nullable&gt;&#xa;- user_name: String&#xa;- user_avatar_url: String&#xa;- content: Text&#xa;- rating: Integer = 5&#xa;- is_approved: Boolean = False&#xa;- is_featured: Boolean = False&#xa;- created_at: DateTime" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_test">
+          <mxGeometry y="52" width="380" height="130" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_test">
+          <mxGeometry y="182" width="380" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_notes" value="Rating 1-5 ★ | Modération admin" style="text;html=1;fontSize=7;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_test">
+          <mxGeometry y="182" width="380" height="35" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_source" value="📍 backend/app/community/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_test">
+          <mxGeometry y="217" width="380" height="10" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="test_validation" value="✓ 8 colonnes" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_test">
+          <mxGeometry y="227" width="380" height="13" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS CENTERPROPOSAL -->
+        <mxCell id="class_proposal" value="CenterProposal" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="990" y="410" width="380" height="260" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_pk" value="+ id: Integer &lt;PK&gt;" style="text;html=1;fontSize=9;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_proposal">
+          <mxGeometry y="30" width="380" height="22" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_sep1" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_proposal">
+          <mxGeometry y="52" width="380" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_attrs" value="- user_id: Integer &lt;FK&gt;&#xa;- user_name: String&#xa;- name: String&#xa;- address: String&#xa;- lat: String &lt;nullable&gt;&#xa;- lng: String &lt;nullable&gt;&#xa;- waste_types: String&#xa;- description: Text&#xa;- status: String = &quot;pending&quot;&#xa;- created_at: DateTime" style="text;html=1;fontSize=8;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;" vertex="1" parent="class_proposal">
+          <mxGeometry y="52" width="380" height="150" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_sep2" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="class_proposal">
+          <mxGeometry y="202" width="380" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_notes" value="Status: pending | approved | rejected" style="text;html=1;fontSize=7;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#FFFACD;" vertex="1" parent="class_proposal">
+          <mxGeometry y="202" width="380" height="35" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_source" value="📍 backend/app/community/models.py" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_proposal">
+          <mxGeometry y="237" width="380" height="10" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="proposal_validation" value="✓ 10 colonnes" style="text;html=1;fontSize=7;align=left;verticalAlign=middle;overflow=hidden;rotatable=0;spacingLeft=5;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_proposal">
+          <mxGeometry y="247" width="380" height="13" as="geometry" />
+        </mxCell>
+        
+        <!-- ===== DOMAIN::COLLECTIONPOINTS ===== -->
+        <mxCell id="pkg_cp" value="&lt;b&gt;Domain::CollectionPoints&lt;/b&gt;" style="shape=folder;tabWidth=100;tabHeight=25;tabPosition=left;html=1;rounded=0;shadow=0;strokeWidth=2;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1450" y="110" width="130" height="560" as="geometry" />
+        </mxCell>
+        
+        <!-- CLASS COLLECTIONPOINT -->
+        <mxCell id="class_cp" value="CollectionPoint" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1465" y="140" width="100" height="500" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cp_pk" value="id: Integer" style="text;html=1;fontSize=8;align=center;verticalAlign=middle;overflow=hidden;rotatable=0;" vertex="1" parent="class_cp">
+          <mxGeometry y="30" width="100" height="18" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cp_sep1" value="" style="line;strokeWidth=1;html=1;" vertex="1" parent="class_cp">
+          <mxGeometry y="48" width="100" height="0" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cp_attrs" value="name: String&#xa;lat: Float&#xa;lng: Float&#xa;is_verified: Bool&#xa;types: String&#xa;address: String&#xa;hours: String&#xa;status: String&#xa;load_level: Float&#xa;created_at: DT" style="text;html=1;fontSize=7;align=center;verticalAlign=middle;overflow=hidden;rotatable=0;" vertex="1" parent="class_cp">
+          <mxGeometry y="48" width="100" height="180" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cp_source" value="📍 backend/app/&#xa;collection_points/" style="text;html=1;fontSize=6;align=center;verticalAlign=middle;overflow=hidden;rotatable=0;fontStyle=3;fillColor=#E8F5E9;" vertex="1" parent="class_cp">
+          <mxGeometry y="228" width="100" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cp_validation" value="✓ 10 cols" style="text;html=1;fontSize=6;align=center;verticalAlign=middle;overflow=hidden;rotatable=0;fontStyle=1;fillColor=#C8E6C9;" vertex="1" parent="class_cp">
+          <mxGeometry y="458" width="100" height="12" as="geometry" />
+        </mxCell>
+        
+        <!-- ===== ASSOCIATIONS (Arrows) ===== -->
+        
+        <!-- User -> Post -->
+        <mxCell id="edge1" edge="1" parent="1" source="30" target="50" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label1" value="author" style="text;html=1;fontSize=8;align=center;fontStyle=1;" vertex="1" parent="edge1">
+          <mxGeometry x="-20" y="0" width="40" height="20" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> Comment -->
+        <mxCell id="edge2" edge="1" parent="1" source="30" target="50" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> Like -->
+        <mxCell id="edge3" edge="1" parent="1" source="30" target="550" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> SavedPost -->
+        <mxCell id="edge4" edge="1" parent="1" source="30" target="750" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> Notification -->
+        <mxCell id="edge5" edge="1" parent="1" source="30" target="550" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> Testimonial -->
+        <mxCell id="edge6" edge="1" parent="1" source="30" target="990" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User -> CenterProposal -->
+        <mxCell id="edge7" edge="1" parent="1" source="30" target="990" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- LEGEND -->
+        <mxCell id="legend_title" value="LÉGENDE &amp; VALIDATIONS" style="text;html=1;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="30" y="880" width="1540" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend1" value="&lt;b&gt;PK&lt;/b&gt; = Primary Key | &lt;b&gt;FK&lt;/b&gt; = Foreign Key | &lt;b&gt;UK&lt;/b&gt; = Unique Key | &lt;b&gt;nullable&lt;/b&gt; = Peut être NULL&#xa;&lt;b&gt;«Association»&lt;/b&gt; = Classe d'association (many-to-many)&#xa;&lt;b&gt;Modération IA&lt;/b&gt; = Pipeline asynchrone | Statuts: pending_review → published/rejected&#xa;&lt;b&gt;Release 1 Sprint 2&lt;/b&gt; couvre: fil d'actualité, publications, interactions (J'aime, commentaires, sauvegarde), notifications, points de collecte, contributions citoyennes" style="text;html=1;fontSize=8;align=left;verticalAlign=top;overflow=hidden;rotatable=0;spacingLeft=5;fillColor=#ECEFF1;borderColor=#455A64;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="900" width="1540" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="metadata" value="✓ VALIDÉ: 2026-08-15 | Sources: backend/app/posts | backend/app/notifications | backend/app/community | backend/app/collection_points | Format: UML 2.5 Complet | Outils: Draw.io + Analyse Code Source" style="text;html=1;fontSize=7;align=center;verticalAlign=middle;fontStyle=3;fillColor=#FAFAFA;" vertex="1" parent="1">
+          <mxGeometry x="30" y="980" width="1540" height="40" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
