@@ -379,11 +379,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   child: Text('Publier mon avis', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
               ),
-            ),
-          );
-        },
-      ),
-    );
+            ],
+          ),
+        ),
+      );
+    },
+  ),
+);
   }
 
   // ── Add Proposal Dialog ──
@@ -497,11 +499,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildField(String label, TextEditingController ctrl, String hint, {int maxLines = 1}) {
     return Column(
