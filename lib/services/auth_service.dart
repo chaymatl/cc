@@ -1,15 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import '../models/user_model.dart';
+import '../core/cache_service.dart';
 import 'fcm_service.dart';
 import 'notification_service.dart';
 
@@ -24,16 +26,20 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
+  // ── Client HTTP persistant avec timeout global ──────────────────────────────
+  // Tous les appels réseau passent par _http + .timeout(_kTimeout)
+  // Evite de bloquer l'UI si le serveur est lent ou injoignable
+  static final http.Client _http = http.Client();
+  static const Duration _kTimeout = Duration(seconds: 15);
+
   // Web client ID du projet Firebase EcoRewind (client_type: 3)
   // Obtenu automatiquement depuis google-services.json après activation de
   // Google dans Firebase Auth > Sign-in method.
-  static const String _webClientId = "539828926028-a2m18h48leoaqqelr3pejlf811rg0urf.apps.googleusercontent.com";
+  static const String _webClientId = '539828926028-a2m18h48leoaqqelr3pejlf811rg0urf.apps.googleusercontent.com';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // Web : clientId explicite requis
-    clientId: kIsWeb ? _webClientId : null,
     // Android : serverClientId (Web client ID) requis pour obtenir un idToken
-    serverClientId: kIsWeb ? null : _webClientId,
+    serverClientId: _webClientId,
     scopes: ['email', 'profile'],
   );
 
@@ -44,14 +50,14 @@ class AuthService {
   /// Connexion avec email et mot de passe
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/token'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: {
           'username': email,
           'password': password,
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -91,16 +97,16 @@ class AuthService {
   /// Inscription d'un nouvel utilisateur
   Future<Map<String, dynamic>> register(String email, String fullName, String password) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
           'full_name': fullName,
           'password': password,
-          'role': 'user',
+          'role': 'citoyen',
         }),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
@@ -116,11 +122,11 @@ class AuthService {
   /// Envoie un code OTP par email ou SMS
   Future<Map<String, dynamic>> sendOTP(String identifier, {String method = 'email'}) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/otp/send'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'identifier': identifier, 'method': method}),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       }
@@ -134,11 +140,11 @@ class AuthService {
   /// Vérifie un code OTP et retourne un token si succès
   Future<Map<String, dynamic>> verifyOTP(String identifier, String code) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/otp/verify'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'identifier': identifier, 'code': code}),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         // Si le backend retourne un firebase_token (compte vérifié avec token JWT)
@@ -157,14 +163,14 @@ class AuthService {
   /// Valide la connexion MFA avec le code à 6 chiffres
   Future<Map<String, dynamic>> verifyMfaLogin(String mfaToken, String code) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/auth/mfa/verify'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'mfa_token': mfaToken,
           'code': code,
         }),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -198,13 +204,13 @@ class AuthService {
   Future<Map<String, dynamic>> setupMfa() async {
     try {
       final token = await _getToken();
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/users/me/mfa/setup'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -226,14 +232,14 @@ class AuthService {
   Future<Map<String, dynamic>> verifyEnableMfa(String code) async {
     try {
       final token = await _getToken();
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/users/me/mfa/verify-enable'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
         body: json.encode({'code': code}),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -255,7 +261,7 @@ class AuthService {
   Future<Map<String, dynamic>> disableMfa({String? password, String? code}) async {
     try {
       final token = await _getToken();
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/users/me/mfa/disable'),
         headers: {
           'Content-Type': 'application/json',
@@ -265,7 +271,7 @@ class AuthService {
           if (password != null) 'password': password,
           if (code != null) 'code': code,
         }),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -307,11 +313,11 @@ class AuthService {
         return {'success': false, 'message': 'Erreur Google Token'};
       }
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'token': tokenToSend}),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
@@ -359,13 +365,11 @@ class AuthService {
 
       // Sur Android/iOS, déconnecter la session précédente
       // Sur web, on skip le logOut car il peut bloquer
-      if (!kIsWeb) {
-        try {
-          await FacebookAuth.instance.logOut();
-          developer.log('[FB-AUTH] Session précédente déconnectée', name: 'FacebookAuth');
-        } catch (e) {
-          developer.log('[FB-AUTH] logOut ignoré: $e', name: 'FacebookAuth');
-        }
+      try {
+        await FacebookAuth.instance.logOut();
+        developer.log('[FB-AUTH] Session précédente déconnectée', name: 'FacebookAuth');
+      } catch (e) {
+        developer.log('[FB-AUTH] logOut ignoré: $e', name: 'FacebookAuth');
       }
 
       developer.log('[FB-AUTH] Ouverture dialog de connexion Facebook...', name: 'FacebookAuth');
@@ -472,7 +476,7 @@ class AuthService {
         await _saveToken(data['access_token']);
         // Connexion Firebase pour que les Security Rules reconnaissent l'utilisateur
         await _signInToFirebase(data['firebase_token']);
-        developer.log('[FB-AUTH] ✅ Connexion Facebook réussie pour ${data["email"]}', name: 'FacebookAuth');
+        developer.log('[FB-AUTH] ✅ Connexion Facebook réussie pour ${data['email']}', name: 'FacebookAuth');
         return {
           'success': true,
           'token': data['access_token'],
@@ -512,11 +516,11 @@ class AuthService {
   /// Demande de reinitialisation du mot de passe
   Future<Map<String, dynamic>> forgotPassword(String email) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/forgot-password'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       return {
         'success': response.statusCode == 200,
@@ -530,11 +534,11 @@ class AuthService {
   /// Vérifie le code de réinitialisation sans le consommer
   Future<Map<String, dynamic>> verifyResetCode(String email, String code) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/verify-reset-code'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email, 'code': code}),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       return {
         'success': response.statusCode == 200,
@@ -546,31 +550,51 @@ class AuthService {
   }
 
   /// Reinitialisation du mot de passe avec le token
+  /// Retourne aussi access_token + user info pour auto-login
   Future<Map<String, dynamic>> resetPassword(String token, String newPassword) async {
     try {
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'token': token,
           'new_password': newPassword,
         }),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        // Sauvegarder le token JWT si le backend le retourne (auto-login)
+        if (data['access_token'] != null) {
+          await _saveToken(data['access_token']);
+          await _signInToFirebase(data['firebase_token']);
+        }
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Succès',
+          'access_token': data['access_token'],
+          'role': data['role'],
+          'id': data['id'],
+          'full_name': data['full_name'],
+          'email': data['email'],
+          'avatar_url': data['avatar_url'] ?? '',
+          'qr_code': data['qr_code'] ?? '',
+        };
+      }
       return {
-        'success': response.statusCode == 200,
-        'message': data['message'] ?? data['detail'] ?? 'Succès',
+        'success': false,
+        'message': data['detail'] ?? data['message'] ?? 'Erreur',
       };
     } catch (e) {
       return {'success': false, 'message': 'Erreur réseau : $e'};
     }
   }
 
+
   /// Change le mot de passe de l'utilisateur connecte
   Future<Map<String, dynamic>> changePassword(String oldPassword, String newPassword) async {
     try {
       final token = await _getToken();
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/users/me/change-password'),
         headers: {
           'Content-Type': 'application/json',
@@ -580,7 +604,7 @@ class AuthService {
           'old_password': oldPassword,
           'new_password': newPassword,
         }),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       return {
         'success': response.statusCode == 200,
@@ -622,7 +646,7 @@ class AuthService {
       );
     } catch (e) {
       developer.log(
-        '[Firebase] ⚠️ signInWithCustomToken échoué (mode dégradé) : $e',
+        '[Firebase] ⚠ï¸ signInWithCustomToken échoué (mode dégradé) : $e',
         name: 'AuthService',
       );
       // On ne throw pas — l'app continue sans temps réel Firebase
@@ -630,14 +654,54 @@ class AuthService {
   }
 
   // ===========================================
-  // STOCKAGE DU TOKEN
+  // STOCKAGE DU TOKEN — Android Keystore / iOS Keychain
+  // jwt_token + refresh_token → flutter_secure_storage (chiffré matériel)
+  // Données FCM non-sensibles → SharedPreferences (pas de clés secrètes)
   // ===========================================
 
-  /// Sauvegarde le token JWT
+  /// Instance unique FlutterSecureStorage avec options robustes
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(), // AES-256 via custom ciphers (Android Keystore)
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock,
+    ),
+  );
+
+  static const _kJwt     = 'jwt_token';
+  static const _kRefresh = 'refresh_token';
+
+  /// Migration transparente : si l'ancien token est dans SharedPreferences,
+  /// le déplacer vers le stockage sécurisé (appel unique au premier lancement).
+  static Future<void> migrateTokensIfNeeded() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Migrer jwt_token
+      final oldJwt = prefs.getString(_kJwt);
+      if (oldJwt != null) {
+        await _secureStorage.write(key: _kJwt, value: oldJwt);
+        await prefs.remove(_kJwt);
+        developer.log('[SecureStorage] jwt_token migré depuis SharedPreferences → Keystore', name: 'AuthService');
+      }
+      // Migrer refresh_token
+      final oldRefresh = prefs.getString(_kRefresh);
+      if (oldRefresh != null) {
+        await _secureStorage.write(key: _kRefresh, value: oldRefresh);
+        await prefs.remove(_kRefresh);
+        developer.log('[SecureStorage] refresh_token migré depuis SharedPreferences → Keystore', name: 'AuthService');
+      }
+    } catch (e) {
+      developer.log('[SecureStorage] Migration ignorée : $e', name: 'AuthService');
+    }
+  }
+
+  /// Sauvegarde le token JWT dans le Keystore Android / Keychain iOS et SharedPreferences
   Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token);
-    // Synchroniser avec AuthState pour accès synchrone
+    await _secureStorage.write(key: _kJwt, value: token);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kJwt, token);
+    } catch (_) {}
+    // Synchroniser avec AuthState pour accès synchrone dans l'app
     AuthState.authToken = token;
     // ── Envoyer le token FCM au backend maintenant qu'on est connecté ────────
     _sendFcmTokenAfterLogin();
@@ -645,7 +709,6 @@ class AuthService {
 
   /// Envoie le token FCM après connexion (sans bloquer le flux principal)
   void _sendFcmTokenAfterLogin() {
-    if (kIsWeb) return;
     // Léger délai pour laisser Firebase Auth se stabiliser
     Future.delayed(const Duration(milliseconds: 800), () async {
       try {
@@ -661,22 +724,22 @@ class AuthService {
   /// Public alias for saving token (used by OTP verification)
   Future<void> saveToken(String token) => _saveToken(token);
 
-  /// Sauvegarde le refresh token
+  /// Récupère le token JWT (synchrone AuthState puis stockage sécurisé)
+  Future<String?> getToken() async => AuthState.authToken ?? await _getToken();
+
+  /// Sauvegarde le refresh token dans le stockage sécurisé
   Future<void> _saveRefreshToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('refresh_token', token);
+    await _secureStorage.write(key: _kRefresh, value: token);
   }
 
-  /// Recupere le token stocke
+  /// Récupère le token JWT depuis le stockage sécurisé
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
+    return _secureStorage.read(key: _kJwt);
   }
 
-  /// Recupere le refresh token
+  /// Récupère le refresh token depuis le stockage sécurisé
   Future<String?> _getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refresh_token');
+    return _secureStorage.read(key: _kRefresh);
   }
 
   /// Tente de renouveler le token d'accès via le refresh token
@@ -685,11 +748,11 @@ class AuthService {
       final refreshToken = await _getRefreshToken();
       if (refreshToken == null) return false;
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/token/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'refresh_token': refreshToken}),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -713,7 +776,7 @@ class AuthService {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (token != null) headers['Authorization'] = 'Bearer $token';
 
-    var response = await http.get(Uri.parse(url), headers: headers);
+    var response = await _http.get(Uri.parse(url), headers: headers).timeout(_kTimeout);
 
     // Si 401 → tenter un refresh puis re-essayer
     if (response.statusCode == 401 && token != null) {
@@ -721,33 +784,35 @@ class AuthService {
       if (refreshed) {
         final newToken = await _getToken();
         headers['Authorization'] = 'Bearer $newToken';
-        response = await http.get(Uri.parse(url), headers: headers);
+        response = await _http.get(Uri.parse(url), headers: headers).timeout(_kTimeout);
       }
     }
     return response;
   }
 
-  /// Supprime tous les tokens (déconnexion JWT + Firebase)
+  /// Supprime tous les tokens sensibles (déconnexion JWT + Firebase)
   Future<void> clearTokens() async {
+    // ── Sauvegarder le timestamp de déconnexion dans SharedPreferences ────────
+    // (donnée non-sensible : utilisée par FCM pour filtrer les notifications)
     final prefs = await SharedPreferences.getInstance();
-    // ── Sauvegarder le timestamp de déconnexion AVANT de supprimer le token ──
-    // Utilisé par FCM pour n'afficher que les notifications reçues après ce moment
     await prefs.setString(
       'fcm_last_logout_time',
       DateTime.now().toUtc().toIso8601String(),
     );
-    // Effacer les IDs déjà affichés (plus nécessaire : le timestamp est la nouvelle borne)
     await prefs.remove('fcm_shown_notif_ids');
-    await prefs.remove('jwt_token');
-    await prefs.remove('refresh_token');
-    // Réinitialiser le token FCM sauvegardé — le prochain login forcera un re-enregistrement
     await prefs.remove('fcm_last_sent_token');
-    // Déconnexion Firebase : les Security Rules refuseront toute lecture ultérieure
+
+    // ── Effacer les tokens sensibles du Keystore/Keychain ─────────────────────
+    await _secureStorage.delete(key: _kJwt);
+    await _secureStorage.delete(key: _kRefresh);
+    AuthState.authToken = null;
+
+    // ── Déconnexion Firebase ──────────────────────────────────────────────────
     try {
       await FirebaseAuth.instance.signOut();
       developer.log('[Firebase] ✅ Déconnexion Firebase réussie', name: 'AuthService');
     } catch (e) {
-      developer.log('[Firebase] ⚠️ Erreur déconnexion Firebase : $e', name: 'AuthService');
+      developer.log('[Firebase] ⚠ï¸ Erreur déconnexion Firebase : $e', name: 'AuthService');
     }
   }
 
@@ -758,10 +823,6 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Aucun token'};
 
-      // Note: On pourrait ajouter un endpoint /users/me au backend
-      // Pour l'instant on va lister tous les utilisateurs et filtrer (ou on peut modifier le backend)
-      // Mais attendons, le backend a déjà un système de token qui contient le sub (email)
-
       final response = await authenticatedGet('$baseUrl/users/me');
 
       if (response.statusCode == 200) {
@@ -771,10 +832,9 @@ class AuthService {
           'user': data,
         };
       } else if (response.statusCode == 401) {
-        // Seulement si non autorisé (token invalide/expiré et refresh impossible), on supprime
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('jwt_token');
-        await prefs.remove('refresh_token');
+        // Token expiré ou invalide — NE PAS supprimer les tokens localement
+        // (le refresh a déjà été tenté par authenticatedGet)
+        // Retourner l'erreur sans déconnecter l'utilisateur
         return {'success': false, 'message': 'Session expirée'};
       } else {
         return {'success': false, 'message': 'Erreur serveur: ${response.statusCode}'};
@@ -801,13 +861,13 @@ class AuthService {
         endpoint = '$baseUrl/posts/feed?skip=$skip&limit=$limit';
       }
       
-      final response = await http.get(Uri.parse(endpoint), headers: headers);
+      final response = await _http.get(Uri.parse(endpoint), headers: headers).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       }
       // If /posts/feed fails (401), fallback to /posts
       if (token != null && response.statusCode == 401) {
-        final fallback = await http.get(Uri.parse('$baseUrl/posts?skip=$skip&limit=$limit'));
+        final fallback = await _http.get(Uri.parse('$baseUrl/posts?skip=$skip&limit=$limit')).timeout(_kTimeout);
         if (fallback.statusCode == 200) {
           return json.decode(utf8.decode(fallback.bodyBytes));
         }
@@ -831,10 +891,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return [];
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/notifications'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       }
@@ -849,10 +909,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return 0;
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/notifications/unread-count'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data['count'] ?? 0;
@@ -868,10 +928,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/notifications/$notifId/read'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -883,10 +943,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/notifications/$notifId/unread'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -898,10 +958,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/notifications/read-all'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -913,14 +973,14 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/users/me/avatar'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: json.encode({'avatar_url': avatarUrl}),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return {'success': true, 'avatar_url': data['avatar_url']};
@@ -1015,7 +1075,7 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/posts'),
         headers: {
           'Content-Type': 'application/json',
@@ -1027,7 +1087,7 @@ class AuthService {
           'image_url': imageUrl,
           'description': description,
         }),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -1064,14 +1124,14 @@ class AuthService {
   Future<bool> updatePost(String postId, String description) async {
     try {
       final token = await _getToken();
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/posts/$postId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({'description': description}),
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1082,11 +1142,15 @@ class AuthService {
   Future<bool> deletePost(String postId) async {
     try {
       final token = await _getToken();
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/posts/$postId'),
         headers: {'Authorization': 'Bearer $token'},
-      );
-      return response.statusCode == 200;
+      ).timeout(_kTimeout);
+      if (response.statusCode == 200) {
+        await CacheService.invalidate(CacheService.kFeedPosts);
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
@@ -1098,17 +1162,19 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/posts/$postId/like'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         data['success'] = true;
+        // Invalider le cache du feed pour que le prochain chargement soit frais
+        await CacheService.invalidate(CacheService.kFeedPosts);
         return data;
       }
       return {'success': false};
@@ -1123,21 +1189,25 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/posts/$postId/save'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         data['success'] = true;
+        // Invalider le cache du feed pour que le prochain chargement soit frais
+        await CacheService.invalidate(CacheService.kFeedPosts);
         return data;
       }
-      return {'success': false, 'message': 'Erreur de synchronisation'};
+      debugPrint('[SavePost] Échec: status=${response.statusCode}, body=${response.body}');
+      return {'success': false, 'message': 'Erreur (${response.statusCode})'};
     } catch (e) {
+      debugPrint('[SavePost] Exception: $e');
       return {'success': false, 'message': 'Erreur réseau : $e'};
     }
   }
@@ -1146,6 +1216,7 @@ class AuthService {
   Future<Map<String, dynamic>> addComment(String postId, String userName, String? userAvatarUrl, String content, {int? parentId}) async {
     try {
       final token = await _getToken();
+
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
       final body = <String, dynamic>{
@@ -1155,16 +1226,18 @@ class AuthService {
       };
       if (parentId != null) body['parent_id'] = parentId;
 
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/posts/$postId/comments'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode(body),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
+        // Invalider le cache du feed pour que le prochain chargement soit frais
+        await CacheService.invalidate(CacheService.kFeedPosts);
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
       }
       return {'success': false, 'message': 'Erreur serveur lors de l\'ajout du commentaire'};
@@ -1179,14 +1252,14 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/comments/$commentId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({'content': content}),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
@@ -1203,10 +1276,10 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return false;
 
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/comments/$commentId'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1219,13 +1292,13 @@ class AuthService {
       final token = await _getToken();
       if (token == null) return null;
 
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users/me/saved-posts'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
@@ -1240,10 +1313,10 @@ class AuthService {
   /// Récupère la liste des utilisateurs ayant aimé une publication
   Future<List<Map<String, dynamic>>> fetchPostLikers(String postId) async {
     try {
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/posts/$postId/likers'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.cast<Map<String, dynamic>>();
@@ -1261,10 +1334,10 @@ class AuthService {
       final headers = <String, String>{'Content-Type': 'application/json'};
       if (token != null) headers['Authorization'] = 'Bearer $token';
 
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/posts/$postId/detail'),
         headers: headers,
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1277,7 +1350,7 @@ class AuthService {
   /// Récupère les statistiques globales de la plateforme
   Future<Map<String, dynamic>> fetchPlatformStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/stats'));
+      final response = await _http.get(Uri.parse('$baseUrl/stats')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1290,7 +1363,7 @@ class AuthService {
   /// Récupère le conseil écologique du jour
   Future<Map<String, dynamic>> fetchDailyTip() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/tips/daily'));
+      final response = await _http.get(Uri.parse('$baseUrl/tips/daily')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1305,10 +1378,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {};
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users/me/stats'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1324,10 +1397,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return null;
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users/me'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1343,13 +1416,13 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return [];
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users/me/points-history'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       }
@@ -1368,13 +1441,13 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {};
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users/me/impact'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10)).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(
             json.decode(utf8.decode(response.bodyBytes)));
@@ -1395,13 +1468,13 @@ class AuthService {
   Future<List<dynamic>> getAllUsers() async {
     try {
       final token = await _getToken();
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/users'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
@@ -1422,7 +1495,7 @@ class AuthService {
   }) async {
     try {
       final token = await _getToken();
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/admin/users'),
         headers: {
           'Content-Type': 'application/json',
@@ -1434,7 +1507,7 @@ class AuthService {
           'password': password,
           'role': role,
         }),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
@@ -1461,14 +1534,14 @@ class AuthService {
       if (role != null) data['role'] = role;
       if (password != null && password.isNotEmpty) data['password'] = password;
 
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/admin/users/$userId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode(data),
-      );
+      ).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
@@ -1484,12 +1557,12 @@ class AuthService {
   Future<bool> deleteUserAdmin(int userId) async {
     try {
       final token = await _getToken();
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/admin/users/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1502,14 +1575,14 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token != null) {
-        await http.put(
+        await _http.put(
           Uri.parse('$baseUrl/notifications/fcm-token'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
           body: jsonEncode({'token': ''}),
-        ).timeout(const Duration(seconds: 3));
+        ).timeout(const Duration(seconds: 3)).timeout(_kTimeout);
         developer.log('[FCM] Token FCM désenregistré avec succès sur le backend', name: 'AuthService');
       }
     } catch (e) {
@@ -1536,15 +1609,20 @@ class AuthService {
   }
 
   /// Récupère les points de collecte depuis l'API
+  /// Endpoint public — aucun token nécessaire, aucun risque de déconnexion.
   Future<List<Map<String, dynamic>>> fetchCollectionPoints({String? type, String? search}) async {
     try {
       final params = <String, String>{};
       if (type != null) params['type'] = type;
       if (search != null && search.isNotEmpty) params['search'] = search;
-      
-      final uri = Uri.parse('$baseUrl/collection-points').replace(queryParameters: params.isNotEmpty ? params : null);
-      final response = await http.get(uri);
-      
+
+      final uri = Uri.parse('$baseUrl/collection-points')
+          .replace(queryParameters: params.isNotEmpty ? params : null);
+
+      // Appel sans Authorization : /collection-points est public
+      // → jamais de 401, jamais de risque de déconnexion
+      final response = await _http.get(uri).timeout(const Duration(seconds: 10)).timeout(_kTimeout);
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.cast<Map<String, dynamic>>();
@@ -1563,7 +1641,7 @@ class AuthService {
   /// Récupère tous les témoignages
   Future<List<Map<String, dynamic>>> fetchTestimonials() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/testimonials'));
+      final response = await _http.get(Uri.parse('$baseUrl/testimonials')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.cast<Map<String, dynamic>>();
@@ -1580,14 +1658,14 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/testimonials'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({'content': content, 'rating': rating}),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
       }
@@ -1603,10 +1681,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/testimonials/$id'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1627,7 +1705,7 @@ class AuthService {
       final uri = Uri.parse('$baseUrl/center-proposals').replace(
         queryParameters: params.isNotEmpty ? params : null,
       );
-      final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
+      final response = await _http.get(uri, headers: {'Authorization': 'Bearer $token'}).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.cast<Map<String, dynamic>>();
@@ -1651,7 +1729,7 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/center-proposals'),
         headers: {
           'Content-Type': 'application/json',
@@ -1665,7 +1743,7 @@ class AuthService {
           'waste_types': wasteTypes,
           'description': description,
         }),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
       }
@@ -1681,10 +1759,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/center-proposals/$id'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1696,14 +1774,14 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/center-proposals/$id/status'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({'status': status}),
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1719,10 +1797,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'total': 0, 'posts': []};
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/admin/moderation/pending?skip=$skip&limit=$limit'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1738,10 +1816,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {};
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/admin/moderation/stats'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1756,10 +1834,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/admin/moderation/$postId/approve'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1774,10 +1852,10 @@ class AuthService {
       final uri = reason != null
           ? Uri.parse('$baseUrl/admin/moderation/$postId/reject?reason=${Uri.encodeComponent(reason)}')
           : Uri.parse('$baseUrl/admin/moderation/$postId/reject');
-      final response = await http.put(
+      final response = await _http.put(
         uri,
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -1870,10 +1948,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/quiz/$quizId/retry'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       if (response.statusCode == 200) {
         return {'success': true, ...data};
@@ -1889,10 +1967,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.delete(
+      final response = await _http.delete(
         Uri.parse('$baseUrl/quiz/$quizId'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       if (response.statusCode == 200) {
         return {'success': true, ...data};
@@ -1908,10 +1986,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return [];
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/quiz/my-quizzes'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         return data['quizzes'] ?? [];
@@ -1927,10 +2005,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {};
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/quiz/$quizId/results'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -1945,11 +2023,11 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.post(
+      final response = await _http.post(
         Uri.parse('$baseUrl/quiz/$quizId/submit'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
         body: json.encode(answers),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       if (response.statusCode == 200) {
         return {'success': true, ...data};
@@ -1963,9 +2041,9 @@ class AuthService {
   /// Liste tous les quiz disponibles (public, pas besoin de token)
   Future<List<dynamic>> fetchAvailableQuizzes() async {
     try {
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/quiz/available'),
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         return data['quizzes'] ?? [];
@@ -1982,10 +2060,10 @@ class AuthService {
       final token = await _getToken();
       final headers = <String, String>{};
       if (token != null) headers['Authorization'] = 'Bearer $token';
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/quiz/$quizId'),
         headers: headers,
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -2000,10 +2078,10 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return null;
-      final response = await http.get(
+      final response = await _http.get(
         Uri.parse('$baseUrl/quiz/$quizId/my-result'),
         headers: {'Authorization': 'Bearer $token'},
-      );
+      ).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -2048,7 +2126,7 @@ class AuthService {
   /// Liste toutes les catégories (public)
   Future<List<dynamic>> fetchVideoCategories() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/educator-videos/categories'));
+      final response = await _http.get(Uri.parse('$baseUrl/educator-videos/categories')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         return data['categories'] ?? [];
@@ -2062,7 +2140,7 @@ class AuthService {
   /// Détail d'une catégorie avec ses vidéos
   Future<Map<String, dynamic>?> fetchCategoryDetail(int catId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/educator-videos/categories/$catId'));
+      final response = await _http.get(Uri.parse('$baseUrl/educator-videos/categories/$catId')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(utf8.decode(response.bodyBytes)));
       }
@@ -2077,7 +2155,7 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final resp = await http.delete(Uri.parse('$baseUrl/educator-videos/categories/$catId'), headers: {'Authorization': 'Bearer $token'});
+      final resp = await _http.delete(Uri.parse('$baseUrl/educator-videos/categories/$catId'), headers: {'Authorization': 'Bearer $token'}).timeout(_kTimeout);
       return resp.statusCode == 200;
     } catch (e) {
       return false;
@@ -2119,7 +2197,7 @@ class AuthService {
   /// Liste toutes les vidéos (public)
   Future<List<dynamic>> fetchEducatorVideos() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/educator-videos/'));
+      final response = await _http.get(Uri.parse('$baseUrl/educator-videos/')).timeout(_kTimeout);
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         return data['videos'] ?? [];
@@ -2135,7 +2213,7 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return [];
-      final resp = await http.get(Uri.parse('$baseUrl/educator-videos/my-videos'), headers: {'Authorization': 'Bearer $token'});
+      final resp = await _http.get(Uri.parse('$baseUrl/educator-videos/my-videos'), headers: {'Authorization': 'Bearer $token'}).timeout(_kTimeout);
       if (resp.statusCode == 200) {
         final data = json.decode(utf8.decode(resp.bodyBytes));
         return data['videos'] ?? [];
@@ -2151,7 +2229,7 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return false;
-      final resp = await http.delete(Uri.parse('$baseUrl/educator-videos/$videoId'), headers: {'Authorization': 'Bearer $token'});
+      final resp = await _http.delete(Uri.parse('$baseUrl/educator-videos/$videoId'), headers: {'Authorization': 'Bearer $token'}).timeout(_kTimeout);
       return resp.statusCode == 200;
     } catch (e) {
       return false;
@@ -2167,14 +2245,14 @@ class AuthService {
     try {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non connecté'};
-      final response = await http.put(
+      final response = await _http.put(
         Uri.parse('$baseUrl/users/me'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: json.encode({'full_name': fullName}),
-      );
+      ).timeout(_kTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       if (response.statusCode == 200) {
         return {'success': true, 'full_name': data['full_name']};
