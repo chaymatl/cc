@@ -15,7 +15,7 @@ import '../messaging/messaging_screen.dart';
 
 
 class EducatorTab extends StatefulWidget {
-  const EducatorTab({Key? key}) : super(key: key);
+  const EducatorTab({super.key});
 
   @override
   State<EducatorTab> createState() => _EducatorTabState();
@@ -52,9 +52,6 @@ class _EducatorTabState extends State<EducatorTab> {
     L10n.removeListener(_onLocaleChange);
     super.dispose();
   }
-
-  String _t(String fr, String ar) => L10n.isArabic ? ar : fr;
-
   Future<void> _loadUnreadMessages() async {
     final count = await MessagingService.getUnreadCount();
     if (mounted) setState(() => _unreadMessages = count);
@@ -90,7 +87,7 @@ class _EducatorTabState extends State<EducatorTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(_t('Nouveau Dossier','مجلد جديد'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('Nouveau Dossier', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           // Cover image picker
           GestureDetector(
@@ -113,22 +110,22 @@ class _EducatorTabState extends State<EducatorTab> {
                   ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.add_photo_alternate_rounded, size: 36, color: Colors.grey.shade400),
                       const SizedBox(height: 6),
-                      Text(_t('Image de couverture','صورة الغلاف'), style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 12)),
+                      Text('Image de couverture', style: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 12)),
                     ])
                   : null,
             ),
           ),
           const SizedBox(height: 16),
-          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: _t('Titre du sujet','عنوان الموضوع'), prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre du sujet', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
           const SizedBox(height: 14),
-          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: _t('Description (optionnel)','وصف (اختياري)'), prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: 'Description (optionnel)', prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Annuler','إلغاء'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.create_new_folder, size: 18),
-            label: Text(_t('Créer','إنشاء'), style: const TextStyle(color: Colors.white)),
+            label: Text('Créer', style: const TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
         ],
@@ -144,7 +141,7 @@ class _EducatorTabState extends State<EducatorTab> {
       coverImage: wrapper,
     );
     if (res['success'] == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('Dossier créé !','تم إنشاء المجلد بنجاح')), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dossier créé !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
       _loadCategories();
     }
   }
@@ -165,7 +162,7 @@ class _EducatorTabState extends State<EducatorTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(_t('Publier une Vidéo','نشر فيديو'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('Publier une Vidéo', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             padding: const EdgeInsets.all(16),
@@ -182,26 +179,28 @@ class _EducatorTabState extends State<EducatorTab> {
           const SizedBox(height: 16),
           DropdownButtonFormField<int?>(
             value: selectedCatId,
-            decoration: InputDecoration(labelText: _t('Dossier (sujet)','المجلد (الموضوع)'), prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
+            isExpanded: true,
+            dropdownColor: Colors.white,
+            decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
             items: [
-              DropdownMenuItem<int?>(value: null, child: Text(_t('— Aucun dossier —','— بدون مجلد —')),),
-              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? ''))),
+              DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —', style: const TextStyle(color: Color(0xFF1E293B)))),
+              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? '', style: const TextStyle(color: Color(0xFF1E293B))))),
             ],
             onChanged: (v) => setDState(() => selectedCatId = v),
           ),
           const SizedBox(height: 14),
-          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: _t('Titre','عنوان'), prefixIcon: const Icon(Icons.title), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre', prefixIcon: const Icon(Icons.title), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
           const SizedBox(height: 14),
-          TextField(controller: descCtrl, maxLines: 3, decoration: InputDecoration(labelText: _t('Description (optionnel)','وصف (اختياري)'), prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          TextField(controller: descCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'Description (optionnel)', prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
           const SizedBox(height: 14),
-          TextField(controller: durationCtrl, decoration: InputDecoration(labelText: _t('Durée (ex: 5:30)','المدة (مثال: 5:30)'), prefixIcon: const Icon(Icons.timer), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          TextField(controller: durationCtrl, decoration: InputDecoration(labelText: 'Durée (ex: 5:30)', prefixIcon: const Icon(Icons.timer), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Annuler','إلغاء'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.cloud_upload_rounded, size: 18),
-            label: Text(_t('Publier','نشر'), style: const TextStyle(color: Colors.white)),
+            label: Text('Publier', style: const TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
         ],
@@ -219,22 +218,22 @@ class _EducatorTabState extends State<EducatorTab> {
     );
     setState(() => _isPublishingVideo = false);
     if (res['success'] == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('Vidéo publiée !','تم نشر الفيديو بنجاح')), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vidéo publiée !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
       _loadMyVideos();
       _loadCategories();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? _t('Erreur','خطأ')), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Erreur'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
     }
   }
 
   Future<void> _deleteVideo(int id) async {
     final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      title: Text(_t('Supprimer cette vidéo ?','حذف هذا الفيديو ؟')),
-      actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Annuler','إلغاء'))), TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_t('Supprimer','حذف'), style: const TextStyle(color: Colors.red)))],
+      title: Text('Supprimer cette vidéo ?'),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Supprimer', style: const TextStyle(color: Colors.red)))],
     ));
     if (ok != true) return;
     final deleted = await _authService.deleteEducatorVideo(id);
-    if (deleted && mounted) { _loadMyVideos(); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('Vidéo supprimée','تم حذف الفيديو')))); }
+    if (deleted && mounted) { _loadMyVideos(); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vidéo supprimée'))); }
   }
 
   Future<void> _uploadQuizPdf() async {
@@ -255,7 +254,7 @@ class _EducatorTabState extends State<EducatorTab> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(_t('Nouveau Quiz','اختبار جديد'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('Nouveau Quiz', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -281,7 +280,7 @@ class _EducatorTabState extends State<EducatorTab> {
             TextField(
               controller: titleController,
               decoration: InputDecoration(
-                labelText: _t('Titre du quiz','عنوان الاختبار'),
+                labelText: 'Titre du quiz',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
               ),
@@ -293,7 +292,7 @@ class _EducatorTabState extends State<EducatorTab> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, titleController.text),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: Text(_t('Analyser avec l\'IA','تحليل بالذكاء الاصطناعي'), style: const TextStyle(color: Colors.white)),
+            child: Text('Analyser avec l\'IA', style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -315,7 +314,7 @@ class _EducatorTabState extends State<EducatorTab> {
         content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.white, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(_t('Quiz créé ! $totalQ questions extraites par Gemini.','تم إنشاء الاختبار! $totalQ سؤال استُخرج بواسطة Gemini.'), style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+          Expanded(child: Text('Quiz créé ! $totalQ questions extraites par Gemini.', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
         ]),
         backgroundColor: AppTheme.primaryGreen,
         behavior: SnackBarBehavior.floating,
@@ -324,7 +323,7 @@ class _EducatorTabState extends State<EducatorTab> {
       _loadQuizzes();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(res['message'] ?? _t('Erreur lors de la création du quiz','خطأ أثناء إنشاء الاختبار')),
+        content: Text(res['message'] ?? 'Erreur lors de la création du quiz'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -377,11 +376,11 @@ class _EducatorTabState extends State<EducatorTab> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  _buildMiniStat(_t('Soumissions','التقديمات'), '${stats['total_submissions'] ?? 0}', Icons.people_rounded, Colors.blue),
+                  _buildMiniStat('Soumissions', '${stats['total_submissions'] ?? 0}', Icons.people_rounded, Colors.blue),
                   const SizedBox(width: 10),
-                  _buildMiniStat(_t('Moyenne','المتوسط'), '${stats['average_score'] ?? 0}/10', Icons.analytics_rounded, Colors.orange),
+                  _buildMiniStat('Moyenne', '${stats['average_score'] ?? 0}/10', Icons.analytics_rounded, Colors.orange),
                   const SizedBox(width: 10),
-                  _buildMiniStat(_t('Meilleure','الأفضل'), '${stats['highest_score'] ?? 0}/10', Icons.emoji_events_rounded, Colors.amber),
+                  _buildMiniStat('Meilleure', '${stats['highest_score'] ?? 0}/10', Icons.emoji_events_rounded, Colors.amber),
                 ],
               ),
             ),
@@ -390,7 +389,7 @@ class _EducatorTabState extends State<EducatorTab> {
             if (questions.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Align(alignment: Alignment.centerLeft, child: Text('${questions.length} ${_t('Questions extraites par l\'IA','سؤال استخرجته الذكاء الاصطناعي')}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryGreen))),
+                child: Align(alignment: Alignment.centerLeft, child: Text('${questions.length} ${'Questions extraites par l\'IA'}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryGreen))),
               ),
               const SizedBox(height: 8),
             ],
@@ -400,7 +399,7 @@ class _EducatorTabState extends State<EducatorTab> {
                   ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.inbox_rounded, size: 48, color: Colors.grey.shade300),
                       const SizedBox(height: 12),
-                      Text(_t('Aucune soumission','لا توجد تقديمات'), style: GoogleFonts.inter(color: AppTheme.textMuted)),
+                      Text('Aucune soumission', style: GoogleFonts.inter(color: AppTheme.textMuted)),
                     ]))
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -427,7 +426,7 @@ class _EducatorTabState extends State<EducatorTab> {
                             Expanded(child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(sub['student_name'] ?? _t('Étudiant','طالب'), style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                                Text(sub['student_name'] ?? 'Étudiant', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
                                 Text(sub['submitted_at'] ?? '', style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
                               ],
                             )),
@@ -483,7 +482,7 @@ class _EducatorTabState extends State<EducatorTab> {
             _buildQuickStats(context),
             const SizedBox(height: 48),
 
-            _buildSectionHeader(L10n.isArabic ? 'اختبار تلقائي (ذكاء Gemini)' : 'QUIZ AUTOMATIQUE (IA GEMINI)', Icons.auto_awesome_rounded),
+            _buildSectionHeader('QUIZ AUTOMATIQUE (IA GEMINI)', Icons.auto_awesome_rounded),
             const SizedBox(height: 20),
             _buildUploadCard(),
             const SizedBox(height: 20),
@@ -492,38 +491,38 @@ class _EducatorTabState extends State<EducatorTab> {
             if (_isLoading)
               const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: AppTheme.primaryGreen)))
             else if (_quizzes.isNotEmpty) ...[
-              Text(L10n.isArabic ? 'اختباراتي (${_quizzes.length})' : 'Mes Quiz (${_quizzes.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              Text('Mes Quiz (${_quizzes.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
               const SizedBox(height: 12),
               ..._quizzes.map((q) => _buildQuizCard(q)).toList(),
             ],
 
             const SizedBox(height: 40),
-            _buildSectionHeader(L10n.isArabic ? 'فيديوهات تعليمية' : 'VIDÉOS ÉDUCATIVES', Icons.video_library_rounded),
+            _buildSectionHeader('VIDÉOS ÉDUCATIVES', Icons.video_library_rounded),
             const SizedBox(height: 20),
             // Create folder + Upload video buttons
             Row(children: [
-              Expanded(child: _buildActionCard(_t('Nouveau Dossier','مجلد جديد'), Icons.create_new_folder_rounded, Colors.indigo, _createCategory)),
+              Expanded(child: _buildActionCard('Nouveau Dossier', Icons.create_new_folder_rounded, Colors.indigo, _createCategory)),
               const SizedBox(width: 14),
-              Expanded(child: _buildActionCard(_t('Publier Vidéo','نشر فيديو'), Icons.video_call_rounded, Colors.teal, _isPublishingVideo ? null : _publishVideo)),
+              Expanded(child: _buildActionCard('Publier Vidéo', Icons.video_call_rounded, Colors.teal, _isPublishingVideo ? null : _publishVideo)),
             ]),
             const SizedBox(height: 20),
             // Category folders
             if (_categories.isNotEmpty) ...[
-              Text(L10n.isArabic ? 'المجلدات (${_categories.length})' : 'DOSSIERS (${_categories.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              Text('DOSSIERS (${_categories.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
               const SizedBox(height: 12),
               ..._categories.map((c) => _buildCategoryCard(c)).toList(),
               const SizedBox(height: 20),
             ],
             // Videos without category
             if (_myVideos.isNotEmpty) ...[
-              Text(L10n.isArabic ? 'فيديوهاتي (${_myVideos.length})' : 'MES VIDÉOS (${_myVideos.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              Text('MES VIDÉOS (${_myVideos.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
               const SizedBox(height: 12),
               ..._myVideos.map((v) => _buildMyVideoCard(v)).toList(),
             ] else if (_categories.isEmpty)
-              Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_t('Aucune vidéo publiée.','لا توجد فيديوهات منشورة.'), style: GoogleFonts.inter(color: AppTheme.textMuted)))),
+              Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Aucune vidéo publiée.', style: GoogleFonts.inter(color: AppTheme.textMuted)))),
 
             const SizedBox(height: 40),
-            _buildSectionHeader(L10n.isArabic ? 'مجموعات المواطنين' : 'GROUPES DE CITOYENS', Icons.group_rounded),
+            _buildSectionHeader('GROUPES DE CITOYENS', Icons.group_rounded),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -535,7 +534,7 @@ class _EducatorTabState extends State<EducatorTab> {
                   _loadMeetings(); // refresh après retour
                 },
                 icon: const Icon(Icons.group_add_rounded),
-                label: Text(_t('Gérer mes groupes de citoyens','إدارة مجموعات المواطنين'),
+                label: Text('Gérer mes groupes de citoyens',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF6C5CE7),
@@ -547,7 +546,7 @@ class _EducatorTabState extends State<EducatorTab> {
             ),
 
             const SizedBox(height: 40),
-            _buildSectionHeader(L10n.isArabic ? 'جلسات Google Meet' : 'SÉANCES GOOGLE MEET', Icons.video_camera_front_rounded),
+            _buildSectionHeader('SÉANCES GOOGLE MEET', Icons.video_camera_front_rounded),
             const SizedBox(height: 16),
             _buildAwarenessSessions(context),
             const SizedBox(height: 100),
@@ -563,7 +562,7 @@ class _EducatorTabState extends State<EducatorTab> {
           icon: _isUploading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(Icons.upload_file_rounded),
-          label: Text(L10n.isArabic ? (_isUploading ? 'جار التحليل...' : 'رفع اختبار PDF') : (_isUploading ? 'ANALYSE IA...' : 'UPLOADER UN QUIZ PDF')),
+          label: Text(_isUploading ? 'ANALYSE IA...' : 'UPLOADER UN QUIZ PDF'),
         ),
       ),
 
@@ -579,7 +578,7 @@ class _EducatorTabState extends State<EducatorTab> {
           children: [
             Expanded(
               child: Text(
-                _t('Espace Éducateur', 'فضاء المعلم'),
+                'Espace Éducateur',
                 style: GoogleFonts.outfit(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -647,7 +646,7 @@ class _EducatorTabState extends State<EducatorTab> {
         ),
         const SizedBox(height: 8),
         Text(
-          _t('Gérez vos quiz et contenus pédagogiques.', 'أدر اختباراتك ومحتوياتك التعليمية.'),
+          'Gérez vos quiz et contenus pédagogiques.',
           style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 16),
         ),
       ],
@@ -657,11 +656,11 @@ class _EducatorTabState extends State<EducatorTab> {
   Widget _buildQuickStats(BuildContext context) {
     return Row(
       children: [
-        _buildStatCard(context, _t('Quiz Créés','اختبارات منشأة'), '${_quizzes.length}', Icons.quiz_rounded, Colors.purple),
+        _buildStatCard(context, 'Quiz Créés', '${_quizzes.length}', Icons.quiz_rounded, Colors.purple),
         const SizedBox(width: 12),
-        _buildStatCard(context, _t('Soumissions','التقديمات'), '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.assignment_turned_in_rounded, Colors.orange),
+        _buildStatCard(context, 'Soumissions', '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.assignment_turned_in_rounded, Colors.orange),
         const SizedBox(width: 12),
-        _buildStatCard(context, _t('Corrigés IA','صحح بالذكاء'), '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.auto_awesome, Colors.amber),
+        _buildStatCard(context, 'Corrigés IA', '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.auto_awesome, Colors.amber),
       ],
     );
   }
@@ -719,10 +718,10 @@ class _EducatorTabState extends State<EducatorTab> {
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_t('Quiz Automatique','اختبار تلقائي'), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                Text('Quiz Automatique', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                 const SizedBox(height: 4),
                 Text(
-                  _t('Uploadez un PDF → Gemini extrait les questions, corrige et note automatiquement sur 10.','ارفع ملف PDF → Gemini يستخرج الأسئلة ويصححها تلقائياً.'),
+                  'Uploadez un PDF → Gemini extrait les questions, corrige et note automatiquement sur 10.',
                   style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 12, height: 1.4),
                 ),
               ],
@@ -742,8 +741,8 @@ class _EducatorTabState extends State<EducatorTab> {
     final isError = status == 'error';
     final errorMsg = quiz['error_message'] ?? '';
 
-    Color statusColor = isReady ? AppTheme.primaryGreen : isError ? Colors.red : Colors.orange;
-    String statusLabel = isReady ? _t('PRÊT','جاهز') : isError ? _t('ERREUR','خطأ') : _t('EN COURS','جاري');
+    final Color statusColor = isReady ? AppTheme.primaryGreen : isError ? Colors.red : Colors.orange;
+    final String statusLabel = isReady ? 'PRÊT' : isError ? 'ERREUR' : 'EN COURS';
 
     return GestureDetector(
       onTap: isReady ? () => _viewQuizResults(Map<String, dynamic>.from(quiz)) : null,
@@ -781,11 +780,11 @@ class _EducatorTabState extends State<EducatorTab> {
                     Row(children: [
                       const Icon(Icons.help_outline, size: 13, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                       Flexible(child: Text('$total ${_t('questions','سؤال')}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
+                       Flexible(child: Text('$total ${'questions'}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 10),
                       const Icon(Icons.people_outline, size: 13, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                      Flexible(child: Text('$subs ${_t('soumissions','تقديم')}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
+                      Flexible(child: Text('$subs ${'soumissions'}', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                     ]),
                   ],
                 )),
@@ -829,7 +828,7 @@ class _EducatorTabState extends State<EducatorTab> {
                           child: ElevatedButton.icon(
                             onPressed: () => _retryQuiz(quiz['id']),
                             icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: Text(_t('RÉESSAYER','إعادة المحاولة'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
+                            label: Text('RÉESSAYER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
                               foregroundColor: Colors.white,
@@ -843,7 +842,7 @@ class _EducatorTabState extends State<EducatorTab> {
                           child: ElevatedButton.icon(
                             onPressed: () => _deleteQuiz(quiz['id']),
                             icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                            label: Text(_t('SUPPRIMER','حذف'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
+                            label: Text('SUPPRIMER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red.shade600,
                               foregroundColor: Colors.white,
@@ -869,14 +868,14 @@ class _EducatorTabState extends State<EducatorTab> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_t('Supprimer ce quiz ?','حذف هذا الاختبار ؟'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text(_t('Cette action est irréversible. Le fichier PDF et toutes les données seront supprimés.','هذا الإجراء لا رجعة منه.'), style: GoogleFonts.inter(color: AppTheme.textMuted)),
+        title: Text('Supprimer ce quiz ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text('Cette action est irréversible. Le fichier PDF et toutes les données seront supprimés.', style: GoogleFonts.inter(color: AppTheme.textMuted)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Annuler','إلغاء'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.delete_forever_rounded, size: 18),
-            label: Text(_t('Supprimer','حذف'), style: const TextStyle(color: Colors.white)),
+            label: Text('Supprimer', style: const TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
         ],
@@ -887,7 +886,7 @@ class _EducatorTabState extends State<EducatorTab> {
     final res = await _authService.deleteQuiz(quizId);
     if (res['success'] == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('Quiz supprimé','تم حذف الاختبار')),
+        content: Text('Quiz supprimé'),
         backgroundColor: Colors.red.shade600,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -895,7 +894,7 @@ class _EducatorTabState extends State<EducatorTab> {
       _loadQuizzes();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(res['message'] ?? _t('Erreur lors de la suppression','خطأ أثناء الحذف')),
+        content: Text(res['message'] ?? 'Erreur lors de la suppression'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ));
@@ -912,7 +911,7 @@ class _EducatorTabState extends State<EducatorTab> {
         content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.white, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(res['message'] ?? _t('Quiz re-traité avec succès !','تمت إعادة معالجة الاختبار بنجاح!'), style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+          Expanded(child: Text(res['message'] ?? 'Quiz re-traité avec succès !', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
         ]),
         backgroundColor: AppTheme.primaryGreen,
         behavior: SnackBarBehavior.floating,
@@ -921,7 +920,7 @@ class _EducatorTabState extends State<EducatorTab> {
       _loadQuizzes();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(res['message'] ?? _t('Erreur lors du retry','خطأ أثناء الإعادة')),
+        content: Text(res['message'] ?? 'Erreur lors du retry'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -978,7 +977,7 @@ class _EducatorTabState extends State<EducatorTab> {
             Row(children: [
               Icon(Icons.video_library_rounded, size: 13, color: Colors.indigo.shade300),
               const SizedBox(width: 4),
-              Text('$videoCount ${_t('vidéo(s)','فيديو')}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.indigo)),
+              Text('$videoCount ${'vidéo(s)'}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.indigo)),
             ]),
           ]),
         )),
@@ -986,8 +985,8 @@ class _EducatorTabState extends State<EducatorTab> {
           icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 20),
           onPressed: () async {
             final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-              title: Text(_t('Supprimer ce dossier ?','حذف هذا المجلد؟')), content: Text(_t('Les vidéos ne seront pas supprimées.','لن يتم حذف الفيديوهات.')),
-              actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Annuler','إلغاء'))), TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_t('Supprimer','حذف'), style: const TextStyle(color: Colors.red)))],
+              title: Text('Supprimer ce dossier ?'), content: Text('Les vidéos ne seront pas supprimées.'),
+              actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Supprimer', style: const TextStyle(color: Colors.red)))],
             ));
             if (ok == true) { await _authService.deleteVideoCategory(catId); _loadCategories(); _loadMyVideos(); }
           },
@@ -1062,7 +1061,7 @@ class _EducatorTabState extends State<EducatorTab> {
             IconButton(
               icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 20),
               onPressed: () => _deleteVideo(videoId),
-              tooltip: _t('Supprimer','حذف'),
+              tooltip: 'Supprimer',
             ),
           const SizedBox(width: 4),
         ],
@@ -1088,7 +1087,7 @@ class _EducatorTabState extends State<EducatorTab> {
               if (ok == true) _loadMeetings();
             },
             icon: const Icon(Icons.add_rounded),
-            label: Text(_t('Planifier une séance Google Meet','جدولة جلسة Google Meet'),
+            label: Text('Planifier une séance Google Meet',
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: kGreen,
@@ -1112,10 +1111,10 @@ class _EducatorTabState extends State<EducatorTab> {
             child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.event_note_rounded, size: 40, color: Colors.grey.shade400),
               const SizedBox(height: 10),
-              Text(_t('Aucune séance planifiée','لا توجد جلسات مجدولة'), style: GoogleFonts.outfit(
+              Text('Aucune séance planifiée', style: GoogleFonts.outfit(
                   color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text(_t('Créez votre première séance Google Meet\npour vos citoyens.','أنشئ أول جلسة Google Meet\nلمواطنيك.'),
+              Text('Créez votre première séance Google Meet\npour vos citoyens.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12, height: 1.5)),
             ])),
@@ -1156,7 +1155,7 @@ class _EducatorTabState extends State<EducatorTab> {
                         color: isPast ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.grey.shade100) : kGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(isPast ? _t('Terminée','انتهت') : _t('Planifiée','مجدولة'),
+                      child: Text(isPast ? 'Terminée' : 'Planifiée',
                         style: GoogleFonts.inter(
                           color: isPast ? Colors.grey : kGreen,
                           fontSize: 11, fontWeight: FontWeight.w700)),
@@ -1176,7 +1175,7 @@ class _EducatorTabState extends State<EducatorTab> {
                       const SizedBox(width: 16),
                       const Icon(Icons.timer_rounded, size: 14, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                      Text('${m['duration_minutes']} ${_t('min','دقيقة')}',
+                      Text('${m['duration_minutes']} ${'min'}',
                         style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
                     ]),
                     if ((m['group_name'] as String? ?? '').isNotEmpty) ...[
@@ -1192,7 +1191,7 @@ class _EducatorTabState extends State<EducatorTab> {
                     Row(children: [
                       const Icon(Icons.people_rounded, size: 14, color: AppTheme.textMuted),
                       const SizedBox(width: 6),
-                       Text('${m['participants_count']} ${_t('participant(s)','مشارك')}',
+                       Text('${m['participants_count']} ${'participant(s)'}',
                         style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13)),
                     ]),
                     const SizedBox(height: 12),
@@ -1204,7 +1203,7 @@ class _EducatorTabState extends State<EducatorTab> {
                           if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
                         },
                         icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                        label: Text(_t('Ouvrir Meet','فتح Meet'), style: GoogleFonts.outfit()),
+                        label: Text('Ouvrir Meet', style: GoogleFonts.outfit()),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: kGreen,
                           side: BorderSide(color: kGreen.withOpacity(0.5)),
@@ -1229,13 +1228,13 @@ class _EducatorTabState extends State<EducatorTab> {
                         onPressed: () async {
                           final confirm = await showDialog<bool>(context: context, builder: (_) =>
                             AlertDialog(
-                              title: Text(_t('Supprimer la séance ?','حذف الجلسة ؟'), style: GoogleFonts.outfit()),
-                              content: Text(_t('Cette action est irréversible.','هذا الإجراء لا رجعة منه.'), style: GoogleFonts.inter()),
+                              title: Text('Supprimer la séance ?', style: GoogleFonts.outfit()),
+                              content: Text('Cette action est irréversible.', style: GoogleFonts.inter()),
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(context, false),
-                                  child: Text(_t('Annuler','إلغاء'))),
+                                  child: Text('Annuler')),
                                 TextButton(onPressed: () => Navigator.pop(context, true),
-                                  child: Text(_t('Supprimer','حذف'), style: const TextStyle(color: Colors.red))),
+                                  child: Text('Supprimer', style: const TextStyle(color: Colors.red))),
                               ],
                             ));
                           if (confirm == true) {

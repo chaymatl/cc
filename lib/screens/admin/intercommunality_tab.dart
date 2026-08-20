@@ -1111,19 +1111,32 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _f3FilterRole.isEmpty ? null : _f3FilterRole,
+                      isExpanded: true,
                       dropdownColor: Colors.white,
                       style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Rôle...',
                         hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
-                        prefixIcon: const Icon(Icons.filter_list_rounded, size: 20, color: Color(0xFF6C3EB8)),
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(left: 8, right: 4),
+                          child: Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF6C3EB8)),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 30, minHeight: 30),
                         isDense: true,
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       ),
+                      selectedItemBuilder: (BuildContext context) {
+                        return const [
+                          Text('Tous', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                          Text('Gestionnaires', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                          Text('Collecteurs', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                          Text('Éducateurs', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                        ];
+                      },
                       items: const [
                         DropdownMenuItem<String>(value: '', child: Text('Tous les rôles', style: TextStyle(color: Color(0xFF1E293B)))),
                         DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires', style: TextStyle(color: Color(0xFF1E293B)))),
@@ -1133,17 +1146,25 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       onChanged: (v) => setState(() => _f3FilterRole = v ?? ''),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   TextButton.icon(
                     onPressed: () => setState(() => _showGroups = !_showGroups),
-                    icon: Icon(_showGroups ? Icons.person_outline_rounded : Icons.group_work_outlined),
-                    label: Text(_showGroups ? 'Acteurs' : 'Groupes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                    icon: Icon(_showGroups ? Icons.person_outline_rounded : Icons.group_work_outlined, size: 18),
+                    label: Text(_showGroups ? 'Acteurs' : 'Groupes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   IconButton(
                     onPressed: _showNotifyActorsDialog,
-                    icon: const Icon(Icons.notifications_active_outlined, color: Color(0xFF6C3EB8)),
+                    icon: const Icon(Icons.notifications_active_outlined, color: Color(0xFF6C3EB8), size: 20),
                     tooltip: 'Notifier les acteurs',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
@@ -1697,6 +1718,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 // City Dropdown
                 DropdownButtonFormField<String>(
                   value: cityCtrl.text.isEmpty ? null : cityCtrl.text,
+                  isExpanded: true,
                   dropdownColor: Colors.white,
                   style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
@@ -1720,6 +1742,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 // Waste Type Dropdown
                 DropdownButtonFormField<String>(
                   value: wasteTypeCtrl.text.isEmpty ? null : wasteTypeCtrl.text,
+                  isExpanded: true,
                   dropdownColor: Colors.white,
                   style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
@@ -1941,6 +1964,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               const SizedBox(height: 6),
               DropdownButtonFormField<int>(
                 value: selectedCollectorId,
+                isExpanded: true,
                 dropdownColor: Colors.white,
                 style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
@@ -2188,6 +2212,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     else
                       DropdownButtonFormField<int>(
                         value: selectedZoneId,
+                        isExpanded: true,
                         dropdownColor: Colors.white,
                         style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
@@ -2326,6 +2351,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     value: selectedCollectorId,
+                    isExpanded: true,
                     dropdownColor: Colors.white,
                     style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
