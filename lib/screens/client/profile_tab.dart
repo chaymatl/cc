@@ -1564,7 +1564,13 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
             child: const Icon(Icons.lock_outline_rounded, color: AppTheme.primaryGreen, size: 20),
           ),
           const SizedBox(width: 12),
-          Text('Changer le mot de passe', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black)),
+          Expanded(
+            child: Text(
+              'Changer le mot de passe',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 17, color: isDark ? Colors.white : Colors.black),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
       content: SingleChildScrollView(
@@ -1646,7 +1652,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : Text('METTRE È JOUR', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              : Text('METTRE À JOUR', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ),
       ],
     );

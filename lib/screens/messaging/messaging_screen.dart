@@ -13,13 +13,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/messaging_service.dart';
 import '../../theme/app_theme.dart';
+import '../../models/user_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Point d'entrée : MessagingScreen
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MessagingScreen extends StatefulWidget {
-  const MessagingScreen({Key? key}) : super(key: key);
+  const MessagingScreen({super.key});
 
   @override
   State<MessagingScreen> createState() => _MessagingScreenState();
@@ -289,7 +290,7 @@ class _ConversationTile extends StatelessWidget {
     if (type == 'citizen_group') {
       title = conversation['group_name'] as String? ?? 'Groupe';
       final count = conversation['member_count'] as int? ?? 0;
-      subtitle = '👥 $count membres · $lastMsg';
+      subtitle = 'ðŸ‘¥ $count membres · $lastMsg';
       typeIcon = Icons.groups_rounded;
       iconColor = Color(int.parse(
           (conversation['group_color'] as String? ?? '#00C896')
@@ -297,13 +298,13 @@ class _ConversationTile extends StatelessWidget {
     } else if (type == 'broadcast') {
       title = '${conversation['partner_name']} (broadcast)';
       final label = conversation['collector_group_label'] as String?;
-      subtitle = label != null ? '📢 $label · $lastMsg' : '📢 $lastMsg';
+      subtitle = label != null ? 'ðŸ“¢ $label · $lastMsg' : 'ðŸ“¢ $lastMsg';
       typeIcon = Icons.campaign_rounded;
       iconColor = Colors.orange;
     } else {
       title = conversation['partner_name'] as String? ?? '?';
       subtitle = ismine ? '✓ $lastMsg' : lastMsg;
-      typeIcon = _roleIcon(conversation['partner_role'] as String? ?? 'user');
+      typeIcon = _roleIcon(conversation['partner_role'] as String? ?? 'citoyen');
       iconColor = AppTheme.primaryGreen;
     }
 
@@ -444,7 +445,7 @@ class _ChatScreenState extends State<_ChatScreen> {
   bool _loading = true;
   bool _sending = false;
   Timer? _pollTimer;
-  Timer? _typingTimer;          // délai avant de stopper l'indicateur "en écriture"
+  Timer? _typingTimer;          // délai avant de stopper l'indicateur 'en écriture'
   int? _replyToId;
   String? _replyToContent;
   String? _replyToSender;
@@ -467,20 +468,21 @@ class _ChatScreenState extends State<_ChatScreen> {
   }
 
   Future<void> _init() async {
-    // Récupérer l'ID de l'utilisateur courant depuis SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
-    if (jwt != null) {
-      try {
-        final parts = jwt.split('.');
-        if (parts.length == 3) {
-          final payload = parts[1];
-          final normalized = base64Url.normalize(payload);
-          final resp = utf8.decode(base64Url.decode(normalized));
-          final data = jsonDecode(resp) as Map<String, dynamic>;
-          _myUserId = int.tryParse(data['id']?.toString() ?? '');
-        }
-      } catch (_) {}
+    _myUserId = int.tryParse(AuthState.currentUser?.id ?? '');
+    if (_myUserId == null) {
+      final jwt = AuthState.authToken ?? (await SharedPreferences.getInstance()).getString('jwt_token');
+      if (jwt != null) {
+        try {
+          final parts = jwt.split('.');
+          if (parts.length == 3) {
+            final payload = parts[1];
+            final normalized = base64Url.normalize(payload);
+            final resp = utf8.decode(base64Url.decode(normalized));
+            final data = jsonDecode(resp) as Map<String, dynamic>;
+            _myUserId = int.tryParse(data['id']?.toString() ?? data['user_id']?.toString() ?? '');
+          }
+        } catch (_) {}
+      }
     }
 
     _load();
@@ -503,14 +505,21 @@ class _ChatScreenState extends State<_ChatScreen> {
 
     // Écouter l'indicateur de frappe du partenaire (RTDB)
     if (_myUserId != null) {
-      _typingSub = _partnerTypingRef.onValue.listen((event) {
-        final val = event.snapshot.value;
-        final isTyping = val == true || val == 1;
-        if (mounted && _partnerTyping != isTyping) {
-          setState(() => _partnerTyping = isTyping);
-          if (isTyping) _scrollToBottom();
-        }
-      });
+      try {
+        _typingSub = _partnerTypingRef.onValue.listen((event) {
+          final val = event.snapshot.value;
+          final isTyping = val == true || val == 1;
+          if (mounted && _partnerTyping != isTyping) {
+            setState(() => _partnerTyping = isTyping);
+            if (isTyping) _scrollToBottom();
+          }
+        }, onError: (err) {
+          // Ignore les erreurs de permissions Firebase RTDB silencieusement
+          debugPrint('[RTDB] typing stream non autorisé ou indisponible : $err');
+        });
+      } catch (e) {
+        debugPrint('[RTDB] Erreur initialisation stream typing : $e');
+      }
     }
   }
 
@@ -522,7 +531,9 @@ class _ChatScreenState extends State<_ChatScreen> {
     _typingSub?.cancel();
     // Effacer l'indicateur de frappe quand on quitte
     if (_myUserId != null) {
-      _myTypingRef.remove().ignore();
+      try {
+        _myTypingRef.remove().catchError((_) {});
+      } catch (_) {}
     }
     _ctrl.dispose();
     _scroll.dispose();
@@ -532,17 +543,21 @@ class _ChatScreenState extends State<_ChatScreen> {
   // ── Publier l'indicateur de frappe dans RTDB ──────────────────────────────
   void _onTypingChanged(String value) {
     if (_myUserId == null) return;
-    if (value.isNotEmpty) {
-      _myTypingRef.set(true).ignore();
-      // Réinitialiser le timer : stoppe l'indicateur après 3s sans frappe
-      _typingTimer?.cancel();
-      _typingTimer = Timer(const Duration(seconds: 3), () {
-        _myTypingRef.remove().ignore();
-      });
-    } else {
-      _typingTimer?.cancel();
-      _myTypingRef.remove().ignore();
-    }
+    try {
+      if (value.isNotEmpty) {
+        _myTypingRef.set(true).catchError((_) {});
+        // Réinitialiser le timer : stoppe l'indicateur après 3s sans frappe
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(seconds: 3), () {
+          try {
+            _myTypingRef.remove().catchError((_) {});
+          } catch (_) {}
+        });
+      } else {
+        _typingTimer?.cancel();
+        _myTypingRef.remove().catchError((_) {});
+      }
+    } catch (_) {}
   }
 
 
@@ -552,11 +567,14 @@ class _ChatScreenState extends State<_ChatScreen> {
     if (mounted && data != null) {
       final msgs = (data['messages'] as List? ?? [])
           .cast<Map<String, dynamic>>();
+      final wasAtBottom = _scroll.hasClients &&
+          _scroll.position.pixels >= _scroll.position.maxScrollExtent - 120;
       setState(() {
         _messages = msgs;
         _loading = false;
       });
-      if (!silent) _scrollToBottom();
+      // Scroll si : premier chargement OU user était déjà en bas
+      if (!silent || wasAtBottom) _scrollToBottom();
     }
   }
 
@@ -574,9 +592,12 @@ class _ChatScreenState extends State<_ChatScreen> {
 
   Future<void> _send() async {
     final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _sending = true);
-    _ctrl.clear();
+    if (text.isEmpty || _sending) return;
+    // Effacer l'indicateur de frappe immédiatement à l'envoi
+    _typingTimer?.cancel();
+    if (_myUserId != null) _myTypingRef.remove().ignore();
+    if (mounted) setState(() => _sending = true);
+    // NE PAS effacer le texte avant confirmation — on le restaure en cas d'échec
 
     Map<String, dynamic>? result;
     if (_replyToId != null) {
@@ -591,16 +612,33 @@ class _ChatScreenState extends State<_ChatScreen> {
       );
     }
 
-    setState(() {
-      _sending = false;
-      _replyToId = null;
-      _replyToContent = null;
-      _replyToSender = null;
-    });
+    if (!mounted) return;
 
     if (result != null) {
+      // Succès : vider le champ et recharger
+      _ctrl.clear();
+      setState(() {
+        _sending = false;
+        _replyToId = null;
+        _replyToContent = null;
+        _replyToSender = null;
+      });
       await _load(silent: true);
       _scrollToBottom();
+    } else {
+      // Échec : conserver le texte et informer l'utilisateur
+      setState(() => _sending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Impossible d'envoyer le message. Vérifiez votre connexion.",
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -896,7 +934,7 @@ class _MessageBubble extends StatelessWidget {
                 radius: 16,
                 backgroundColor: AppTheme.primaryGreen.withOpacity(0.2),
                 child: Icon(
-                  _roleIcon(message['sender_role'] as String? ?? 'user'),
+                  _roleIcon(message['sender_role'] as String? ?? 'citoyen'),
                   color: AppTheme.primaryGreen,
                   size: 16,
                 ),
@@ -1009,7 +1047,7 @@ class _MessageBubble extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              createdAt != null ? _formatTime(createdAt) : '',
+                              createdAt != null ? _formatBubbleTime(createdAt) : '',
                               style: GoogleFonts.inter(
                                 color: Colors.white54,
                                 fontSize: 10,
@@ -1078,6 +1116,8 @@ class _GroupChatScreenState extends State<_GroupChatScreen> {
   void initState() {
     super.initState();
     _load();
+    // Marquer tous les messages du groupe comme lus dès l'ouverture
+    MessagingService.markGroupAsRead(widget.groupId).ignore();
     // Polling 2s pour les messages récents
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _load(silent: true));
     // Wakeup instantané si une push FCM de type 'group_message' arrive en foreground
@@ -1086,6 +1126,7 @@ class _GroupChatScreenState extends State<_GroupChatScreen> {
       final groupId = int.tryParse(msg.data['group_id'] ?? '');
       if (type == 'group_message' && groupId == widget.groupId) {
         _load(silent: true);
+        MessagingService.markGroupAsRead(widget.groupId).ignore();
       }
     });
   }
@@ -1100,17 +1141,19 @@ class _GroupChatScreenState extends State<_GroupChatScreen> {
   }
 
   Future<void> _load({bool silent = false}) async {
-    if (!silent) setState(() => _loading = true);
+    if (!silent && mounted) setState(() => _loading = true);
     final data =
         await MessagingService.getGroupConversation(widget.groupId);
     if (mounted && data != null) {
       final msgs = (data['messages'] as List? ?? [])
           .cast<Map<String, dynamic>>();
+      final wasAtBottom = _scroll.hasClients &&
+          _scroll.position.pixels >= _scroll.position.maxScrollExtent - 120;
       setState(() {
         _messages = msgs;
         _loading = false;
       });
-      if (!silent) _scrollToBottom();
+      if (!silent || wasAtBottom) _scrollToBottom();
     }
   }
 
@@ -1126,12 +1169,12 @@ class _GroupChatScreenState extends State<_GroupChatScreen> {
 
   Future<void> _send() async {
     final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _sending = true);
+    if (text.isEmpty || _sending) return;
+    if (mounted) setState(() => _sending = true);
     _ctrl.clear();
     final result = await MessagingService.sendGroupMessage(
         groupId: widget.groupId, content: text);
-    setState(() => _sending = false);
+    if (mounted) setState(() => _sending = false);
     if (result != null) {
       await _load(silent: true);
       _scrollToBottom();
@@ -1339,14 +1382,30 @@ class _NewMessageSheetState extends State<_NewMessageSheet>
 
   Future<void> _sendDirect() async {
     if (_selectedRecipient == null || _contentCtrl.text.trim().isEmpty) return;
+    final content = _contentCtrl.text.trim();
     setState(() => _sending = true);
-    await MessagingService.sendMessage(
+    final result = await MessagingService.sendMessage(
       receiverId: _selectedRecipient!['id'] as int,
-      content: _contentCtrl.text.trim(),
+      content: content,
     );
+    if (!mounted) return;
     setState(() => _sending = false);
-    widget.onMessageSent();
-    if (mounted) Navigator.pop(context);
+    if (result != null) {
+      widget.onMessageSent();
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Envoi échoué. Vous n'avez peut-être pas la permission de contacter cet utilisateur.",
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   Future<void> _sendGroup() async {
@@ -1535,7 +1594,7 @@ class _DirectTab extends StatefulWidget {
 
 class _DirectTabState extends State<_DirectTab> {
   final TextEditingController _searchCtrl = TextEditingController();
-  bool _isExpanded = false;
+  bool _isExpanded = true;  // Afficher les contacts dès l'ouverture
   String _query = '';
 
   @override
@@ -2286,6 +2345,7 @@ IconData _roleIcon(String role) {
       return Icons.location_on_rounded;
     case 'educator':
       return Icons.school_rounded;
+    case 'citoyen':
     case 'user':
       return Icons.person_rounded;
     default:
@@ -2301,6 +2361,7 @@ String _roleLabel(String role) {
     case 'collector':  return 'Collecteur';
     case 'pointManager': return 'Gestionnaire';
     case 'educator':   return 'Éducateur';
+    case 'citoyen':
     case 'user':       return 'Citoyen';
     default:           return role;
   }
@@ -2308,22 +2369,45 @@ String _roleLabel(String role) {
 
 String _formatTime(String isoString) {
   try {
-    final dt = DateTime.parse(isoString).toLocal();
+    final dt = _parseUtc(isoString);
     final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) {
+    // Comparaison par jour calendaire (pas par tranche de 24h)
+    final nowDay = DateTime(now.year, now.month, now.day);
+    final dtDay  = DateTime(dt.year,  dt.month,  dt.day);
+    final dayDiff = nowDay.difference(dtDay).inDays;
+    if (dayDiff == 0) {
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } else if (diff.inDays == 1) {
+    } else if (dayDiff == 1) {
       return 'Hier';
-    } else if (diff.inDays < 7) {
+    } else if (dayDiff < 7) {
       const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
       return days[dt.weekday - 1];
     } else {
-      return '${dt.day}/${dt.month}';
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
     }
   } catch (_) {
     return '';
   }
+}
+
+/// Toujours HH:mm — utilisé dans les bulles de message (comme WhatsApp).
+String _formatBubbleTime(String isoString) {
+  try {
+    final dt = _parseUtc(isoString);
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  } catch (_) {
+    return '';
+  }
+}
+
+/// Parse une date ISO 8601 en s'assurant qu'elle est traitée comme UTC,
+/// même si le suffixe 'Z' est absent (protection contre les serveurs qui
+/// renvoient des dates sans indicateur de fuseau horaire).
+DateTime _parseUtc(String isoString) {
+  final s = isoString.endsWith('Z') || isoString.contains('+') || isoString.contains('-', 10)
+      ? isoString
+      : '${isoString}Z'; // forcer UTC si pas de suffixe
+  return DateTime.parse(s).toLocal();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2338,11 +2422,10 @@ class DirectChatRoute extends StatelessWidget {
   final int    partnerId;
   final String partnerName;
 
-  const DirectChatRoute({
-    Key? key,
+  const DirectChatRoute({super.key,
     required this.partnerId,
     required this.partnerName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2360,11 +2443,10 @@ class GroupChatRoute extends StatelessWidget {
   final int    groupId;
   final String groupName;
 
-  const GroupChatRoute({
-    Key? key,
+  const GroupChatRoute({super.key,
     required this.groupId,
     required this.groupName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
