@@ -89,7 +89,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 5, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
     _tabCtrl.addListener(() => setState(() {})); // Rebuild FAB on tab changes
     L10n.addListener(_onLocaleChange);
     _loadInstructions();
@@ -295,19 +295,23 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     final totalInstructions = dash?['total_instructions'] ?? _instructions.length;
     final totalPoints       = dash?['total_points']       ?? _points.length;
     final totalActors       = dash?['total_actors']       ?? _actors.length;
-    final unread            = _unreadRepliesCount;
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Row(
         children: [
-          _kpiCard(value: '$totalInstructions', label: 'Consignes',  icon: Icons.rule_rounded,          color: const Color(0xFF6C3EB8)),
+          _kpiCard(value: '$totalInstructions', label: 'Consignes', icon: Icons.rule_rounded, color: const Color(0xFF6C3EB8)),
           const SizedBox(width: 8),
-          _kpiCard(value: '$totalPoints',       label: 'Points',     icon: Icons.location_city_rounded,  color: const Color(0xFF1A6B3C)),
+          _kpiCard(value: '$totalPoints', label: 'Points', icon: Icons.location_city_rounded, color: const Color(0xFF1A6B3C)),
           const SizedBox(width: 8),
-          _kpiCard(value: '$totalActors',       label: 'Acteurs',    icon: Icons.groups_rounded,         color: const Color(0xFFE8961A)),
+          _kpiCard(value: '$totalActors', label: 'Acteurs', icon: Icons.groups_rounded, color: const Color(0xFFE8961A)),
           const SizedBox(width: 8),
-          _kpiCard(value: '$unread',            label: 'Non lus',    icon: Icons.forum_rounded,          color: unread > 0 ? Colors.red : AppTheme.textMuted),
+          _kpiCard(
+            value: '${_assignments.where((a) => a['status'] == 'pending' || a['status'] == 'in_progress').length}',
+            label: 'Missions',
+            icon: Icons.route_rounded,
+            color: const Color(0xFF00BFA6),
+          ),
         ],
       ),
     );
@@ -584,7 +588,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   Tab(icon: Icon(Icons.rule_rounded, size: 19),          text: 'Consignes'),
                   Tab(icon: Icon(Icons.location_city_rounded, size: 19), text: 'Points'),
                   Tab(icon: Icon(Icons.groups_rounded, size: 19),        text: 'Acteurs'),
-                  Tab(icon: Icon(Icons.forum_rounded, size: 19),         text: 'Réponses'),
                   Tab(icon: Icon(Icons.route_rounded, size: 19),         text: 'Pilotage'),
                 ],
               ),
@@ -597,7 +600,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             _buildF1Consignes(),
             _buildF2Points(),
             _buildF3Acteurs(),
-            _buildF4Reponses(),
             _buildF5Pilotage(),
           ],
         ),
@@ -1506,7 +1508,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         onPressed: _showCreateGroupDialog,
       );
     }
-    if (_tabCtrl.index == 4) {
+    if (_tabCtrl.index == 3) {
       fab = FloatingActionButton.extended(
         heroTag: 'fab_intercommunality_affecter',
         backgroundColor: const Color(0xFF1A6B3C),
