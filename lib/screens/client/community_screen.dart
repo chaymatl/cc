@@ -9,7 +9,7 @@ import '../../services/l10n_service.dart';
 
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({Key? key}) : super(key: key);
+  const CommunityScreen({super.key});
 
   @override
   State<CommunityScreen> createState() => _CommunityScreenState();
@@ -20,6 +20,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   List<Map<String, dynamic>> _testimonials = [];
   bool _isLoading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -39,12 +40,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _loadTestimonials() async {
-    final data = await _authService.fetchTestimonials();
-    if (mounted) {
-      setState(() {
-        _testimonials = data;
-        _isLoading = false;
-      });
+    try {
+      final data = await _authService.fetchTestimonials();
+      if (mounted) {
+        setState(() {
+          _testimonials = data;
+          _hasError = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[Community] Erreur chargement témoignages: $e');
+      if (mounted) setState(() => _hasError = true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -52,8 +60,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+      body: RefreshIndicator(
+        onRefresh: _loadTestimonials,
+        color: AppTheme.primaryGreen,
+        child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -92,6 +103,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -103,13 +115,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
     }
 
+    if (_hasError) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 120),
+        child: Center(child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            Text('Impossible de charger les avis', style: GoogleFonts.inter(color: Colors.grey.shade500)),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () { setState(() { _isLoading = true; _hasError = false; }); _loadTestimonials(); },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+            ),
+          ],
+        )),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Action buttons ──
-          if (AuthState.isLoggedIn && AuthState.currentUser?.role == UserRole.user) ...[
+          if (AuthState.isLoggedIn && AuthState.currentUser?.role == UserRole.citoyen) ...[
             _buildAddTestimonialButton(),
             const SizedBox(height: 12),
             _buildSubmitProposalButton(),
@@ -136,7 +168,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ).animate().fadeIn(delay: 200.ms),
           const SizedBox(height: 6),
           Text(
-            L10n.isArabic ? '${_testimonials.length} شهادات' : '${_testimonials.length} témoignage${_testimonials.length > 1 ? 's' : ''}',
+            '${_testimonials.length} témoignage${_testimonials.length > 1 ? 's' : ''}',
             style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
           ).animate().fadeIn(delay: 250.ms),
           const SizedBox(height: 20),
@@ -255,19 +287,26 @@ class _CommunityScreenState extends State<CommunityScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+        builder: (ctx, setModalState) {
+          final kb = MediaQuery.of(ctx).viewInsets.bottom;
+          final bottomInset = MediaQuery.of(ctx).padding.bottom;
+          final effectiveBottom = (kb > 0 ? kb : bottomInset) + 20.0;
+          return Container(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, effectiveBottom),
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 20),
               Text(L10n.tr('Votre avis'), style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
               const SizedBox(height: 8),
@@ -291,6 +330,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 controller: contentController,
                 maxLines: 4,
                 maxLength: 500,
+                style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+                cursorColor: const Color(0xFF00BFA6),
                 decoration: InputDecoration(
                   hintText: 'Décrivez votre expérience...',
                   hintStyle: GoogleFonts.inter(color: AppTheme.textMuted),
@@ -338,9 +379,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   child: Text('Publier mon avis', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -357,21 +398,26 @@ class _CommunityScreenState extends State<CommunityScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.85),
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+        builder: (ctx, setModalState) {
+          final kb = MediaQuery.of(ctx).viewInsets.bottom;
+          final bottomInset = MediaQuery.of(ctx).padding.bottom;
+          final effectiveBottom = (kb > 0 ? kb : bottomInset) + 20.0;
+          return Container(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, effectiveBottom),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.85),
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 20),
                 Text('Proposer un centre de tri', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
                 const SizedBox(height: 8),
@@ -451,8 +497,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -461,17 +507,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
+        Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepSlate)),
         const SizedBox(height: 8),
         TextField(
           controller: ctrl,
           maxLines: maxLines,
+          style: GoogleFonts.inter(color: AppTheme.deepSlate, fontSize: 14),
+          cursorColor: AppTheme.primaryGreen,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
             filled: true,
-            fillColor: Colors.grey.shade50,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
           ),
         ),

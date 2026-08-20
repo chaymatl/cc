@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/safe_network_image.dart';
+import '../../widgets/auth_prompt_dialog.dart';
 
 
 /// Screen that shows a single post with all interactions.
@@ -14,7 +15,7 @@ import '../../widgets/safe_network_image.dart';
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
 
-  const PostDetailScreen({Key? key, required this.post}) : super(key: key);
+  const PostDetailScreen({super.key, required this.post});
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -52,10 +53,66 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (!AuthState.isLoggedIn) return;
-    setState(() => _isSaved = !_isSaved);
-    final result = await _authService.toggleSavePost(_post['id'].toString());
-    if (result['success'] == true && mounted) setState(() => _isSaved = result['saved'] ?? _isSaved);
+    if (!AuthState.isLoggedIn) {
+      AuthPromptDialog.show(context: context);
+      return;
+    }
+    final oldSaved = _isSaved;
+    final newSaved = !_isSaved;
+    setState(() {
+      _isSaved = newSaved;
+      _post['is_saved'] = newSaved;
+      widget.post['is_saved'] = newSaved;
+    });
+    try {
+      final result = await _authService.toggleSavePost(_post['id'].toString());
+      if (result['success'] == true && mounted) {
+        final serverSaved = result['saved'] ?? newSaved;
+        setState(() {
+          _isSaved = serverSaved;
+          _post['is_saved'] = serverSaved;
+          widget.post['is_saved'] = serverSaved;
+        });
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  serverSaved ? Icons.bookmark_rounded : Icons.bookmark_remove_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                Expanded(
+                  child: Text(
+                    serverSaved ? 'Publication enregistrée dans vos favoris' : 'Publication retirée des favoris',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: serverSaved ? AppTheme.primaryGreen : AppTheme.deepSlate,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else if (mounted) {
+        setState(() {
+          _isSaved = oldSaved;
+          _post['is_saved'] = oldSaved;
+          widget.post['is_saved'] = oldSaved;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isSaved = oldSaved;
+          _post['is_saved'] = oldSaved;
+          widget.post['is_saved'] = oldSaved;
+        });
+      }
+    }
   }
 
   void _showLikersModal() {
@@ -151,6 +208,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (modalContext, setModalState) {
@@ -315,10 +373,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 // Input
                 if (AuthState.isLoggedIn)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+                    padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(modalContext).viewInsets.bottom + (MediaQuery.of(modalContext).viewInsets.bottom > 0 ? 12 : MediaQuery.of(modalContext).padding.bottom + 16)),
                     child: Row(children: [
                       Expanded(child: TextField(
                         controller: commentController,
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+                        cursorColor: const Color(0xFF00BFA6),
                         decoration: InputDecoration(
                           hintText: replyingTo != null
                               ? 'Répondre à $replyingToName...'
@@ -485,7 +545,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       Text('$commentCount', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textMuted)),
                     ]),
                   ),
-                  if (AuthState.currentUser?.role == UserRole.user) ...[
+                  if (AuthState.isLoggedIn) ...[
                     const Spacer(),
                     // Save
                     IconButton(

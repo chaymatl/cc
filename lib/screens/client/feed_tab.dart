@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,12 +12,14 @@ import '../../services/auth_service.dart';
 import '../../widgets/auth_prompt_dialog.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../core/cache_service.dart';
 import '../../constants.dart';
 import '../../services/l10n_service.dart';
 import 'post_detail_screen.dart';
 
 class FeedTab extends StatefulWidget {
-  const FeedTab({Key? key}) : super(key: key);
+  const FeedTab({super.key});
   @override
   State<FeedTab> createState() => _FeedTabState();
 }
@@ -32,6 +33,8 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
+  bool _isOffline = false;
+  DateTime? _cachedAt;
   String? _error;
   int _skip = 0;
   static const int _pageSize = 20;
@@ -74,12 +77,35 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _loadPosts() async {
-    setState(() { _loading = true; _error = null; _skip = 0; _hasMore = true; });
-    try {
-      final p = await _auth.fetchPosts(skip: 0, limit: _pageSize);
-      if (mounted) setState(() { _posts = p.cast<Map<String, dynamic>>(); _loading = false; _skip = p.length; _hasMore = p.length >= _pageSize; });
-    } catch (_) {
-      if (mounted) setState(() { _error = L10n.tr('Impossible de charger le fil'); _loading = false; });
+    if (mounted) setState(() { _loading = true; _error = null; _skip = 0; _hasMore = true; _isOffline = false; });
+
+    final result = await CacheService.getOrFetch<List<dynamic>>(
+      key: CacheService.kFeedPosts,
+      ttl: CacheService.kTtlFeed,
+      fetcher: () async {
+        final p = await _auth.fetchPosts(skip: 0, limit: _pageSize);
+        return p.isEmpty ? null : p;
+      },
+    );
+
+    if (!mounted) return;
+    if (result.hasData) {
+      final posts = (result.data!).cast<Map<String, dynamic>>();
+      setState(() {
+        _posts = posts;
+        _skip = posts.length;
+        _hasMore = posts.length >= _pageSize;
+        _loading = false;
+        _isOffline = result.isOffline;
+        _cachedAt = result.cachedAt;
+        _error = null;
+      });
+    } else {
+      setState(() {
+        _error = L10n.tr('Impossible de charger le fil');
+        _loading = false;
+        _isOffline = false;
+      });
     }
   }
 
@@ -99,6 +125,7 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _CreatePostSheet(auth: _auth, onPosted: _loadPosts),
     );
@@ -181,7 +208,12 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
 
             // ── Contenu ──
             if (_loading)
-              const SliverFillRemaining(child: AppLoadingView(message: "Chargement du fil d'actualité..."))
+              SliverToBoxAdapter(
+                child: SkeletonList(
+                  count: 5,
+                  builder: (_) => const SkeletonPostCard(),
+                ),
+              )
             else if (_error != null)
               SliverFillRemaining(child: AppErrorView(message: _error!, onRetry: _loadPosts))
             else if (_posts.isEmpty)
@@ -192,12 +224,17 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
                 onActionPressed: _showCreatePost,
               ))
             else ...[
+              if (_isOffline)
+                SliverToBoxAdapter(child: OfflineBanner(cachedAt: _cachedAt)),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                 sliver: _MasonryGrid(posts: _posts, auth: _auth, onRefresh: _loadPosts, formatTime: _time),
               ),
               if (_loadingMore)
-                const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen, strokeWidth: 2)))),
+                const SliverToBoxAdapter(child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: SkeletonPostCard(),
+                )),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ],
@@ -261,19 +298,87 @@ class _PinCardState extends State<_PinCard> {
     _saved = widget.post['is_saved'] == true;
   }
 
+  @override
+  void didUpdateWidget(_PinCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.post != widget.post) {
+      _liked = widget.post['is_liked'] == true;
+      _likes = widget.post['likes_count'] ?? 0;
+      _saved = widget.post['is_saved'] == true;
+    }
+  }
+
   Future<void> _toggleLike() async {
     if (!AuthState.isLoggedIn) { AuthPromptDialog.show(context: context); return; }
+    final oldLiked = _liked;
+    final oldLikes = _likes;
     setState(() { _liked = !_liked; _liked ? _likes++ : _likes = (_likes - 1).clamp(0, 9999); });
-    final r = await widget.auth.toggleLikePost(widget.post['id'].toString());
-    if (r['success'] == true && mounted) { setState(() { _liked = r['liked'] ?? _liked; _likes = r['count'] ?? _likes; }); }
+    try {
+      final r = await widget.auth.toggleLikePost(widget.post['id'].toString());
+      if (r['success'] == true && mounted) {
+        setState(() { _liked = r['liked'] ?? _liked; _likes = r['count'] ?? _likes; });
+      } else if (mounted) {
+        setState(() { _liked = oldLiked; _likes = oldLikes; });
+      }
+    } catch (_) {
+      if (mounted) setState(() { _liked = oldLiked; _likes = oldLikes; });
+    }
   }
 
   Future<void> _toggleSave() async {
     if (!AuthState.isLoggedIn) { AuthPromptDialog.show(context: context); return; }
-    setState(() => _saved = !_saved);
-    final r = await widget.auth.toggleSavePost(widget.post['id'].toString());
-    if (r['success'] == true && mounted) { setState(() => _saved = r['saved'] ?? _saved); }
-    else if (mounted) { setState(() => _saved = !_saved); }
+    final oldSaved = _saved;
+    final newSaved = !_saved;
+    setState(() {
+      _saved = newSaved;
+      widget.post['is_saved'] = newSaved;
+    });
+    try {
+      final r = await widget.auth.toggleSavePost(widget.post['id'].toString());
+      if (r['success'] == true && mounted) {
+        final serverSaved = r['saved'] ?? newSaved;
+        setState(() {
+          _saved = serverSaved;
+          widget.post['is_saved'] = serverSaved;
+        });
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  serverSaved ? Icons.bookmark_rounded : Icons.bookmark_remove_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                Expanded(
+                  child: Text(
+                    serverSaved ? 'Publication enregistrée dans vos favoris' : 'Publication retirée des favoris',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: serverSaved ? AppTheme.primaryGreen : AppTheme.deepSlate,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else if (mounted) {
+        setState(() {
+          _saved = oldSaved;
+          widget.post['is_saved'] = oldSaved;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saved = oldSaved;
+          widget.post['is_saved'] = oldSaved;
+        });
+      }
+    }
   }
 
   void _goToDetails() {
@@ -295,7 +400,9 @@ class _PinCardState extends State<_PinCard> {
     final desc = widget.post['description'] as String? ?? '';
     final avatarUrl = widget.post['user_avatar_url'] as String? ?? '';
     final timeStr = widget.formatTime(widget.post['created_at']);
-    final isOwn = AuthState.isLoggedIn && name == AuthState.currentUser?.name;
+    final currentUserId = AuthState.currentUser?.id;
+    final postUserId = widget.post['user_id']?.toString();
+    final isOwn = AuthState.isLoggedIn && currentUserId != null && postUserId != null && currentUserId == postUserId;
     final commentsCount = (widget.post['comments'] as List?)?.length ?? 0;
 
     return AppCard(
@@ -350,7 +457,7 @@ class _PinCardState extends State<_PinCard> {
                   ]),
                 ),
                 // Bouton save toujours visible en haut à droite (uniquement citoyens)
-                if (AuthState.currentUser?.role == UserRole.user)
+                if (AuthState.isLoggedIn)
                   Positioned(
                     top: 8, right: 8,
                     child: GestureDetector(
@@ -402,7 +509,7 @@ class _PinCardState extends State<_PinCard> {
                         ),
                         const SizedBox(width: 4),
                         Text('$commentsCount', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade500)),
-                        if (AuthState.currentUser?.role == UserRole.user) ...[
+                        if (AuthState.isLoggedIn) ...[
                           const Spacer(),
                           GestureDetector(onTap: _toggleSave, child: Icon(_saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, size: 16, color: _saved ? AppTheme.primaryGreen : Colors.grey.shade400)),
                         ],
@@ -528,12 +635,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               Expanded(
                 child: Text(
                   pending
-                      ? (L10n.isArabic
-                          ? '⏳ منشورك قيد المراجعة، سيظهر قريباً!'
-                          : '⏳ Publication envoyée ! Elle sera visible très bientôt.')
-                      : (L10n.isArabic
-                          ? '✅ تم نشر منشورك!'
-                          : '✅ Publication publiée !'),
+                      ? ('⏳ Publication envoyée ! Elle sera visible très bientôt.')
+                      : ('✅ Publication publiée !'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -552,7 +655,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
             const SizedBox(width: 10),
             Expanded(child: Text(
-              L10n.isArabic ? 'حدث خطأ، حاول مرة أخرى' : 'Erreur lors de la publication, réessayez.',
+              'Erreur lors de la publication, réessayez.',
               style: const TextStyle(color: Colors.white),
             )),
           ]),
@@ -565,7 +668,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-            L10n.isArabic ? 'خطأ في الاتصال بالشبكة' : 'Erreur de connexion au serveur.',
+            'Erreur de connexion au serveur.',
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red.shade600,
@@ -581,89 +684,132 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final kb = MediaQuery.of(context).viewInsets.bottom;
+    final mediaQuery = MediaQuery.of(context);
+    final kb = mediaQuery.viewInsets.bottom;
+    final bottomInset = mediaQuery.padding.bottom;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveBottom = (kb > 0 ? kb : bottomInset) + 16.0;
+
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + kb),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, effectiveBottom),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 16),
-        Row(children: [
-          Text(
-            L10n.tr('Nouvelle publication'),
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Theme.of(context).textTheme.titleLarge?.color ?? const Color(0xFF0F172A),
-            ),
-          ),
-          const Spacer(),
-          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded), color: Colors.grey.shade500),
-        ]),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _ctrl,
-          maxLines: 3,
-          style: GoogleFonts.inter(fontSize: 14),
-          decoration: InputDecoration(
-            hintText: L10n.tr('Partagez votre geste écologique...'),
-            hintStyle: GoogleFonts.inter(color: Colors.grey.shade400),
-            filled: true,
-            fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF8F7F5),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.all(14),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (_image != null)
-          Stack(children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: kIsWeb
-                ? Image.network(_image!.path, height: 160, width: double.infinity, fit: BoxFit.cover)
-                : Image.file(File(_image!.path), height: 160, width: double.infinity, fit: BoxFit.cover),
-            ),
-            Positioned(top: 8, right: 8, child: GestureDetector(
-              onTap: () => setState(() => _image = null),
-              child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 16)),
-            )),
-          ])
-        else
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3), width: 1.5),
-                borderRadius: BorderRadius.circular(16),
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.add_photo_alternate_rounded, color: AppTheme.primaryGreen, size: 22),
-                const SizedBox(width: 8),
-                Text(L10n.tr('Ajouter une photo'), style: GoogleFonts.inter(color: AppTheme.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-              ]),
             ),
-          ),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: (_uploading || (_ctrl.text.isEmpty && _image == null)) ? null : _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryGreen,
-            disabledBackgroundColor: Colors.grey.shade200,
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 0,
-          ),
-          child: _uploading
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text(L10n.tr('Publier'), style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  L10n.tr('Nouvelle publication'),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? const Color(0xFF0F172A),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  color: Colors.grey.shade500,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _ctrl,
+              maxLines: 3,
+              style: GoogleFonts.inter(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: L10n.tr('Partagez votre geste écologique...'),
+                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400),
+                filled: true,
+                fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF8F7F5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (_image != null)
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.file(File(_image!.path), height: 150, width: double.infinity, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _image = null),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3), width: 1.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_photo_alternate_rounded, color: AppTheme.primaryGreen, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        L10n.tr('Ajouter une photo'),
+                        style: GoogleFonts.inter(color: AppTheme.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              onPressed: (_uploading || (_ctrl.text.isEmpty && _image == null)) ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryGreen,
+                disabledBackgroundColor: Colors.grey.shade200,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: _uploading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(
+                      L10n.tr('Publier'),
+                      style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+            ),
+          ],
         ),
-      ]),
+      ),
     );
   }
 }

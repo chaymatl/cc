@@ -20,13 +20,11 @@ import '../admin/point_manager_tab.dart';
 import '../admin/educator_tab.dart';
 import '../messaging/messaging_screen.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/platform_ui.dart';
-import '../../layouts/web_shell.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MainNavigationShell extends StatefulWidget {
   final int initialTab;
-  const MainNavigationShell({Key? key, this.initialTab = 0}) : super(key: key);
+  const MainNavigationShell({super.key, this.initialTab = 0});
 
   @override
   State<MainNavigationShell> createState() => _MainNavigationShellState();
@@ -34,8 +32,8 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   late int _currentIndex;
-  late final bool _isLoggedIn;
-  List<Widget> get _pages => _initializePages(AuthState.currentUser?.role ?? UserRole.user);
+  bool get _isLoggedIn => AuthState.currentUser != null;
+  late List<Widget> _pages;
 
   // GlobalKeys pour accéder aux states des tabs et appeler refresh()
   final GlobalKey<ProfileTabState> _profileKey = GlobalKey<ProfileTabState>();
@@ -50,11 +48,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   void initState() {
     super.initState();
     L10n.addListener(_onLocaleChange);
-    _isLoggedIn = AuthState.currentUser != null;
+    _pages = _initializePages(AuthState.currentUser?.role ?? UserRole.citoyen);
     _currentIndex = widget.initialTab.clamp(0, _pages.length - 1);
 
     // Démarrer l'écoute Firebase uniquement pour les citoyens connectés
-    if (_isLoggedIn && AuthState.currentUser?.role == UserRole.user) {
+    if (_isLoggedIn && AuthState.currentUser?.role == UserRole.citoyen) {
       _startFirebaseScoreListener();  // chemin API : /scores/{userId}
       _startArduinoScoreListener();   // chemin Arduino : /utilisateurs/{qrCode}/score
     }
@@ -85,12 +83,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           });
         }
       }
-    }, onError: (_) {});
+    }, onError: (e) {
+      debugPrint('[Firebase] Erreur stream score : $e');
+    });
   }
 
   /// Écoute /utilisateurs/{qrCode}/score — mis à jour par l'Arduino ESP32.
   /// L'Arduino écrit directement dans Firebase sans passer par l'API :
-  ///   Firebase.setInt(fbdo, "/utilisateurs/" + qrID + "/score", newScore)
+  ///   Firebase.setInt(fbdo, '/utilisateurs/' + qrID + '/score', newScore)
   /// Ce listener garantit que le score affiché dans l'app est mis à jour
   /// EN TEMPS RÉEL dès qu'un citoyen dépose ses déchets dans la poubelle.
   void _startArduinoScoreListener() {
@@ -112,7 +112,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           });
         }
       }
-    }, onError: (_) {});
+    }, onError: (e) {
+      debugPrint('[Firebase] Erreur stream score : $e');
+    });
   }
 
   @override
@@ -131,12 +133,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   /// Appelé quand on change d'onglet — simple setState pour conserver l'état des tabs
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
-    final role = AuthState.currentUser?.role ?? UserRole.user;
+    final role = AuthState.currentUser?.role ?? UserRole.citoyen;
     // Index de l'onglet Profil selon le rôle
     int profileIndex;
     if (role == UserRole.educator) {
       profileIndex = 2; // [Educateur, Messages, Profil]
-    } else if (role == UserRole.user) {
+    } else if (role == UserRole.citoyen) {
       profileIndex = 6; // [Feed, Multimedia, Rewards, Map, Community, Messages, Profil]
     } else if (role == UserRole.intercommunality ||
                role == UserRole.pointManager ||
@@ -195,8 +197,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ProfileTab(key: _profileKey),
         ];
 
-      // ── Rôle Citoyen (user) : 6 onglets avec Communauté + Messages ──
-      case UserRole.user:
+      // ── Rôle Citoyen : 6 onglets avec Communauté + Messages ──
+      case UserRole.citoyen:
         return [
           const FeedTab(key: ValueKey('feed')),
           const MultimediaTab(key: ValueKey('multimedia')),
@@ -220,7 +222,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
   }
 
-  /// Renvoie le label de l'onglet "Formation" selon le rôle
+  /// Renvoie le label de l'onglet 'Formation' selon le rôle
   String _proTabLabel(UserRole role) {
     switch (role) {
       case UserRole.educator:     return L10n.tr('tab_educator');
@@ -231,7 +233,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
   }
 
-  /// Renvoie l'icône de l'onglet "Formation" selon le rôle
+  /// Renvoie l'icône de l'onglet 'Formation' selon le rôle
   Widget _proTabIcon(UserRole role) {
     switch (role) {
       case UserRole.educator:
@@ -280,7 +282,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
 
     // ── Citoyen : 7 onglets avec Communauté + Messages ──
-    if (role == UserRole.user) {
+    if (role == UserRole.citoyen) {
       return [
         NavigationDestination(icon: const FaIcon(FontAwesomeIcons.house, size: 20), label: L10n.tr('tab_feed')),
         NavigationDestination(icon: _proTabIcon(role), label: _proTabLabel(role)),
@@ -305,17 +307,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
-    final role = AuthState.currentUser?.role ?? UserRole.user;
+    final role = AuthState.currentUser?.role ?? UserRole.citoyen;
 
-    // ── Web : sidebar + contenu (professionnel) ──────────────────────
-    if (PlatformUI.shouldUseWebLayout(context)) {
-      return WebShell(
-        currentIndex: _currentIndex,
-        onTabSelected: _onTabSelected,
-        pages: _pages,
-        isLoggedIn: _isLoggedIn,
-      );
-    }
 
     // ── Mobile : bottom navigation premium floating ───────────────────
     final destinations = _getDestinations(role);
@@ -364,8 +357,8 @@ class _PremiumBottomNav extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        height: 68,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+        height: 66,
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A),
           borderRadius: BorderRadius.circular(22),
