@@ -98,6 +98,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
         builder: (ctx, setDS) {
           final screenH = MediaQuery.of(ctx).size.height;
           return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -105,11 +106,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
             title: Row(children: [
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
                 child: Icon(isEditing ? Icons.edit_rounded : Icons.person_add_rounded, color: AppTheme.primaryGreen, size: 20),
               ),
               const SizedBox(width: 12),
-              Text(isEditing ? 'Modifier Utilisateur' : 'Nouvel Utilisateur', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18)),
+              Expanded(
+                child: Text(
+                  isEditing ? 'Modifier Utilisateur' : 'Nouvel Utilisateur',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ]),
             content: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: screenH * 0.62, minWidth: double.maxFinite),
@@ -117,23 +124,27 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                 const SizedBox(height: 8),
                 if (errorMsg != null) Container(
                   padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade200)),
-                  child: Row(children: [Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 18), const SizedBox(width: 8), Expanded(child: Text(errorMsg!, style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade700)))]),
+                  decoration: BoxDecoration(color: Colors.red.shade900.withOpacity(0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade400)),
+                  child: Row(children: [Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 18), const SizedBox(width: 8), Expanded(child: Text(errorMsg!, style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade200)))]),
                 ),
                 if (!isEditing) ...[_buildField(emailCtrl, 'Email', Icons.email_outlined, hint: 'exemple@gmail.com', keyboardType: TextInputType.emailAddress), const SizedBox(height: 12)],
                 _buildField(nameCtrl, 'Nom complet', Icons.person_outline_rounded),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: selectedRole, isExpanded: true,
-                  dropdownColor: Colors.white,
-                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
-                  items: availableRoles.map((r) => DropdownMenuItem(value: r, child: Row(children: [Icon(_getRoleIcon(r), size: 16, color: _getRoleColor(r)), const SizedBox(width: 8), Text(_getRoleLabel(r), style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13))]))).toList(),
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                  items: availableRoles.map((r) => DropdownMenuItem(value: r, child: Row(children: [Icon(_getRoleIcon(r), size: 16, color: _getRoleColor(r)), const SizedBox(width: 8), Text(_getRoleLabel(r), style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500))]))).toList(),
                   onChanged: (v) => selectedRole = v!,
                   decoration: InputDecoration(
-                    labelText: 'Role',
-                    labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B)),
-                    prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: 'Rôle',
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
+                    prefixIcon: const Icon(Icons.badge_outlined, size: 20, color: Color(0xFF00BFA6)),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF00BFA6), width: 1.5)),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
@@ -146,7 +157,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
               ])),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Annuler', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w700))),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
                 onPressed: () {
@@ -162,7 +173,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                   Navigator.pop(ctx);
                   _processUser(isEditing: isEditing, userId: user?['id'], email: emailCtrl.text.trim(), name: nameCtrl.text.trim(), role: selectedRole, password: pwd);
                 },
-                child: Text(isEditing ? 'Sauvegarder' : 'Creer', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                child: Text(isEditing ? 'Sauvegarder' : 'Créer', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ],
           );
@@ -173,18 +184,24 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
 
   Widget _buildField(TextEditingController ctrl, String label, IconData icon, {String? hint, bool obscure = false, String? helper, TextInputType? keyboardType}) {
     return TextField(
-      style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+      style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
       controller: ctrl,
       obscureText: obscure,
       keyboardType: keyboardType,
+      cursorColor: const Color(0xFF00BFA6),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B)),
+        labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
         hintText: hint,
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
         helperText: helper,
-        helperStyle: GoogleFonts.inter(fontSize: 10),
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        helperStyle: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF64748B)),
+        prefixIcon: Icon(icon, size: 20, color: const Color(0xFF00BFA6)),
+        filled: true,
+        fillColor: const Color(0xFF0F172A),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF00BFA6), width: 1.5)),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
