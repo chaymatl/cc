@@ -13,7 +13,7 @@ import 'post_detail_screen.dart';
 import '../../widgets/web_back_button.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({Key? key}) : super(key: key);
+  const NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -40,7 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     // Rafraîchir toutes les 30 s → nouvelles notifs visibles sans action
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _silentRefresh();
+      if (mounted && AuthState.isLoggedIn) _silentRefresh();
     });
 
     // Rafraîchissement immédiat quand FCM reçoit un message foreground

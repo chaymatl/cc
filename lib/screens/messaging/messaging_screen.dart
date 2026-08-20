@@ -39,9 +39,12 @@ class _MessagingScreenState extends State<MessagingScreen>
   void initState() {
     super.initState();
     _load();
+    // Polling toutes les 15s — uniquement si l'utilisateur est connecté
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 8),
-      (_) => _load(silent: true),
+      const Duration(seconds: 15),
+      (_) {
+        if (AuthState.isLoggedIn) _load(silent: true);
+      },
     );
   }
 
@@ -52,6 +55,11 @@ class _MessagingScreenState extends State<MessagingScreen>
   }
 
   Future<void> _load({bool silent = false}) async {
+    // Ne pas appeler l'API si non connecté (évite les 401 en boucle)
+    if (!AuthState.isLoggedIn) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     if (!silent) setState(() => _loading = true);
     final convs = await MessagingService.getConversations();
     if (mounted) {
