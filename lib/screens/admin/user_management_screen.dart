@@ -97,12 +97,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDS) {
           final screenH = MediaQuery.of(ctx).size.height;
+          final bottomInsets = MediaQuery.of(ctx).viewInsets.bottom;
           return AlertDialog(
             backgroundColor: const Color(0xFF1E293B),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            insetPadding: EdgeInsets.only(
+              left: 24, right: 24,
+              top: 24,
+              bottom: bottomInsets > 0 ? bottomInsets + 8 : 24,
+            ),
             title: Row(children: [
               Container(
                 width: 36, height: 36,
@@ -119,7 +125,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
               ),
             ]),
             content: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: screenH * 0.62, minWidth: double.maxFinite),
+              constraints: BoxConstraints(
+                maxHeight: (screenH - bottomInsets) * 0.58,
+                minWidth: double.maxFinite,
+              ),
               child: SingleChildScrollView(physics: const BouncingScrollPhysics(), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const SizedBox(height: 8),
                 if (errorMsg != null) Container(

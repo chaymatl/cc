@@ -661,8 +661,18 @@ async def delete_post(post_id: int, db: Session = Depends(get_db),
         raise HTTPException(status_code=404, detail="Publication non trouvée")
     if db_post.user_id != current_user.id and current_user.role not in ["admin", "superadmin"]:
         raise HTTPException(status_code=403, detail="Non autorisé")
-    db.delete(db_post)
-    db.commit()
+    try:
+        # Supprimer les enfants manuellement (compatibilité DB sans migration CASCADE)
+        db.query(db_models.Comment).filter(db_models.Comment.post_id == post_id).delete(synchronize_session=False)
+        db.query(db_models.Like).filter(db_models.Like.post_id == post_id).delete(synchronize_session=False)
+        db.query(db_models.SavedPost).filter(db_models.SavedPost.post_id == post_id).delete(synchronize_session=False)
+        db.delete(db_post)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        if IS_DEV:
+            print(f"[DELETE_POST] Erreur : {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression")
     return {"message": "Publication supprimée"}
 
 
@@ -718,35 +728,46 @@ async def get_likers(post_id: int, db: Session = Depends(get_db)):
 async def save_post(post_id: int, db: Session = Depends(get_db),
                     current_user: db_models.User = Depends(get_current_user)):
     user_id = current_user.id
-    existing = db.query(db_models.SavedPost).filter(
-        db_models.SavedPost.user_id == user_id,
-        db_models.SavedPost.post_id == post_id).first()
-    if existing:
-        db.delete(existing)
-        db.commit()
-        return {"message": "Retiré des favoris", "saved": False}
-    db.add(db_models.SavedPost(user_id=user_id, post_id=post_id))
-    db.commit()
+    # Vérifier que le post existe
     db_post = db.query(db_models.Post).filter(db_models.Post.id == post_id).first()
-    if db_post and db_post.user_id != user_id:
-        db.add(db_models.Notification(
-            user_id=db_post.user_id, type="save", title="Publication sauvegardée",
-            body=f"{current_user.full_name} a sauvegardé votre publication",
-            from_user_name=current_user.full_name, post_id=post_id))
+    if not db_post:
+        raise HTTPException(status_code=404, detail="Publication non trouvée")
+    try:
+        existing = db.query(db_models.SavedPost).filter(
+            db_models.SavedPost.user_id == user_id,
+            db_models.SavedPost.post_id == post_id).first()
+        if existing:
+            db.delete(existing)
+            db.commit()
+            return {"message": "Retiré des favoris", "saved": False}
+        db.add(db_models.SavedPost(user_id=user_id, post_id=post_id))
         db.commit()
-        # ── Push FCM ──────────────────────────────────────────────────────────
-        try:
-            from services.fcm_push_service import send_push_to_user
-            send_push_to_user(
-                db=db,
-                user_id=db_post.user_id,
-                title="🔖 Publication sauvegardée",
+        if db_post.user_id != user_id:
+            db.add(db_models.Notification(
+                user_id=db_post.user_id, type="save", title="Publication sauvegardée",
                 body=f"{current_user.full_name} a sauvegardé votre publication",
-                data={"type": "save", "post_id": str(post_id)},
-            )
-        except Exception as _e:
-            print(f"[FCM] Erreur push save : {_e}")
-    return {"message": "Publication enregistrée", "saved": True}
+                from_user_name=current_user.full_name, post_id=post_id))
+            db.commit()
+            # ── Push FCM ──────────────────────────────────────────────────────────
+            try:
+                from services.fcm_push_service import send_push_to_user
+                send_push_to_user(
+                    db=db,
+                    user_id=db_post.user_id,
+                    title="🔖 Publication sauvegardée",
+                    body=f"{current_user.full_name} a sauvegardé votre publication",
+                    data={"type": "save", "post_id": str(post_id)},
+                )
+            except Exception as _e:
+                print(f"[FCM] Erreur push save : {_e}")
+        return {"message": "Publication enregistrée", "saved": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        if IS_DEV:
+            print(f"[SAVE_POST] Erreur : {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde")
 
 
 @router.get("/users/me/saved-posts")

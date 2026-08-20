@@ -35,9 +35,11 @@ class Post(Base):
     moderation_model_version = Column(String, nullable=True)
 
     author = relationship("User", back_populates="posts")
-    savers = relationship("SavedPost", back_populates="post")
-    liked_by = relationship("Like", back_populates="post")
-    comments = relationship("Comment", back_populates="post")
+    # cascade="all, delete-orphan" : les likes/saves/commentaires sont
+    # supprimés automatiquement quand le Post parent est supprimé.
+    savers  = relationship("SavedPost", back_populates="post", cascade="all, delete-orphan", passive_deletes=True)
+    liked_by = relationship("Like",      back_populates="post", cascade="all, delete-orphan", passive_deletes=True)
+    comments = relationship("Comment",   back_populates="post", cascade="all, delete-orphan", passive_deletes=True)
 
 
 class SavedPost(Base):
@@ -45,7 +47,8 @@ class SavedPost(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    # ondelete="CASCADE" : la suppression du Post en DB supprime aussi les SavedPost orphelins
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"))
     saved_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="saved_posts")
@@ -57,7 +60,8 @@ class Like(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    # ondelete="CASCADE" : la suppression du Post supprime les Likes liés
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="likes")
@@ -68,7 +72,8 @@ class Comment(Base):
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    # ondelete="CASCADE" : la suppression du Post supprime les Commentaires liés
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id"))
     user_name = Column(String)
     user_avatar_url = Column(String, nullable=True)
