@@ -2379,7 +2379,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     children: [
                       _priorityChip('normal', 'Normal', Colors.blue, priority, (v) => setSt(() => priority = v)),
                       const SizedBox(width: 8),
-                      _priorityChip('urgent', 'ðŸš¨ Urgent', Colors.red.shade600, priority, (v) => setSt(() => priority = v)),
+                      _priorityChip('urgent', 'Urgent', Colors.red.shade600, priority, (v) => setSt(() => priority = v)),
                     ],
                   ),
                   const SizedBox(height: 14),

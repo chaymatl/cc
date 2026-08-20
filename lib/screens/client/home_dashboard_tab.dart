@@ -20,7 +20,7 @@ import '../../services/l10n_service.dart';
 class HomeDashboardTab extends StatefulWidget {
   final Function(int) onNavigate;
 
-  const HomeDashboardTab({Key? key, required this.onNavigate}) : super(key: key);
+  const HomeDashboardTab({super.key, required this.onNavigate});
 
   @override
   State<HomeDashboardTab> createState() => _HomeDashboardTabState();
@@ -147,9 +147,9 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   }
 
   String _getLevelBadge(double score) {
-    if (score >= 5000) return L10n.isArabic ? 'أسطورة البيئة 👑' : 'Légende Éco 👑';
-    if (score >= 2000) return L10n.isArabic ? 'بطل أخضر 🏆' : 'Champion Vert 🏆';
-    return L10n.isArabic ? 'مواطن بيئي 🪙' : 'Éco-Citoyen 🪙';
+    if (score >= 5000) return 'Légende Éco';
+    if (score >= 2000) return 'Champion Vert';
+    return 'Éco-Citoyen';
   }
 
   @override
@@ -369,7 +369,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            L10n.isArabic ? 'أهلاً 👋' : 'Bonjour 👋',
+                            'Bonjour',
                             style: GoogleFonts.inter(
                               color: Colors.white.withOpacity(0.6),
                               fontSize: 13,
@@ -554,7 +554,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      L10n.isArabic ? 'نصيحة اليوم 💡' : 'Conseil du jour 💡',
+                      'Conseil du jour',
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -843,24 +843,24 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   Widget _buildVlogSpotlight() {
     final cards = [
       (
-        title: L10n.isArabic ? 'مستقبل إعادة التدوير' : 'Le Futur du Recyclage',
-        meta: L10n.isArabic ? 'فيديو • 4 دقائق' : 'Vidéo • 4 min',
+        title: 'Le Futur du Recyclage',
+        meta: 'Vidéo • 4 min',
         icon: Icons.recycling_rounded,
         gradientColors: [const Color(0xFF0F4C33), const Color(0xFF1A7A50)],
         accentColor: AppTheme.primaryGreen,
         tabIndex: 1,
       ),
       (
-        title: L10n.isArabic ? 'أساسيات الفرز' : "L'Essentiel du Tri",
-        meta: L10n.isArabic ? 'مقال • 3 دقائق' : 'Article • 3 min',
+        title: "L'Essentiel du Tri",
+        meta: 'Article • 3 min',
         icon: Icons.sort_rounded,
         gradientColors: [const Color(0xFF0C3547), const Color(0xFF1565C0)],
         accentColor: const Color(0xFF42A5F5),
         tabIndex: 1,
       ),
       (
-        title: L10n.isArabic ? 'اختبار الأسبوع' : 'Quiz Hebdo',
-        meta: L10n.isArabic ? 'اختبار • +100 نقطة' : 'Quiz • +100 pts',
+        title: 'Quiz Hebdo',
+        meta: 'Quiz • +100 pts',
         icon: Icons.quiz_rounded,
         gradientColors: [const Color(0xFF3A1060), const Color(0xFF6A1B9A)],
         accentColor: const Color(0xFFCE93D8),
@@ -1123,7 +1123,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
             children: [
               Expanded(child: _buildImpactStat(_fmt(wasteVal, kg: true), L10n.tr('home_stat_sorted'), Icons.recycling_rounded)),
               Container(width: 1, height: 40, color: Colors.white.withOpacity(0.08)),
-              Expanded(child: _buildImpactStat('$treesVal 🌳', L10n.tr('home_stat_trees'), Icons.forest_rounded)),
+              Expanded(child: _buildImpactStat('$treesVal', L10n.tr('home_stat_trees'), Icons.forest_rounded)),
             ],
           ),
         ],

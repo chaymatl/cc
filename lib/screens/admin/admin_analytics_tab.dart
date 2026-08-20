@@ -11,13 +11,13 @@ import '../../core/firebase/firebase_admin_stats_service.dart';
 // ONGLET ANALYTICS ADMIN — Architecture hybride Firebase + FastAPI
 //
 // Sources de données :
-//   🔥 Firebase RTDB (push temps réel, pas de polling) :
+//   ðŸ”¥ Firebase RTDB (push temps réel, pas de polling) :
 //       Section 1 — KPIs Vue d'ensemble   → /admin_stats/
 //       Section 2 — Scans QR              → /admin_stats/ + /leaderboard/
 //       Section 3 — Utilisateurs          → /admin_stats/ + /leaderboard/
 //       Section 7 — Poubelles             → /poubelles/
 //
-//   🌐 FastAPI HTTP (polling 30s via _CoordinateurRefresh) :
+//   ðŸŒ FastAPI HTTP (polling 30s via _CoordinateurRefresh) :
 //       Section 4 — Formation & Quiz      → /admin/analytics/education
 //       Section 5 — Modération            → /admin/analytics/community
 //       Section 6 — Centres de tri        → /admin/analytics/centers/*
@@ -65,7 +65,7 @@ class _CoordinateurRefresh {
 // ═══════════════════════════════════════════════════════════════════
 
 class AdminAnalyticsTab extends StatefulWidget {
-  const AdminAnalyticsTab({Key? key}) : super(key: key);
+  const AdminAnalyticsTab({super.key});
 
   @override
   State<AdminAnalyticsTab> createState() => _AdminAnalyticsTabState();
@@ -115,7 +115,7 @@ class _AdminAnalyticsTabState extends State<AdminAnalyticsTab> {
   }
 
   String get _freshness {
-    if (_syncAgeSeconds <= 0) return 'À l\'instant';
+    if (_syncAgeSeconds <= 0) return 'È l\'instant';
     if (_syncAgeSeconds < 60) return 'il y a ${_syncAgeSeconds}s';
     final min = _syncAgeSeconds ~/ 60;
     return 'il y a ${min}min';
@@ -152,37 +152,27 @@ class _AdminAnalyticsTabState extends State<AdminAnalyticsTab> {
           ),
           const SizedBox(height: 20),
 
-          // ── SECTION 1 : VUE D'ENSEMBLE KPIs 🔥 Firebase RTDB ────────
-          const SectionDivider(label: 'VUE D\'ENSEMBLE'),
+          // ── SECTION 1 : VUE D'ENSEMBLE KPIs ðŸ”¥ Firebase RTDB ────────
+          const SectionDivider(label: 'VUE D\'ENSEMBLE GLOBAL'),
           const _SectionDashboardFirebase(),
           const SizedBox(height: 4),
 
-          // ── SECTION 2 : SCANS QR 🔥 Firebase RTDB ───────────────────
+          // ── SECTION 2 : SCANS QR ðŸ”¥ Firebase RTDB ───────────────────
           const SectionDivider(label: 'ACTIVITÉ — SCANS QR'),
           _SectionScansFirebase(coordinateur: _CoordinateurRefresh()),
           const SizedBox(height: 4),
 
-          // ── SECTION 3 : UTILISATEURS 🔥 Firebase RTDB ───────────────
-          const SectionDivider(label: 'COMMUNAUTÉ — UTILISATEURS'),
-          const _SectionUtilisateursFirebase(),
-          const SizedBox(height: 4),
+          // ── SECTIONS DÉPLACÉES ────────────────────────────────────────
+          // Section Utilisateurs  → onglet 'Utilisateurs' (UserManagementScreen)
+          // Section Éducation     → onglet 'Contenu' (_EducationKpiBanner)
+          // Section Modération    → onglet 'Modération' (_ModerationKpiBanner)
 
-          // ── SECTION 4 : ÉDUCATION 🌐 FastAPI ─────────────────────────
-          const SectionDivider(label: 'FORMATION & ÉDUCATION'),
-          _SectionEducation(coordinateur: _CoordinateurRefresh()),
-          const SizedBox(height: 4),
-
-          // ── SECTION 5 : MODÉRATION 🌐 FastAPI ────────────────────────
-          const SectionDivider(label: 'MODÉRATION & PUBLICATIONS'),
-          _SectionModeration(coordinateur: _CoordinateurRefresh()),
-          const SizedBox(height: 4),
-
-          // ── SECTION 6 : CENTRES DE TRI 🌐 FastAPI ────────────────────
+          // ── SECTION 6 : CENTRES DE TRI ðŸŒ FastAPI ────────────────────
           const SectionDivider(label: 'CENTRES DE TRI & COLLECTE'),
           _SectionCentres(coordinateur: _CoordinateurRefresh()),
           const SizedBox(height: 4),
 
-          // ── SECTION 7 : POUBELLES INTELLIGENTES 🔥 Firebase RTDB ─────
+          // ── SECTION 7 : POUBELLES INTELLIGENTES ðŸ”¥ Firebase RTDB ─────
           const SectionDivider(label: 'POUBELLES INTELLIGENTES — TEMPS RÉEL'),
           const _SectionPoubelles(),
           const SizedBox(height: 4),
@@ -302,13 +292,13 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 1 — DASHBOARD KPI 🔥 Firebase RTDB /admin_stats/
+// SECTION 1 — DASHBOARD KPI ðŸ”¥ Firebase RTDB /admin_stats/
 // Données poussées par le backend après chaque scan QR.
 // StreamBuilder = zéro polling, mise à jour instantanée.
 // ═══════════════════════════════════════════════════════════════════
 
 class _SectionDashboardFirebase extends StatelessWidget {
-  const _SectionDashboardFirebase({Key? key}) : super(key: key);
+  const _SectionDashboardFirebase({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -353,53 +343,32 @@ class _SectionDashboardFirebase extends StatelessWidget {
           ],
           contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // ── Bloc 1 : Utilisateurs ──────────────────────────────────
-            Text('👥 Utilisateurs', style: GoogleFonts.inter(
-              fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-            const SizedBox(height: 10),
+            // ── Vue synthétique : chiffres clés transversaux ────────────
+            // Collectes (collecteurs) — indicateur unique ici
             LayoutBuilder(builder: (_, c) {
               final w = (c.maxWidth - 12) / 2;
               return Column(children: [
                 Row(children: [
                   SizedBox(width: w, child: IndicateurPrincipal(
-                    valeur: '${s.totalUsers}', etiquette: L10n.tr('admin_kpi_users'),
-                    sousTitre: 'Comptes actifs',
-                    icone: Icons.people_rounded, couleur: Colors.blue)),
+                    valeur: '${s.totalCollections}',
+                    etiquette: 'Total collectes',
+                    sousTitre: 'Historique complet',
+                    icone: Icons.local_shipping_rounded, couleur: Colors.indigo)),
                   const SizedBox(width: 12),
                   SizedBox(width: w, child: IndicateurPrincipal(
-                    valeur: s.averageScore.toStringAsFixed(1),
-                    etiquette: L10n.tr('admin_kpi_avg_score'),
-                    sousTitre: 'Score global moyen',
-                    icone: Icons.emoji_events_rounded, couleur: Colors.purple)),
+                    valeur: '${s.collectionsWeek}',
+                    etiquette: 'Collectes 7j',
+                    sousTitre: 'Cette semaine',
+                    icone: Icons.recycling_rounded, couleur: Colors.teal)),
                 ]),
                 const SizedBox(height: 10),
                 Row(children: [
-                  Expanded(child: IndicateurCompact(
-                    valeur: '+${s.newUsersMonth}', etiquette: 'Nouveaux / mois',
-                    icone: Icons.person_add_rounded, couleur: Colors.indigo)),
-                  const SizedBox(width: 8),
-                  Expanded(child: IndicateurCompact(
-                    valeur: '${s.activeUsersWeek}', etiquette: 'Actifs / semaine',
-                    icone: Icons.trending_up_rounded, couleur: Colors.teal)),
-                ]),
-              ]);
-            }),
-
-            const SizedBox(height: 20),
-
-            // ── Bloc 2 : Scans QR ──────────────────────────────────────
-            Text('📦 Scans QR & Points', style: GoogleFonts.inter(
-              fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-            const SizedBox(height: 10),
-            LayoutBuilder(builder: (_, c) {
-              final w = (c.maxWidth - 12) / 2;
-              return Column(children: [
-                Row(children: [
                   SizedBox(width: w, child: IndicateurPrincipal(
-                    valeur: '${s.totalScans}',
-                    etiquette: L10n.tr('admin_kpi_scans'),
-                    sousTitre: 'Total historique',
-                    icone: Icons.qr_code_scanner_rounded, couleur: AppTheme.primaryGreen)),
+                    valeur: '${s.activeCenters}/${s.totalCenters}',
+                    etiquette: 'Centres actifs',
+                    sousTitre: 'Disponibles / Total',
+                    icone: Icons.location_on_rounded,
+                    couleur: const Color(0xFFF59E0B))),
                   const SizedBox(width: 12),
                   SizedBox(width: w, child: IndicateurPrincipal(
                     valeur: s.pointsDistributed.toStringAsFixed(0),
@@ -407,62 +376,13 @@ class _SectionDashboardFirebase extends StatelessWidget {
                     sousTitre: 'Points distribués',
                     icone: Icons.stars_rounded, couleur: Colors.amber)),
                 ]),
-                const SizedBox(height: 10),
-                Row(children: [
-                  Expanded(child: IndicateurCompact(
-                    valeur: '${s.scansToday}', etiquette: 'Scans aujourd\'hui',
-                    icone: Icons.today_rounded, couleur: Colors.green)),
-                  const SizedBox(width: 8),
-                  Expanded(child: IndicateurCompact(
-                    valeur: '${s.scansWeek}', etiquette: 'Scans 7 jours',
-                    icone: Icons.date_range_rounded, couleur: Colors.cyan)),
-                ]),
               ]);
             }),
 
             const SizedBox(height: 20),
 
-            // ── Bloc 2b : Collecteurs ──────────────────────────────────
-            Text('🚛 Collectes (Collecteurs)', style: GoogleFonts.inter(
-              fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(child: IndicateurCompact(
-                valeur: '${s.totalCollections}', etiquette: 'Total collectes',
-                icone: Icons.local_shipping_rounded, couleur: Colors.indigo)),
-              const SizedBox(width: 8),
-              Expanded(child: IndicateurCompact(
-                valeur: '${s.collectionsWeek}', etiquette: 'Collectes 7j',
-                icone: Icons.recycling_rounded, couleur: Colors.teal)),
-            ]),
-
-            const SizedBox(height: 20),
-
-            // ── Bloc 3 : Centres ───────────────────────────────────────
-            Text('🏭 Centres de collecte', style: GoogleFonts.inter(
-              fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-            const SizedBox(height: 10),
-            LayoutBuilder(builder: (_, c) {
-              final w = (c.maxWidth - 12) / 2;
-              return Row(children: [
-                SizedBox(width: w, child: IndicateurPrincipal(
-                  valeur: '${s.activeCenters}/${s.totalCenters}',
-                  etiquette: L10n.tr('admin_kpi_centers'),
-                  sousTitre: 'Disponibles / Total',
-                  icone: Icons.location_on_rounded, couleur: const Color(0xFFF59E0B))),
-                const SizedBox(width: 12),
-                SizedBox(width: w, child: IndicateurPrincipal(
-                  valeur: s.averageScore.toStringAsFixed(1),
-                  etiquette: 'Score moyen',
-                  sousTitre: 'Citoyens actifs',
-                  icone: Icons.school_rounded, couleur: Colors.teal)),
-              ]);
-            }),
-
-            const SizedBox(height: 20),
-
-            // ── Bloc 4 : Alertes en attente ────────────────────────────
-            Text('⚠️ Alertes en attente', style: GoogleFonts.inter(
+            // ── Alertes globales (cross-domain) ────────────────────────
+            Text('⚠ï¸ Alertes en attente', style: GoogleFonts.inter(
               fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
             const SizedBox(height: 10),
             Row(children: [
@@ -484,6 +404,12 @@ class _SectionDashboardFirebase extends StatelessWidget {
                 couleur: s.pendingProposals > 0 ? Colors.orange : Colors.green,
                 alerte: s.pendingProposals > 0)),
             ]),
+
+            const SizedBox(height: 6),
+            Text(
+              'Détails → onglets Utilisateurs · Scans · Centres · Modération',
+              style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted, fontStyle: FontStyle.italic),
+            ),
           ]),
         );
       },
@@ -493,20 +419,20 @@ class _SectionDashboardFirebase extends StatelessWidget {
 
 String _formatAgo(DateTime dt) {
   final diff = DateTime.now().difference(dt);
-  if (diff.inSeconds < 5)  return 'À l\'instant';
+  if (diff.inSeconds < 5)  return 'È l\'instant';
   if (diff.inSeconds < 60) return 'il y a ${diff.inSeconds}s';
   if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes}min';
   return 'il y a ${diff.inHours}h';
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 2 — SCANS QR 🔥 Firebase RTDB /admin_stats/ + courbe FastAPI
+// SECTION 2 — SCANS QR ðŸ”¥ Firebase RTDB /admin_stats/ + courbe FastAPI
 // KPIs en temps réel via Firebase, courbe de tendance via FastAPI.
 // ═══════════════════════════════════════════════════════════════════
 
 class _SectionScansFirebase extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
-  const _SectionScansFirebase({Key? key, required this.coordinateur}) : super(key: key);
+  const _SectionScansFirebase({super.key, required this.coordinateur});
   @override State<_SectionScansFirebase> createState() => _EtatScansFirebase();
 }
 
@@ -603,16 +529,16 @@ class _EtatScansFirebase extends State<_SectionScansFirebase> {
                 const SizedBox(height: 12),
                 Row(children: [
                   SizedBox(width: w, child: IndicateurPrincipal(
-                    valeur: s.pointsDistributed.toStringAsFixed(0),
-                    etiquette: 'Points distribués', sousTitre: 'Total cumulé',
-                    icone: Icons.stars_rounded, couleur: Colors.amber)),
+                    valeur: '${s.scansToday}',
+                    etiquette: 'Aujourd\'hui', sousTitre: 'Scans du jour',
+                    icone: Icons.today_rounded, couleur: Colors.green)),
                   const SizedBox(width: 12),
                   SizedBox(width: w, child: IndicateurPrincipal(
                     valeur: s.totalScans > 0
                         ? (s.pointsDistributed / s.totalScans).toStringAsFixed(1)
                         : '0',
                     etiquette: 'Moy. pts/scan', sousTitre: 'Rendement moyen',
-                    icone: Icons.speed_rounded, couleur: Colors.teal)),
+                    icone: Icons.speed_rounded, couleur: Colors.orange)),
                 ]),
               ]);
             }),
@@ -636,141 +562,6 @@ class _EtatScansFirebase extends State<_SectionScansFirebase> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 3 — UTILISATEURS 🔥 Firebase RTDB /admin_stats/ + /leaderboard/
-// Compteurs temps réel + top scorers depuis le leaderboard Firebase.
-// ═══════════════════════════════════════════════════════════════════
-
-class _SectionUtilisateursFirebase extends StatelessWidget {
-  const _SectionUtilisateursFirebase({Key? key}) : super(key: key);
-
-  static const _medalColors = [Colors.amber, Colors.blueGrey, Colors.brown];
-  static const _roleColors  = <String, Color>{
-    'user': Colors.blue, 'educator': Colors.purple, 'admin': Colors.red,
-    'collector': Colors.orange, 'point_manager': Colors.teal,
-  };
-  static const _roleLabels = {
-    'user': 'Citoyen', 'educator': 'Éducateur', 'admin': 'Admin',
-    'collector': 'Collecteur', 'point_manager': 'Gestionnaire',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<AdminStatsSnapshot>(
-      stream: FirebaseAdminStatsService().watchAdminStats(),
-      builder: (ctx, statsSnap) {
-        final s = statsSnap.data ?? AdminStatsSnapshot.empty();
-        final isLoading = statsSnap.connectionState == ConnectionState.waiting
-            && !statsSnap.hasData;
-
-        return StreamBuilder<List<LeaderboardEntry>>(
-          stream: FirebaseAdminStatsService().watchLeaderboard(),
-          builder: (ctx2, lbSnap) {
-            final leaderboard = lbSnap.data ?? [];
-            final lastUpdStr = s.lastUpdated != null ? _formatAgo(s.lastUpdated!) : '…';
-
-            return SectionCard(
-              titre: 'Utilisateurs & Communauté',
-              icone: Icons.people_alt_rounded,
-              couleur: Colors.blue,
-              chargement: isLoading,
-              onActualiser: () {},
-              lastUpdated: s.lastUpdated,
-              cacheAge: 0,
-              filtres: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Container(width: 6, height: 6,
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle)),
-                    const SizedBox(width: 5),
-                    Text('Firebase · $lastUpdStr',
-                      style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.blue.shade700)),
-                  ]),
-                ),
-              ],
-              contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                LayoutBuilder(builder: (_, c) {
-                  final w = (c.maxWidth - 12) / 2;
-                  return Column(children: [
-                    Row(children: [
-                      SizedBox(width: w, child: IndicateurPrincipal(
-                        valeur: '${s.totalUsers}',
-                        etiquette: 'Total inscrits', sousTitre: 'Comptes enregistrés',
-                        icone: Icons.person_rounded, couleur: Colors.blue)),
-                      const SizedBox(width: 12),
-                      SizedBox(width: w, child: IndicateurPrincipal(
-                        valeur: '+${s.newUsersMonth}',
-                        etiquette: 'Nouveaux', sousTitre: 'Ce mois',
-                        icone: Icons.person_add_rounded, couleur: Colors.indigo)),
-                    ]),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      SizedBox(width: w, child: IndicateurPrincipal(
-                        valeur: '${s.activeUsersWeek}',
-                        etiquette: 'Actifs', sousTitre: 'Cette semaine',
-                        icone: Icons.trending_up_rounded, couleur: Colors.green)),
-                      const SizedBox(width: 12),
-                      SizedBox(width: w, child: IndicateurPrincipal(
-                        valeur: s.averageScore.toStringAsFixed(1),
-                        etiquette: 'Score moyen', sousTitre: 'Moyenne globale',
-                        icone: Icons.stars_rounded, couleur: Colors.amber)),
-                    ]),
-                  ]);
-                }),
-
-                // ── Leaderboard depuis Firebase /leaderboard/ ──────────
-                if (leaderboard.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Text('🏆 Meilleurs citoyens (Leaderboard Firebase)',
-                    style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-                  const SizedBox(height: 10),
-                  ...leaderboard.take(5).toList().asMap().entries.map((e) {
-                    final entry = e.value;
-                    final medalColor = e.key < 3 ? _medalColors[e.key] : Colors.blueGrey;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5),
-                      child: Row(children: [
-                        Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: medalColor.withOpacity(0.15),
-                            shape: BoxShape.circle),
-                          child: Center(child: Text('${e.key + 1}',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12, fontWeight: FontWeight.w900,
-                              color: AppTheme.deepSlate)))),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(entry.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 12, fontWeight: FontWeight.w700,
-                            color: AppTheme.deepSlate))),
-                        BadgeStatut(
-                          label: _roleLabels[entry.role] ?? entry.role,
-                          couleur: _roleColors[entry.role] ?? Colors.grey),
-                        const SizedBox(width: 8),
-                        Text('${entry.score.toStringAsFixed(0)} pts',
-                          style: GoogleFonts.outfit(
-                            fontSize: 14, fontWeight: FontWeight.w900,
-                            color: Colors.amber.shade700)),
-                      ]),
-                    );
-                  }),
-                ],
-              ]),
-            );
-          },
-        );
-      },
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 4 — ÉDUCATION (GET /admin/analytics/education)
@@ -778,7 +569,7 @@ class _SectionUtilisateursFirebase extends StatelessWidget {
 
 class _SectionEducation extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
-  const _SectionEducation({Key? key, required this.coordinateur}) : super(key: key);
+  const _SectionEducation({super.key, required this.coordinateur});
   @override State<_SectionEducation> createState() => _EtatEducation();
 }
 
@@ -916,7 +707,7 @@ class _EtatEducation extends State<_SectionEducation> {
 
 class _SectionModeration extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
-  const _SectionModeration({Key? key, required this.coordinateur}) : super(key: key);
+  const _SectionModeration({super.key, required this.coordinateur});
   @override State<_SectionModeration> createState() => _EtatModeration();
 }
 
@@ -1015,11 +806,11 @@ class _EtatModeration extends State<_SectionModeration> {
             tranches: [
               MapEntry('Approuvés', published.toDouble()),
               if (pendAI > 0) MapEntry('En attente IA', pendAI.toDouble()),
-              if (pendRev > 0) MapEntry('À réviser', pendRev.toDouble()),
+              if (pendRev > 0) MapEntry('È réviser', pendRev.toDouble()),
               if (rejected > 0) MapEntry('Rejetés', rejected.toDouble()),
             ],
             couleurs: [Colors.green, Colors.orange.shade300, Colors.orange, Colors.red],
-            etiquettes: const ['Approuvés', 'En attente IA', 'À réviser', 'Rejetés'],
+            etiquettes: const ['Approuvés', 'En attente IA', 'È réviser', 'Rejetés'],
           ),
         ],
         const SizedBox(height: 20),
@@ -1038,7 +829,7 @@ class _EtatModeration extends State<_SectionModeration> {
           Icon(Icons.auto_awesome_rounded, size: 12, color: Colors.purple.shade300),
           const SizedBox(width: 6),
           Text(
-            "Auto-approbation IA : ${(autoRate * 100).toStringAsFixed(0)}%",
+            'Auto-approbation IA : ${(autoRate * 100).toStringAsFixed(0)}%',
             style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
           ),
           const Spacer(),
@@ -1048,7 +839,7 @@ class _EtatModeration extends State<_SectionModeration> {
           ),
           const SizedBox(width: 6),
           Text(
-            "Modérateur IA : ${health.toUpperCase()}",
+            'Modérateur IA : ${health.toUpperCase()}',
             style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
           ),
         ]),
@@ -1074,7 +865,7 @@ class _EtatModeration extends State<_SectionModeration> {
 
 class _SectionCentres extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
-  const _SectionCentres({Key? key, required this.coordinateur}) : super(key: key);
+  const _SectionCentres({super.key, required this.coordinateur});
   @override State<_SectionCentres> createState() => _EtatCentres();
 }
 
@@ -1170,14 +961,14 @@ class _EtatCentres extends State<_SectionCentres> {
             Row(children: [
               SizedBox(width: w, child: IndicateurPrincipal(valeur: '$sat',
                 etiquette: 'Saturés',
-                sousTitre: sat > 0 ? '⚠️ Intervention requise' : '✅ Aucun saturé',
+                sousTitre: sat > 0 ? '⚠ï¸ Intervention requise' : '✅ Aucun saturé',
                 icone: Icons.warning_amber_rounded,
                 couleur: sat > 0 ? Colors.red : Colors.green,
                 alerte: sat > 0)),
               const SizedBox(width: 12),
               SizedBox(width: w, child: IndicateurPrincipal(valeur: '$maint',
                 etiquette: 'Maintenance',
-                sousTitre: maint > 0 ? '🔧 $maint hors service' : '✅ Aucun',
+                sousTitre: maint > 0 ? '$maint hors service' : 'Aucun',
                 icone: Icons.build_circle_outlined,
                 couleur: maint > 0 ? Colors.orange : Colors.green,
                 alerte: maint > 0)),
@@ -1223,12 +1014,12 @@ class _EtatCentres extends State<_SectionCentres> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION POUBELLES 🔥 Firebase RTDB /poubelles/
+// SECTION POUBELLES ðŸ”¥ Firebase RTDB /poubelles/
 // État temps réel de chaque Smart Bin mis à jour après chaque scan.
 // ═══════════════════════════════════════════════════════════════════
 
 class _SectionPoubelles extends StatelessWidget {
-  const _SectionPoubelles({Key? key}) : super(key: key);
+  const _SectionPoubelles({super.key});
 
   Color _etatColor(String etat) {
     switch (etat) {
@@ -1467,7 +1258,7 @@ class _SectionPoubelles extends StatelessWidget {
 
 class _SectionAnomalies extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
-  const _SectionAnomalies({Key? key, required this.coordinateur}) : super(key: key);
+  const _SectionAnomalies({super.key, required this.coordinateur});
   @override State<_SectionAnomalies> createState() => _EtatAnomalies();
 }
 
@@ -1594,7 +1385,7 @@ class _EtatAnomalies extends State<_SectionAnomalies> {
                     fontSize: 11, color: AppTheme.deepSlate, height: 1.4)),
                   if (a['user_id'] != null) ...[
                     const SizedBox(height: 4),
-                    Text('Utilisateur ID : ${a['user_id']}',
+                    Text('Citoyen ID : ${a['user_id']}',
                       style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted)),
                   ],
                 ])),

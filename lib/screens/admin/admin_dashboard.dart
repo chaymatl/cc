@@ -12,13 +12,14 @@ import '../../services/messaging_service.dart';
 import '../client/profile_tab.dart';
 import 'user_management_screen.dart';
 import 'admin_proposals_screen.dart';
-import 'admin_analytics_tab.dart';
+import 'admin_analytics_tab.dart' show AdminAnalyticsTab;
+import 'analytics_helpers.dart';
 import '../../services/l10n_service.dart';
 import '../messaging/messaging_screen.dart';
 
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -388,6 +389,9 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── KPI Formation (Education stats) ────────────────────────────
+          const _EducationKpiBanner(),
+          const SizedBox(height: 20),
           Text('TÉMOIGNAGES CITOYENS',
             style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 12, color: AppTheme.textMuted)),
           const SizedBox(height: 24),
@@ -609,9 +613,9 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
       );
       if (!mounted) return;
       if (response.statusCode == 200) {
-        final statusLabel = newStatus == 'disponible' ? '✅ Disponible'
-            : newStatus == 'saturé' ? '🔴 Saturé'
-            : '🟡 Maintenance';
+        final statusLabel = newStatus == 'disponible' ? 'Disponible'
+            : newStatus == 'saturé' ? 'Saturé'
+            : 'Maintenance';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Statut mis à jour : $statusLabel'),
           backgroundColor: newStatus == 'disponible' ? Colors.green
@@ -637,7 +641,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
     try {
       final dt = DateTime.parse(isoDate).toLocal();
       final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return 'À l\'instant';
+      if (diff.inMinutes < 1) return 'È l\'instant';
       if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
       if (diff.inHours < 24) return 'Il y a ${diff.inHours}h';
       return 'Il y a ${diff.inDays}j';
@@ -1409,7 +1413,10 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Stats bar
+            // ── KPI Modération ─────────────────────────────────────────
+            const _ModerationKpiBanner(),
+            const SizedBox(height: 16),
+            // Stats bar (liste des catégories)
             if (_stats.isNotEmpty) ...[
               _buildStatsBar(),
               const SizedBox(height: 24),
@@ -1665,5 +1672,156 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
         ],
       ),
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05, end: 0);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// KPI BANNER — MODÉRATION (onglet Modération)
+// ═══════════════════════════════════════════════════════════════════
+
+class _ModerationKpiBanner extends StatefulWidget {
+  const _ModerationKpiBanner({super.key});
+  @override
+  State<_ModerationKpiBanner> createState() => _ModerationKpiBannerState();
+}
+
+class _ModerationKpiBannerState extends State<_ModerationKpiBanner> {
+  Map<String, dynamic> _stats = {};
+  bool _loading = true;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final result = await analyticsGetFull('/admin/analytics/community');
+      if (mounted) setState(() { _stats = (result?.data as Map<String, dynamic>?) ?? {}; _loading = false; });
+    } catch (_) { if (mounted) setState(() => _loading = false); }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalPosts = (_stats['total_posts']    as num?)?.toInt() ?? 0;
+    final published  = (_stats['published']      as num?)?.toInt() ?? 0;
+    final pendAI     = (_stats['pending_ai']     as num?)?.toInt() ?? 0;
+    final pendRev    = (_stats['pending_review'] as num?)?.toInt() ?? 0;
+    final rejected   = (_stats['rejected']       as num?)?.toInt() ?? 0;
+    final pending    = pendAI + pendRev;
+    return _KpiBannerCard(
+      loading: _loading, accentColor: Colors.purple,
+      icon: Icons.library_books_rounded, label: 'Publications & Modération', source: 'FastAPI · community',
+      kpis: [
+        _KpiItem(icon: Icons.article_rounded, color: Colors.purple, value: '$totalPosts', label: 'Total posts', sub: 'Toutes catégs.'),
+        _KpiItem(icon: Icons.check_circle_rounded, color: Colors.green, value: '$published', label: 'Approuvés', sub: '${totalPosts > 0 ? (published / totalPosts * 100).toStringAsFixed(0) : 0}% du total'),
+        _KpiItem(icon: Icons.pending_actions_rounded, color: pending > 0 ? Colors.orange : Colors.green, value: '$pending', label: 'En attente', sub: '$pendAI IA · $pendRev review'),
+        _KpiItem(icon: Icons.cancel_rounded, color: Colors.red, value: '$rejected', label: 'Rejetés', sub: 'IA ou admin'),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// KPI BANNER — ÉDUCATION (onglet Contenu/Témoignages)
+// ═══════════════════════════════════════════════════════════════════
+
+class _EducationKpiBanner extends StatefulWidget {
+  const _EducationKpiBanner({super.key});
+  @override
+  State<_EducationKpiBanner> createState() => _EducationKpiBannerState();
+}
+
+class _EducationKpiBannerState extends State<_EducationKpiBanner> {
+  Map<String, dynamic> _stats = {};
+  bool _loading = true;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final result = await analyticsGetFull('/admin/analytics/education?period=last_30_days');
+      if (mounted) setState(() { _stats = (result?.data as Map<String, dynamic>?) ?? {}; _loading = false; });
+    } catch (_) { if (mounted) setState(() => _loading = false); }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalQuiz = (_stats['total_quizzes']      as num?)?.toInt() ?? 0;
+    final totalSub  = (_stats['total_submissions']  as num?)?.toInt() ?? 0;
+    final avgScore  = (_stats['average_quiz_score'] as num?)?.toDouble() ?? 0.0;
+    final successRt = (_stats['success_rate']       as num?)?.toDouble() ?? 0.0;
+    return _KpiBannerCard(
+      loading: _loading, accentColor: Colors.teal,
+      icon: Icons.school_rounded, label: 'Formation & Quiz', source: 'FastAPI · education · 30j',
+      kpis: [
+        _KpiItem(icon: Icons.quiz_rounded, color: Colors.teal, value: '$totalQuiz', label: 'Quiz créés', sub: 'Total plateforme'),
+        _KpiItem(icon: Icons.assignment_turned_in_rounded, color: Colors.indigo, value: '$totalSub', label: 'Soumissions', sub: 'Ce mois'),
+        _KpiItem(icon: Icons.analytics_rounded, color: Colors.orange, value: '${avgScore.toStringAsFixed(1)}/10', label: 'Score moyen', sub: 'Moyenne globale'),
+        _KpiItem(icon: Icons.emoji_events_rounded, color: successRt >= 60 ? Colors.green : Colors.orange, value: '${successRt.toStringAsFixed(0)}%', label: 'Taux réussite', sub: 'Score ≥ 5/10'),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// COMPOSANTS PARTAGÉS KPI BANNER
+// ═══════════════════════════════════════════════════════════════════
+
+class _KpiItem {
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
+  final String sub;
+  const _KpiItem({required this.icon, required this.color, required this.value, required this.label, required this.sub});
+}
+
+class _KpiBannerCard extends StatelessWidget {
+  final bool loading;
+  final Color accentColor;
+  final IconData icon;
+  final String label;
+  final String source;
+  final List<_KpiItem> kpis;
+
+  const _KpiBannerCard({required this.loading, required this.accentColor, required this.icon, required this.label, required this.source, required this.kpis});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: isDark ? [const Color(0xFF0F1F2A), accentColor.withOpacity(0.08)] : [accentColor.withOpacity(0.06), accentColor.withOpacity(0.02)]),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.2)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: accentColor.withOpacity(0.12), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: accentColor, size: 16)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(label, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? Colors.white : AppTheme.deepSlate))),
+          if (loading)
+            SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: accentColor))
+          else
+            Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(source, style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: accentColor))),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: kpis.asMap().entries.map((e) => Expanded(child: Padding(
+          padding: EdgeInsets.only(right: e.key < kpis.length - 1 ? 8 : 0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(color: isDark ? e.value.color.withOpacity(0.08) : e.value.color.withOpacity(0.06), borderRadius: BorderRadius.circular(14), border: Border.all(color: e.value.color.withOpacity(0.15))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(e.value.icon, color: e.value.color, size: 16),
+              const SizedBox(height: 5),
+              Text(e.value.value, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: e.value.color), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(e.value.label, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : AppTheme.deepSlate), maxLines: 1),
+              Text(e.value.sub, style: GoogleFonts.inter(fontSize: 8, color: AppTheme.textMuted), maxLines: 1),
+            ]),
+          ),
+        ))).toList()),
+      ]),
+    );
   }
 }

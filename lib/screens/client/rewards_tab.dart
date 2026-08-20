@@ -9,7 +9,7 @@ import '../../services/l10n_service.dart';
 import '../../services/levels_service.dart';
 
 class RewardsTab extends StatefulWidget {
-  const RewardsTab({Key? key}) : super(key: key);
+  const RewardsTab({super.key});
 
   @override
   State<RewardsTab> createState() => _RewardsTabState();
@@ -390,10 +390,10 @@ class _RewardsTabState extends State<RewardsTab> {
                 border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
               ),
               child: Row(children: [
-                const Text('👑', style: TextStyle(fontSize: 16)),
+                const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD700), size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  L10n.tr('Niveau Maximum atteint ! 🎉'),
+                  L10n.tr('Niveau Maximum atteint !'),
                   style: GoogleFonts.inter(
                     color: const Color(0xFFFFD700),
                     fontSize: 12,
@@ -554,7 +554,7 @@ class _RewardsTabState extends State<RewardsTab> {
               ),
               const SizedBox(height: 4),
               Text(
-                isCurrent ? (L10n.isArabic ? 'المستوى الحالي ✓' : 'Niveau Actuel ✓') : subtitle,
+                isCurrent ? ('Niveau Actuel ✓') : subtitle,
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -637,15 +637,15 @@ class _RewardsTabState extends State<RewardsTab> {
     final tiles = [
       _ImpactTile(icon: Icons.recycling_rounded, color: const Color(0xFF10B981),
           value: _scanCount.toString(),
-          label: L10n.isArabic ? 'عمليات الفرز' : 'Tris effectués',
+          label: 'Tris effectués',
           sublabel: '${_totalScanPoints.toStringAsFixed(0)} pts gagnés'),
       _ImpactTile(icon: Icons.quiz_rounded, color: const Color(0xFF8B5CF6),
           value: _quizCount.toString(),
-          label: L10n.isArabic ? 'اختبارات' : 'Quiz joués',
+          label: 'Quiz joués',
           sublabel: '${_totalQuizPoints.toStringAsFixed(0)} pts gagnés'),
       _ImpactTile(icon: Icons.article_rounded, color: const Color(0xFF3B82F6),
           value: _postsCount.toString(),
-          label: L10n.isArabic ? 'منشورات' : 'Posts publiés',
+          label: 'Posts publiés',
           sublabel: '$_likesReceived like(s)'),
     ];
 
@@ -702,9 +702,9 @@ class _RewardsTabState extends State<RewardsTab> {
 
     final badges = [
       _BadgeData(Icons.recycling_rounded, const Color(0xFF3B82F6),
-          L10n.isArabic ? 'أول فرز' : 'Premier Tri',
+          'Premier Tri',
           _scanCount >= 1,
-          L10n.isArabic ? 'افرز ولو مرة واحدة' : 'Effectuer au moins 1 scan'),
+          'Effectuer au moins 1 scan'),
       _BadgeData(Icons.local_fire_department_rounded, const Color(0xFFF59E0B),
           'Série 7J', _score >= 100, '100 pts requis'),
       _BadgeData(Icons.quiz_rounded, const Color(0xFF8B5CF6),
@@ -761,7 +761,7 @@ class _RewardsTabState extends State<RewardsTab> {
                 Row(children: [
                   Icon(Icons.check_circle_rounded, color: color, size: 12),
                   const SizedBox(width: 4),
-                  Text(L10n.isArabic ? 'مفتوح ✓' : 'Débloqué ✓',
+                  Text('Débloqué ✓',
                     style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
                 ])
               else

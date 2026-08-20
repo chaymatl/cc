@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,7 +9,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:io';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../services/auth_service.dart';
@@ -18,7 +18,7 @@ import '../../constants.dart';
 import '../../services/l10n_service.dart';
 
 class MapTab extends StatefulWidget {
-  const MapTab({Key? key}) : super(key: key);
+  const MapTab({super.key});
 
   @override
   State<MapTab> createState() => _MapTabState();
@@ -39,9 +39,9 @@ extension VehicleModeExtension on VehicleMode {
 
   String get label {
     switch (this) {
-      case VehicleMode.foot: return L10n.isArabic ? 'مشياً' : 'À pied';
-      case VehicleMode.moto: return L10n.isArabic ? 'دراجة نارية' : 'Moto';
-      case VehicleMode.car:  return L10n.isArabic ? 'سيارة' : 'Voiture';
+      case VehicleMode.foot: return 'À pied';
+      case VehicleMode.moto: return 'Moto';
+      case VehicleMode.car:  return 'Voiture';
     }
   }
 
@@ -60,6 +60,19 @@ extension VehicleModeExtension on VehicleMode {
       case VehicleMode.car:  return const Color(0xFF2196F3);
     }
   }
+
+  /// Vitesse moyenne réelle en ville (km/h) — utilisée pour estimer la durée
+  /// quand OSRM échoue ou qu'on tombe sur un serveur au mauvais profil.
+  double get speedKmh {
+    switch (this) {
+      case VehicleMode.foot: return 5.0;   // marche à pied
+      case VehicleMode.moto: return 45.0;  // moto en ville
+      case VehicleMode.car:  return 55.0;  // voiture en ville
+    }
+  }
+
+  /// Minutes par km selon le mode (pour le fallback haversine).
+  double get minPerKm => 60.0 / speedKmh;
 }
 
 class _MapTabState extends State<MapTab> {
@@ -81,19 +94,19 @@ class _MapTabState extends State<MapTab> {
   double? _routeDistanceKm;
   int? _routeDurationMin;
 
-  // ── Dictionnaire bilingue FR / AR ─────────────────────────────────────────
+  // ── Types de déchets (français uniquement) ─────────────────────────────────
   static const List<Map<String, String>> _typeMap = [
-    {'key': 'tous',         'fr': 'Tous',         'ar': 'الكل'},
-    {'key': 'plastique',    'fr': 'Plastique',    'ar': 'بلاستيك'},
-    {'key': 'verre',        'fr': 'Verre',        'ar': 'زجاج'},
-    {'key': 'papier',       'fr': 'Papier',       'ar': 'ورق'},
-    {'key': 'carton',       'fr': 'Carton',       'ar': 'كرتون'},
-    {'key': 'metal',        'fr': 'Métal',        'ar': 'معدن'},
-    {'key': 'electronique', 'fr': 'Électronique', 'ar': 'إلكترونيات'},
-    {'key': 'batteries',    'fr': 'Batteries',    'ar': 'بطاريات'},
-    {'key': 'compost',      'fr': 'Compost',      'ar': 'سماد'},
-    {'key': 'vetements',    'fr': 'Vêtements',    'ar': 'ملابس'},
-    {'key': 'general',      'fr': 'Général',      'ar': 'عام'},
+    {'key': 'tous',         'fr': 'Tous'},
+    {'key': 'plastique',    'fr': 'Plastique'},
+    {'key': 'verre',        'fr': 'Verre'},
+    {'key': 'papier',       'fr': 'Papier'},
+    {'key': 'carton',       'fr': 'Carton'},
+    {'key': 'metal',        'fr': 'Métal'},
+    {'key': 'electronique', 'fr': 'Électronique'},
+    {'key': 'batteries',    'fr': 'Batteries'},
+    {'key': 'compost',      'fr': 'Compost'},
+    {'key': 'vetements',    'fr': 'Vêtements'},
+    {'key': 'general',      'fr': 'Général'},
   ];
 
   String _norm(String s) => s.toLowerCase()
@@ -107,33 +120,33 @@ class _MapTabState extends State<MapTab> {
   List<String> _bilingualTerms(String key) {
     final e = _typeMap.firstWhere((m) => m['key'] == key, orElse: () => {});
     if (e.isEmpty) return [];
-    return [_norm(e['fr']!), e['ar']!];
+    return [_norm(e['fr']!)];
   }
 
   static const List<List<String>> _cityTranslations = [
-    ['nabeul', 'نابل', 'hammamet', 'حمامت', 'kelibia', 'قليبية', 'beni khiar', 'بني خيار', 'la jarre'],
-    ['tunis', 'تونس', 'bardo', 'باردو', 'carthage', 'قرطاج'],
-    ['sousse', 'سوسة', 'hammam sousse', 'حمام سوسة', 'msaken', 'مساكن'],
-    ['sfax', 'صفاقس'],
-    ['bizerte', 'بنزرت', 'menzel bourguiba', 'منزل بورقيبة'],
-    ['ariana', 'أريانة', 'raoued', 'راوض', 'ennasr', 'النصر'],
-    ['ben arous', 'بن عروس', 'rades', 'رادس', 'megrine', 'مقرين', 'ezzahra', 'الزهراء'],
-    ['manouba', 'منوبة', 'oued ellil', 'وادي الليل', 'douar hicher', 'دوار هيشر'],
-    ['monastir', 'المنستير', 'skanes', 'سكانس'],
-    ['mahdia', 'المهدية'],
-    ['kairouan', 'القيروان'],
-    ['kasserine', 'القصرين'],
-    ['gabes', 'قابس', 'gabès'],
-    ['gafsa', 'قفصة'],
-    ['medenine', 'مدنين', 'médenine', 'djerba', 'جربة', 'houmt souk', 'حومة السوق'],
-    ['tozeur', 'توزر'],
-    ['tataouine', 'تطاوين'],
-    ['zaghouan', 'زغوان'],
-    ['siliana', 'سليانة'],
-    ['jendouba', 'جندوبة'],
-    ['kef', 'الكاف', 'le kef'],
-    ['sidi bouzid', 'سيدي بوزيد'],
-    ['beja', 'باجة', 'béja'],
+    ['nabeul', 'hammamet', 'kelibia', 'beni khiar', 'la jarre'],
+    ['tunis', 'bardo', 'carthage'],
+    ['sousse', 'hammam sousse', 'msaken'],
+    ['sfax'],
+    ['bizerte', 'menzel bourguiba'],
+    ['ariana', 'raoued', 'ennasr'],
+    ['ben arous', 'rades', 'megrine', 'ezzahra'],
+    ['manouba', 'oued ellil', 'douar hicher'],
+    ['monastir', 'skanes'],
+    ['mahdia'],
+    ['kairouan'],
+    ['kasserine'],
+    ['gabes', 'gabès'],
+    ['gafsa'],
+    ['medenine', 'médenine', 'djerba', 'houmt souk'],
+    ['tozeur'],
+    ['tataouine'],
+    ['zaghouan'],
+    ['siliana'],
+    ['jendouba'],
+    ['kef', 'le kef'],
+    ['sidi bouzid'],
+    ['beja', 'béja'],
   ];
 
   List<String> _expandQuery(String query) {
@@ -155,132 +168,128 @@ class _MapTabState extends State<MapTab> {
   
   static const List<Map<String, dynamic>> _kFallbackPoints = [
     {
-      "id": 1,
-      "name": "Ariana Nord",
-      "lat": 36.8665,
-      "lng": 10.1647,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Papier"],
-      "address": "Rue de la République, Ariana",
-      "hours": "8h-18h",
-      "status": "disponible",
-      "load_level": "0.45"
+      'id': 1,
+      'name': 'Ariana Nord',
+      'lat': 36.8665,
+      'lng': 10.1647,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Papier'],
+      'address': 'Rue de la République, Ariana',
+      'hours': '8h-18h',
+      'status': 'disponible',
+      'load_level': '0.45'
     },
     {
-      "id": 2,
-      "name": "Tunis Centre",
-      "lat": 36.8065,
-      "lng": 10.1815,
-      "is_verified": false,
-      "types": ["Plastique", "Batteries"],
-      "address": "Avenue Habib Bourguiba, Tunis",
-      "hours": "7h-20h",
-      "status": "disponible",
-      "load_level": "0.85"
+      'id': 2,
+      'name': 'Tunis Centre',
+      'lat': 36.8065,
+      'lng': 10.1815,
+      'is_verified': false,
+      'types': ['Plastique', 'Batteries'],
+      'address': 'Avenue Habib Bourguiba, Tunis',
+      'hours': '7h-20h',
+      'status': 'disponible',
+      'load_level': '0.85'
     },
     {
-      "id": 3,
-      "name": "La Marsa",
-      "lat": 36.8782,
-      "lng": 10.3247,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Compost"],
-      "address": "Rue du Lac, La Marsa",
-      "hours": "9h-17h",
-      "status": "maintenance",
-      "load_level": "0.0"
+      'id': 3,
+      'name': 'La Marsa',
+      'lat': 36.8782,
+      'lng': 10.3247,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Compost'],
+      'address': 'Rue du Lac, La Marsa',
+      'hours': '9h-17h',
+      'status': 'maintenance',
+      'load_level': '0.0'
     },
     {
-      "id": 4,
-      "name": "Bardo",
-      "lat": 36.8189,
-      "lng": 10.1658,
-      "is_verified": false,
-      "types": ["Plastique", "Papier"],
-      "address": "Avenue du Bardo, Le Bardo",
-      "hours": "8h-16h",
-      "status": "disponible",
-      "load_level": "0.45"
+      'id': 4,
+      'name': 'Bardo',
+      'lat': 36.8189,
+      'lng': 10.1658,
+      'is_verified': false,
+      'types': ['Plastique', 'Papier'],
+      'address': 'Avenue du Bardo, Le Bardo',
+      'hours': '8h-16h',
+      'status': 'disponible',
+      'load_level': '0.45'
     },
     {
-      "id": 5,
-      "name": "Ben Arous",
-      "lat": 36.7256,
-      "lng": 10.2164,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Batteries", "Electronique"],
-      "address": "Zone industrielle, Ben Arous",
-      "hours": "7h-19h",
-      "status": "disponible",
-      "load_level": "0.72"
+      'id': 5,
+      'name': 'Ben Arous',
+      'lat': 36.7256,
+      'lng': 10.2164,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Batteries', 'Electronique'],
+      'address': 'Zone industrielle, Ben Arous',
+      'hours': '7h-19h',
+      'status': 'disponible',
+      'load_level': '0.72'
     },
     {
-      "id": 6,
-      "name": "Manouba",
-      "lat": 36.8094,
-      "lng": 10.0971,
-      "is_verified": true,
-      "types": ["Plastique", "Verre"],
-      "address": "Centre ville, Manouba",
-      "hours": "8h-17h",
-      "status": "disponible",
-      "load_level": "0.30"
+      'id': 6,
+      'name': 'Manouba',
+      'lat': 36.8094,
+      'lng': 10.0971,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre'],
+      'address': 'Centre ville, Manouba',
+      'hours': '8h-17h',
+      'status': 'disponible',
+      'load_level': '0.30'
     },
     {
-      "id": 7,
-      "name": "Carthage",
-      "lat": 36.8528,
-      "lng": 10.3306,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Papier", "Compost"],
-      "address": "Rue Hannibal, Carthage",
-      "hours": "8h-18h",
-      "status": "disponible",
-      "load_level": "0.55"
+      'id': 7,
+      'name': 'Carthage',
+      'lat': 36.8528,
+      'lng': 10.3306,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Papier', 'Compost'],
+      'address': 'Rue Hannibal, Carthage',
+      'hours': '8h-18h',
+      'status': 'disponible',
+      'load_level': '0.55'
     },
     {
-      "id": 8,
-      "name": "Lac 1",
-      "lat": 36.8325,
-      "lng": 10.2336,
-      "is_verified": false,
-      "types": ["Plastique", "Batteries"],
-      "address": "Les Berges du Lac, Tunis",
-      "hours": "9h-20h",
-      "status": "saturé",
-      "load_level": "0.98"
+      'id': 8,
+      'name': 'Lac 1',
+      'lat': 36.8325,
+      'lng': 10.2336,
+      'is_verified': false,
+      'types': ['Plastique', 'Batteries'],
+      'address': 'Les Berges du Lac, Tunis',
+      'hours': '9h-20h',
+      'status': 'saturé',
+      'load_level': '0.98'
     },
     {
-      "id": 9,
-      "name": "Sidi Bou Said",
-      "lat": 36.8687,
-      "lng": 10.3414,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Compost"],
-      "address": "Village de Sidi Bou Said",
-      "hours": "9h-16h",
-      "status": "disponible",
-      "load_level": "0.20"
+      'id': 9,
+      'name': 'Sidi Bou Said',
+      'lat': 36.8687,
+      'lng': 10.3414,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Compost'],
+      'address': 'Village de Sidi Bou Said',
+      'hours': '9h-16h',
+      'status': 'disponible',
+      'load_level': '0.20'
     },
     {
-      "id": 10,
-      "name": "Hammam Lif",
-      "lat": 36.7333,
-      "lng": 10.1667,
-      "is_verified": true,
-      "types": ["Plastique", "Verre", "Papier", "Electronique"],
-      "address": "Avenue de la Plage, Hammam Lif",
-      "hours": "7h-18h",
-      "status": "disponible",
-      "load_level": "0.60"
+      'id': 10,
+      'name': 'Hammam Lif',
+      'lat': 36.7333,
+      'lng': 10.1667,
+      'is_verified': true,
+      'types': ['Plastique', 'Verre', 'Papier', 'Electronique'],
+      'address': 'Avenue de la Plage, Hammam Lif',
+      'hours': '7h-18h',
+      'status': 'disponible',
+      'load_level': '0.60'
     }
   ];
 
   bool _isRefreshing = false;
-
-  /// `true` = on a accès à tile.openstreetmap.org → on affiche la vraie carte.
-  /// `false` = hors-ligne → placeholder premium, 0 log d'erreur.
-  bool _mapOnline = false;
 
   @override
   void initState() {
@@ -288,22 +297,6 @@ class _MapTabState extends State<MapTab> {
     L10n.addListener(_onLocaleChange);
     _loadFromCache();
     _checkAndRefreshCache();
-    _checkMapConnectivity();
-  }
-
-  /// Test rapide TCP vers tile.openstreetmap.org:80 (< 3 s).
-  /// N'utilise PAS HttpOverrides — connexion directe.
-  Future<void> _checkMapConnectivity() async {
-    try {
-      final socket = await Socket.connect(
-        'tile.openstreetmap.org', 80,
-        timeout: const Duration(seconds: 3),
-      );
-      socket.destroy();
-      if (mounted) setState(() => _mapOnline = true);
-    } catch (_) {
-      // Hors-ligne : _mapOnline reste false
-    }
   }
 
   void _onLocaleChange() {
@@ -435,7 +428,7 @@ class _MapTabState extends State<MapTab> {
 
   Future<void> _fetchCurrentLocation() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) throw 'Service de localisation désactivé';
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -469,12 +462,11 @@ class _MapTabState extends State<MapTab> {
   Future<void> _navigateInApp(
     double destLat,
     double destLng,
-    Map<String, dynamic> point,
-  ) async {
-    // Fermer la bottom sheet si elle est ouverte
-    if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+    Map<String, dynamic> point, {
+    VoidCallback? onBeforeNavigate,
+  }) async {
+    onBeforeNavigate?.call();
 
-    // Obtenir la position si pas encore connue
     if (_currentLocation == null) {
       await _fetchCurrentLocation();
       if (_currentLocation == null) return;
@@ -491,62 +483,131 @@ class _MapTabState extends State<MapTab> {
     try {
       final start = _currentLocation!;
       final profile = _selectedVehicle.osrmProfile;
+      final vehicle = _selectedVehicle;
 
-      // Appel à l'API OSRM publique (OpenStreetMap, gratuit, sans Google Maps)
-      final url =
-          'https://routing.openstreetmap.de/routed-$profile/route/v1/driving/'
-          '${start.longitude},${start.latitude};'
-          '$destLng,$destLat'
-          '?overview=full&geometries=geojson&steps=false';
+      final List<String> osrmServers = [
+        'https://router.project-osrm.org',
+        'https://routing.openstreetmap.de/routed-$profile',
+        if (profile == 'car') 'https://routing.openstreetmap.de/routed-car',
+      ];
 
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 10));
+      http.Response? response;
+      bool usedFallbackCarServer = false;
 
-      if (response.statusCode != 200) throw 'Erreur réseau OSRM';
+      for (final server in osrmServers) {
+        try {
+          final isProjectOsrm = server.contains('project-osrm');
+          final url = isProjectOsrm
+              ? '$server/route/v1/$profile/${start.longitude},${start.latitude};$destLng,$destLat?overview=full&geometries=geojson&steps=false'
+              : '$server/route/v1/driving/${start.longitude},${start.latitude};$destLng,$destLat?overview=full&geometries=geojson&steps=false';
 
-      final data = json.decode(response.body);
-      if (data['code'] != 'Ok' || (data['routes'] as List).isEmpty) {
-        throw 'Aucun itinéraire trouvé';
+          usedFallbackCarServer = server.contains('routed-car') && profile == 'foot';
+
+          debugPrint('[OSRM] Tentative : $server (profil: $profile)');
+          response = await http
+              .get(Uri.parse(url))
+              .timeout(const Duration(seconds: 7));
+
+          if (response.statusCode == 200) {
+            final data = json.decode(response.body);
+            if (data['code'] == 'Ok' && (data['routes'] as List).isNotEmpty) {
+              break;
+            }
+          }
+          response = null;
+          usedFallbackCarServer = false;
+        } catch (e) {
+          debugPrint('[OSRM] Échec $server : $e');
+          response = null;
+          usedFallbackCarServer = false;
+        }
       }
 
-      final route = data['routes'][0];
-      final double distanceM = (route['distance'] as num).toDouble();
-      final double durationS = (route['duration'] as num).toDouble();
+      if (response != null && response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final route = data['routes'][0];
+        final double distanceM = (route['distance'] as num).toDouble();
+        double durationS  = (route['duration'] as num).toDouble();
 
-      final List<dynamic> coords = route['geometry']['coordinates'];
-      final List<LatLng> routeLatLngs =
-          coords.map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble())).toList();
+        if (usedFallbackCarServer) {
+          final double distKm = distanceM / 1000;
+          durationS = (distKm / vehicle.speedKmh) * 3600;
+          debugPrint('[OSRM] Durée recalculée pour ${vehicle.label} (${vehicle.speedKmh} km/h) : ${(durationS/60).ceil()} min');
+        }
 
-      if (mounted) {
-        setState(() {
-          _routePoints = routeLatLngs;
-          _routeDistanceKm = distanceM / 1000;
-          _routeDurationMin = (durationS / 60).ceil();
-          _isRouting = false;
-        });
+        final List<dynamic> coords = route['geometry']['coordinates'];
+        final List<LatLng> routeLatLngs =
+            coords.map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble())).toList();
 
-        // Centrer la carte pour afficher tout l'itinéraire
-        if (routeLatLngs.isNotEmpty) {
-          final bounds = LatLngBounds.fromPoints(routeLatLngs);
+        if (mounted) {
+          setState(() {
+            _routePoints = routeLatLngs;
+            _routeDistanceKm = distanceM / 1000;
+            _routeDurationMin = (durationS / 60).ceil();
+            _isRouting = false;
+          });
+
+          if (routeLatLngs.isNotEmpty) {
+            final bounds = LatLngBounds.fromPoints(routeLatLngs);
+            _mapController.fitCamera(
+              CameraFit.bounds(
+                bounds: bounds,
+                padding: const EdgeInsets.fromLTRB(40, 120, 40, 240),
+              ),
+            );
+          }
+        }
+      } else {
+        debugPrint('[OSRM] Tous les serveurs ont échoué. Fallback ligne droite.');
+        final double distKm = _haversineDistance(
+          start.latitude, start.longitude, destLat, destLng,
+        );
+        final int estMin = (distKm * vehicle.minPerKm).ceil().clamp(1, 9999);
+        debugPrint('[OSRM] Fallback haversine : ${distKm.toStringAsFixed(1)} km, $estMin min (${vehicle.label} à ${vehicle.speedKmh} km/h)');
+
+        if (mounted) {
+          setState(() {
+            _routePoints = [start, LatLng(destLat, destLng)];
+            _routeDistanceKm = distKm;
+            _routeDurationMin = estMin;
+            _isRouting = false;
+          });
+
+          final bounds = LatLngBounds.fromPoints([start, LatLng(destLat, destLng)]);
           _mapController.fitCamera(
             CameraFit.bounds(
               bounds: bounds,
-              padding: const EdgeInsets.fromLTRB(40, 120, 40, 240),
+              padding: const EdgeInsets.fromLTRB(60, 140, 60, 260),
+            ),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(children: [
+                const Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Itinéraire estimé (${distKm.toStringAsFixed(1)} km à vol d\'oiseau)',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ]),
+              backgroundColor: const Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isRouting = false;
-          _activeDestination = null;
-        });
+        setState(() { _isRouting = false; });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Impossible de calculer l\'itinéraire : $e'),
-            backgroundColor: Colors.red,
+            content: Text('Erreur de navigation : ${e.toString().split(':').first}'),
+            backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -554,6 +615,19 @@ class _MapTabState extends State<MapTab> {
       }
     }
   }
+
+  double _haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371.0;
+    final dLat = _deg2rad(lat2 - lat1);
+    final dLon = _deg2rad(lon2 - lon1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_deg2rad(lat1)) * math.cos(_deg2rad(lat2)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  double _deg2rad(double deg) => deg * (math.pi / 180);
+
 
   void _clearRoute() {
     setState(() {
@@ -572,34 +646,97 @@ class _MapTabState extends State<MapTab> {
   Future<void> _findAndNavigateToNearestPoint() async {
     if (_isFindingNearest || _isRouting) return;
 
+    // Charger les points si vide
     if (_allPoints.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Aucun point de tri chargé. Veuillez vérifier votre connexion.',
-              style: GoogleFonts.inter(fontSize: 13),
+      if (mounted) setState(() => _isFindingNearest = true);
+      await _fetchAndCachePoints();
+      if (_allPoints.isEmpty) {
+        if (mounted) {
+          setState(() => _isFindingNearest = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Aucun point de tri chargé. Vérifiez votre connexion.',
+                style: GoogleFonts.inter(fontSize: 13),
+              ),
+              backgroundColor: Colors.orange.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            backgroundColor: Colors.orange.shade700,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        );
+          );
+        }
+        return;
       }
-      return;
     }
 
     if (mounted) setState(() => _isFindingNearest = true);
 
     try {
-      // 1. Obtenir la position actuelle
-      await _fetchCurrentLocation();
-      if (_currentLocation == null || !mounted) {
-        setState(() => _isFindingNearest = false);
+      // 1. Vérifier / demander la permission GPS
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() => _isFindingNearest = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Activez le GPS dans les paramètres de l\'appareil',
+                style: GoogleFonts.inter(fontSize: 13),
+              ),
+              backgroundColor: Colors.orange.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              action: SnackBarAction(
+                label: 'Paramètres',
+                textColor: Colors.white,
+                onPressed: () => Geolocator.openLocationSettings(),
+              ),
+            ),
+          );
+        }
         return;
       }
 
-      // 2. Calculer la distance vers chaque point et trouver le plus proche
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => _isFindingNearest = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Permission de localisation refusée — autorisez-la dans les paramètres',
+                style: GoogleFonts.inter(fontSize: 13),
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              action: permission == LocationPermission.deniedForever
+                  ? SnackBarAction(
+                      label: 'Paramètres',
+                      textColor: Colors.white,
+                      onPressed: () => Geolocator.openAppSettings(),
+                    )
+                  : null,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. Obtenir la position
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
+      final myLoc = LatLng(pos.latitude, pos.longitude);
+      setState(() => _currentLocation = myLoc);
+
+      // 3. Calculer la distance vers chaque point et trouver le plus proche
       Map<String, dynamic>? nearest;
       double minDistM = double.infinity;
 
@@ -608,10 +745,7 @@ class _MapTabState extends State<MapTab> {
         final lng = (p['lng'] as num?)?.toDouble();
         if (lat == null || lng == null) continue;
         final dist = Geolocator.distanceBetween(
-          _currentLocation!.latitude,
-          _currentLocation!.longitude,
-          lat,
-          lng,
+          myLoc.latitude, myLoc.longitude, lat, lng,
         );
         if (dist < minDistM) {
           minDistM = dist;
@@ -624,51 +758,59 @@ class _MapTabState extends State<MapTab> {
         return;
       }
 
-      // 3. Confirmer à l'utilisateur
+      final nearestLat = (nearest['lat'] as num).toDouble();
+      final nearestLng = (nearest['lng'] as num).toDouble();
+
+      // 4. Centrer la carte sur le point trouvé immédiatement
+      setState(() {
+        _activeDestination = nearest;
+        _isFindingNearest = false;
+      });
+      _mapController.move(LatLng(nearestLat, nearestLng), 15);
+
+      // 5. Afficher le feedback distance à vol d'oiseau
       final distStr = minDistM < 1000
           ? '${minDistM.round()} m'
           : '${(minDistM / 1000).toStringAsFixed(1)} km';
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.location_on_rounded, color: Colors.white, size: 18),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '${nearest['name']} · $distStr',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_on_rounded, color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${nearest['name']} · $distStr à vol d\'oiseau',
+                    style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
+            backgroundColor: AppTheme.primaryGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            duration: const Duration(seconds: 4),
           ),
-          backgroundColor: AppTheme.primaryGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+        );
+      }
 
-      if (mounted) setState(() => _isFindingNearest = false);
+      // 6. Calculer l'itinéraire OSRM (non bloquant — affiche le marqueur même si ça échoue)
+      await _navigateInApp(nearestLat, nearestLng, nearest);
 
-      // 4. Lancer la navigation intégrée (OSRM — pas Google Maps)
-      await _navigateInApp(
-        (nearest['lat'] as num).toDouble(),
-        (nearest['lng'] as num).toDouble(),
-        nearest,
-      );
     } catch (e) {
       if (mounted) {
         setState(() => _isFindingNearest = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur : $e', style: GoogleFonts.inter(fontSize: 13)),
+            content: Text(
+              'Erreur : $e',
+              style: GoogleFonts.inter(fontSize: 13),
+            ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -703,122 +845,44 @@ class _MapTabState extends State<MapTab> {
         types: types,
         selectedVehicle: _selectedVehicle,
         onVehicleChanged: (mode) => setState(() => _selectedVehicle = mode),
-        onNavigate: () => _navigateInApp(
-          (point['lat'] as num).toDouble(),
-          (point['lng'] as num).toDouble(),
-          point,
-        ),
+        onNavigate: () {
+          // Fermer le bottom sheet via son propre contexte, puis lancer la navigation
+          if (Navigator.canPop(ctx)) Navigator.pop(ctx);
+          _navigateInApp(
+            (point['lat'] as num).toDouble(),
+            (point['lng'] as num).toDouble(),
+            point,
+          );
+        },
       ),
     );
   }
 
-  /// Affiché à la place de FlutterMap quand tile.openstreetmap.org est inaccessible.
-  Widget _buildOfflineMapPlaceholder(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B), const Color(0xFF0D3320)]
-              : [const Color(0xFF1A3A2A), const Color(0xFF0D5C3A), const Color(0xFF0F4C2A)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          CustomPaint(painter: _MapGridPainter(), size: Size.infinite),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
-                  ),
-                  child: const Icon(Icons.map_outlined, color: Colors.white, size: 52),
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 2.seconds),
-                const SizedBox(height: 24),
-                Text(
-                  L10n.isArabic ? 'الخريطة غير متاحة' : 'Carte indisponible',
-                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  L10n.isArabic
-                      ? 'يتطلب تحميل الخريطة اتصالاً بالإنترنت'
-                      : 'La carte nécessite une connexion internet',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.6)),
-                ),
-                const SizedBox(height: 28),
-                if (_allPoints.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_on_rounded, color: AppTheme.primaryGreen, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          L10n.isArabic
-                              ? '${_allPoints.length} نقطة في التخزين المؤقت'
-                              : '${_allPoints.length} points en cache',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryGreen),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: _checkMapConnectivity,
-                  icon: const Icon(Icons.refresh_rounded, size: 16, color: Colors.white54),
-                  label: Text(
-                    L10n.isArabic ? 'إعادة المحاولة' : 'Réessayer',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Carte flutter_map (seulement si réseau disponible) ──────────
-          if (_mapOnline)
-            FlutterMap(
-              mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(36.8065, 10.1815),
-                initialZoom: 11.5,
-                minZoom: 5,
+          // ── Carte flutter_map (OpenStreetMap — intégrée, sans Google Maps) ──
+          FlutterMap(
+            mapController: _mapController,
+            options: const MapOptions(
+              initialCenter: LatLng(36.8065, 10.1815),
+              initialZoom: 11.5,
+              minZoom: 5,
+              maxZoom: 18,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.ecorewind.app',
+                tileProvider: CancellableNetworkTileProvider(),
+                // Tuile inaccessible → échec silencieux (fond gris par défaut)
+                errorTileCallback: (tile, error, stackTrace) {},
+                // Fallback : fond neutre si aucune tuile n'est disponible
+                fallbackUrl: 'https://tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.ecorewind.app',
-                  tileProvider: CancellableNetworkTileProvider(),
-                  errorTileCallback: (tile, error, stackTrace) {
-                    // Tuiles inaccessibles (pas de réseau) → échec silencieux
-                  },
-                ),
 
               // ── Tracé de l'itinéraire ────────────────────────────────
               if (_routePoints.isNotEmpty)
@@ -859,16 +923,17 @@ class _MapTabState extends State<MapTab> {
                           .animate(onPlay: (c) => c.repeat(reverse: true))
                           .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 1.seconds),
                     ),
-                  // Marqueur de destination de l'itinéraire actif
+                  // Marqueur de destination (visible même avant calcul OSRM)
                   if (_activeDestination != null)
                     Marker(
                       point: LatLng(
                         (_activeDestination!['lat'] as num).toDouble(),
                         (_activeDestination!['lng'] as num).toDouble(),
                       ),
-                      width: 60,
-                      height: 60,
+                      width: 64,
+                      height: 64,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
@@ -892,11 +957,8 @@ class _MapTabState extends State<MapTab> {
                     ),
                 ],
               ),
-              ],
-            )
-          else
-            // ── Placeholder hors-ligne ──────────────────────────────────────
-            _buildOfflineMapPlaceholder(context),
+            ],
+          ),
 
           // ── Overlay de chargement initial ────────────────────────────────
           if (_isLoading)
@@ -1005,9 +1067,10 @@ class _MapTabState extends State<MapTab> {
                             controller: _searchController,
                             onChanged: _onSearch,
                             onSubmitted: _onSearch,
-                            style: GoogleFonts.inter(fontSize: 14),
+                            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1E293B)),
+                            cursorColor: const Color(0xFF00BFA6),
                             decoration: const InputDecoration(
-                              hintText: 'بحث / Rechercher un point de tri...',
+                              hintText: 'Rechercher un point de tri...',
                               hintStyle: TextStyle(color: AppTheme.textMuted, fontSize: 13),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
@@ -1030,8 +1093,8 @@ class _MapTabState extends State<MapTab> {
             ),
           ),
 
-          // ── Panneau d'itinéraire actif ────────────────────────────────────
-          if (_activeDestination != null && _routePoints.isNotEmpty)
+          // ── Panneau d'itinéraire actif (visible dès que la destination est choisie) ──
+          if (_activeDestination != null)
             Positioned(
               bottom: 0, left: 0, right: 0,
               child: _RouteInfoPanel(
@@ -1039,7 +1102,17 @@ class _MapTabState extends State<MapTab> {
                 distanceKm: _routeDistanceKm,
                 durationMin: _routeDurationMin,
                 vehicle: _selectedVehicle,
+                isRouting: _isRouting,
                 onClose: _clearRoute,
+                onVehicleChanged: (mode) {
+                  setState(() => _selectedVehicle = mode);
+                  // Recalculer l'itinéraire avec le nouveau mode
+                  _navigateInApp(
+                    (_activeDestination!['lat'] as num).toDouble(),
+                    (_activeDestination!['lng'] as num).toDouble(),
+                    _activeDestination!,
+                  );
+                },
               ).animate().slideY(begin: 1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
             ),
 
@@ -1230,35 +1303,16 @@ class _MapTabState extends State<MapTab> {
                   width: 1.5,
                 ),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(
+              child: Center(
+                child: Text(
                   entry['fr']!,
                   style: TextStyle(
                     color: isActive ? Colors.white : AppTheme.textMuted,
                     fontWeight: FontWeight.w700,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
-                if (key != 'tous') ...[
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    width: 1, height: 12,
-                    color: isActive
-                        ? Colors.white.withOpacity(0.4)
-                        : Colors.grey.shade300,
-                  ),
-                  Text(
-                    entry['ar']!,
-                    style: TextStyle(
-                      color: isActive
-                          ? Colors.white.withOpacity(0.9)
-                          : AppTheme.textMuted,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ]),
+              ),
             ),
           );
         },
@@ -1504,7 +1558,7 @@ class _PointDetailSheetState extends State<_PointDetailSheet> {
             // Note explicative
             Center(
               child: Text(
-                '🗺️ Navigation intégrée — fonctionne sans Google Maps',
+                'Navigation intégrée — fonctionne sans Google Maps',
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppTheme.textMuted,
@@ -1554,7 +1608,9 @@ class _RouteInfoPanel extends StatelessWidget {
   final double? distanceKm;
   final int? durationMin;
   final VehicleMode vehicle;
+  final bool isRouting;
   final VoidCallback onClose;
+  final void Function(VehicleMode) onVehicleChanged;
 
   const _RouteInfoPanel({
     required this.destination,
@@ -1562,6 +1618,8 @@ class _RouteInfoPanel extends StatelessWidget {
     required this.durationMin,
     required this.vehicle,
     required this.onClose,
+    required this.onVehicleChanged,
+    this.isRouting = false,
   });
 
   @override
@@ -1578,7 +1636,7 @@ class _RouteInfoPanel extends StatelessWidget {
         : '—';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 80),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -1587,10 +1645,11 @@ class _RouteInfoPanel extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ── Destination + Close ──
             Row(
               children: [
                 Container(
@@ -1630,7 +1689,7 @@ class _RouteInfoPanel extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+                      color: Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close_rounded, size: 18, color: AppTheme.textMuted),
@@ -1638,7 +1697,68 @@ class _RouteInfoPanel extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // ── Sélecteur de mode de transport (visible en premier) ──
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: VehicleMode.values.map((mode) {
+                  final selected = vehicle == mode;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: isRouting ? null : () => onVehicleChanged(mode),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: EdgeInsets.only(right: mode == VehicleMode.car ? 0 : 4),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: selected ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selected ? mode.color : Colors.transparent,
+                            width: 2,
+                          ),
+                          boxShadow: selected ? [
+                            BoxShadow(color: mode.color.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2)),
+                          ] : [],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (isRouting && selected)
+                              SizedBox(
+                                width: 18, height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: mode.color),
+                              )
+                            else
+                              Icon(mode.icon,
+                                color: selected ? mode.color : Colors.grey.shade500,
+                                size: 20),
+                            const SizedBox(width: 6),
+                            Text(
+                              mode.label,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: selected ? mode.color : Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Distance & Durée ──
             Row(
               children: [
                 Expanded(
@@ -1649,49 +1769,16 @@ class _RouteInfoPanel extends StatelessWidget {
                     color: vehicle.color,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _StatChip(
                     icon: Icons.timer_outlined,
                     label: 'Durée estimée',
-                    value: durStr,
-                    color: vehicle.color,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatChip(
-                    icon: Icons.route_rounded,
-                    label: 'Mode',
-                    value: vehicle.label,
+                    value: isRouting ? '...' : durStr,
                     color: vehicle.color,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: vehicle.color.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: vehicle.color.withOpacity(0.15)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_rounded, color: vehicle.color, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Itinéraire tracé sur la carte • Navigation intégrée',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: vehicle.color,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -1746,24 +1833,4 @@ class _StatChip extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Grille décorative en arrière-plan du placeholder hors-ligne.
-class _MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
-      ..strokeWidth = 0.8;
-    const step = 60.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

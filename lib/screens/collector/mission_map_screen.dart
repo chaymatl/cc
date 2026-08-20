@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants.dart';
 
 /// Écran carte mission pour le collecteur.
-/// Accessible via notification push de type "assignment".
+/// Accessible via notification push de type 'assignment'.
 /// Affiche les centres de tri assignés sur une carte OSM et permet
 /// de naviguer vers chaque centre et de marquer la mission terminée.
 class MissionMapScreen extends StatefulWidget {
@@ -184,8 +184,9 @@ class _MissionMapScreenState extends State<MissionMapScreen> {
                         TileLayer(
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           tileProvider: CancellableNetworkTileProvider(),
-                          userAgentPackageName: 'com.example.eco_rewind',
+                          userAgentPackageName: 'com.ecorewind.app',
                           errorTileCallback: (tile, error, stackTrace) {},
+                          fallbackUrl: 'https://tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
                         ),
                         // Marqueurs des centres de tri
                         MarkerLayer(
@@ -287,7 +288,7 @@ class _MissionMapScreenState extends State<MissionMapScreen> {
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text(
-                                  isUrgent ? '🚨 MISSION URGENTE' : '📋 Mission',
+                                  isUrgent ? 'MISSION URGENTE' : 'Mission',
                                   style: GoogleFonts.outfit(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
                                 ),
                                 Text(

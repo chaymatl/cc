@@ -290,7 +290,7 @@ class _ConversationTile extends StatelessWidget {
     if (type == 'citizen_group') {
       title = conversation['group_name'] as String? ?? 'Groupe';
       final count = conversation['member_count'] as int? ?? 0;
-      subtitle = 'ðŸ‘¥ $count membres · $lastMsg';
+      subtitle = '$count membres · $lastMsg';
       typeIcon = Icons.groups_rounded;
       iconColor = Color(int.parse(
           (conversation['group_color'] as String? ?? '#00C896')
@@ -298,7 +298,7 @@ class _ConversationTile extends StatelessWidget {
     } else if (type == 'broadcast') {
       title = '${conversation['partner_name']} (broadcast)';
       final label = conversation['collector_group_label'] as String?;
-      subtitle = label != null ? 'ðŸ“¢ $label · $lastMsg' : 'ðŸ“¢ $lastMsg';
+      subtitle = label != null ? '$label · $lastMsg' : lastMsg;
       typeIcon = Icons.campaign_rounded;
       iconColor = Colors.orange;
     } else {
