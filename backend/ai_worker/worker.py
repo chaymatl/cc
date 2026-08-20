@@ -120,24 +120,63 @@ def _basic_moderation(post: Post) -> dict:
     }
 
 
+# ── Résolution URL → chemin local ─────────────────────────────────────────────
+_UPLOADS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "uploads",
+)
+
+def _resolve_image_path(image_url: str) -> str:
+    """
+    Convertit une URL relative (/uploads/xxx.jpg) ou un chemin absolu
+    en chemin local absolu utilisable par le modèle IA.
+    Retourne "" si le fichier n'existe pas.
+    """
+    if not image_url:
+        return ""
+    # Déjà un chemin absolu existant
+    if os.path.isabs(image_url) and os.path.exists(image_url):
+        return image_url
+    # URL relative : /uploads/filename.jpg  ou  uploads/filename.jpg
+    filename = os.path.basename(image_url)
+    candidate = os.path.join(_UPLOADS_DIR, filename)
+    return candidate if os.path.exists(candidate) else ""
+
+
 # ── Traitement d'un post ───────────────────────────────────────────────────────
 def _moderate_post(post: Post, moderator) -> dict:
     """
     Applique la modération IA (ou les règles basiques si moderator=None).
     Retourne un dict avec les champs à mettre à jour sur le post.
+
+    CORRECTIF :
+    - image_local_path= (et non image_path=) est le nom exact du paramètre
+      attendu par EcoCNNModerator.moderate() / AIModerator.moderate().
+    - moderate() retourne un objet ModerationResult (dataclass), pas un dict ;
+      on accède donc aux attributs avec getattr(), pas avec .get().
+    - L'URL image (/uploads/…) est résolue en chemin local avant appel.
     """
     if moderator is None:
         return _basic_moderation(post)
 
     try:
+        # BUG CORRIGÉ #1 : résoudre l'URL en chemin local
+        image_local_path = _resolve_image_path(post.image_url or "")
+
+        # BUG CORRIGÉ #2 : kwarg correct = image_local_path (pas image_path)
         result = moderator.moderate(
             text=post.description or "",
-            image_path=post.image_url or None,
+            image_local_path=image_local_path,
         )
-        status = result.get("status", "published")
-        score  = float(result.get("score", 0.0))
-        reason = result.get("reason", "")
-        version = result.get("model_version", "cnn_v1.0")
+
+        # BUG CORRIGÉ #3 : ModerationResult est un dataclass, pas un dict
+        status  = getattr(result, "status",  "published")
+        score   = float(getattr(result, "score", 0.0))
+        reasons = getattr(result, "reasons", [])
+        reason  = " | ".join(reasons[:2]) if reasons else getattr(result, "short_reason", "")
+        text_m  = getattr(result, "text_model_used",  None) or ""
+        img_m   = getattr(result, "image_model_used", None) or ""
+        version = "|".join(filter(None, [text_m, img_m])) or "cnn_v1.0"
 
         # Ce worker n'auto-rejette jamais : le rejet reste une décision admin
         if status == "rejected":

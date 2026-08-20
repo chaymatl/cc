@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
@@ -14,9 +15,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/firebase/firebase_admin_stats_service.dart';
 import '../../services/messaging_service.dart';
 import '../messaging/messaging_screen.dart';
+import '../../models/user_model.dart';
 
 class IntercommunalityTab extends StatefulWidget {
-  const IntercommunalityTab({Key? key}) : super(key: key);
+  const IntercommunalityTab({super.key});
 
   @override
   State<IntercommunalityTab> createState() => _IntercommunalityTabState();
@@ -118,8 +120,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   // ── Auth helpers ──────────────────────────────────────────────────────────
   Future<String?> _jwt() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
+    return AuthState.authToken ?? (await SharedPreferences.getInstance()).getString('jwt_token');
   }
 
   Map<String, String> _headers(String jwt) => {
@@ -346,9 +347,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 8),
-              TextField(controller: msgCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             ],
           ),
         ),
@@ -388,9 +389,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 8),
-              TextField(controller: msgCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             ],
           ),
         ),
@@ -571,19 +572,20 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             delegate: _TabHeaderDelegate(
               TabBar(
                 controller: _tabCtrl,
-                isScrollable: false,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 labelColor: const Color(0xFF6C3EB8),
-                unselectedLabelColor: AppTheme.textMuted,
+                unselectedLabelColor: const Color(0xFF64748B),
                 indicatorColor: const Color(0xFF6C3EB8),
                 indicatorWeight: 3,
-                labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12),
-                unselectedLabelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w500, fontSize: 12),
+                labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
+                unselectedLabelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 13),
                 tabs: const [
-                  Tab(icon: Icon(Icons.rule_rounded, size: 18),          text: 'Consignes'),
-                  Tab(icon: Icon(Icons.location_city_rounded, size: 18), text: 'Points'),
-                  Tab(icon: Icon(Icons.groups_rounded, size: 18),        text: 'Acteurs'),
-                  Tab(icon: Icon(Icons.forum_rounded, size: 18),         text: 'Réponses'),
-                  Tab(icon: Icon(Icons.route_rounded, size: 18),         text: 'Pilotage'),
+                  Tab(icon: Icon(Icons.rule_rounded, size: 19),          text: 'Consignes'),
+                  Tab(icon: Icon(Icons.location_city_rounded, size: 19), text: 'Points'),
+                  Tab(icon: Icon(Icons.groups_rounded, size: 19),        text: 'Acteurs'),
+                  Tab(icon: Icon(Icons.forum_rounded, size: 19),         text: 'Réponses'),
+                  Tab(icon: Icon(Icons.route_rounded, size: 19),         text: 'Pilotage'),
                 ],
               ),
             ),
@@ -618,7 +620,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         final totalUsers = stats.totalUsers > 0 ? stats.totalUsers : (f3['total_users'] ?? 0);
 
         return Container(
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 12, 20, 16),
+          padding: EdgeInsets.fromLTRB(20, math.max(MediaQuery.of(context).padding.top, 28) + 12, 20, 16),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1E0442), Color(0xFF4A1F8A), Color(0xFF7B3FC4)],
@@ -795,24 +797,28 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       child: DropdownButtonFormField<String>(
                         value: _f1FilterWasteType.isEmpty ? null : _f1FilterWasteType,
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
                           hintText: 'Déchet...',
-                          prefixIcon: const Icon(Icons.recycling_rounded, size: 20),
+                          hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                          prefixIcon: const Icon(Icons.recycling_rounded, size: 20, color: Color(0xFF6C3EB8)),
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                           filled: true,
                           fillColor: Colors.white,
                         ),
                         selectedItemBuilder: (BuildContext context) {
                           return [
-                            const Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
-                            ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(overflow: TextOverflow.ellipsis))),
+                            const Text('Tous', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                            ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis))),
                           ];
                         },
                         items: [
-                          const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets')),
-                          ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w))),
+                          const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets', style: TextStyle(color: Color(0xFF1E293B)))),
+                          ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle(color: Color(0xFF1E293B))))),
                         ],
                         onChanged: (v) => setState(() => _f1FilterWasteType = v ?? ''),
                       ),
@@ -859,6 +865,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       },
       fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
         return TextField(
+          style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
           controller: textEditingController,
           focusNode: focusNode,
           decoration: InputDecoration(
@@ -963,6 +970,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: TextField(
+              style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Rechercher un point de collecte…',
                 prefixIcon: const Icon(Icons.search, size: 20),
@@ -1103,18 +1111,24 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _f3FilterRole.isEmpty ? null : _f3FilterRole,
+                      dropdownColor: Colors.white,
+                      style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Rôle...',
-                        prefixIcon: const Icon(Icons.filter_list_rounded, size: 20),
+                        hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                        prefixIcon: const Icon(Icons.filter_list_rounded, size: 20, color: Color(0xFF6C3EB8)),
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: const Color(0xFFF1F5F9),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       ),
                       items: const [
-                        DropdownMenuItem<String>(value: '', child: Text('Tous les rôles')),
-                        DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires')),
-                        DropdownMenuItem<String>(value: 'collector', child: Text('Collecteurs')),
-                        DropdownMenuItem<String>(value: 'educator', child: Text('Éducateurs')),
+                        DropdownMenuItem<String>(value: '', child: Text('Tous les rôles', style: TextStyle(color: Color(0xFF1E293B)))),
+                        DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires', style: TextStyle(color: Color(0xFF1E293B)))),
+                        DropdownMenuItem<String>(value: 'collector', child: Text('Collecteurs', style: TextStyle(color: Color(0xFF1E293B)))),
+                        DropdownMenuItem<String>(value: 'educator', child: Text('Éducateurs', style: TextStyle(color: Color(0xFF1E293B)))),
                       ],
                       onChanged: (v) => setState(() => _f3FilterRole = v ?? ''),
                     ),
@@ -1486,21 +1500,21 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.fromLTRB(24, 20, 24, math.max(MediaQuery.of(ctx).padding.bottom, 20) + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 16),
-                  Text('Actions de Pilotage', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
+                  Text('Actions de Pilotage', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B))),
                   const SizedBox(height: 16),
                   ListTile(
                     leading: CircleAvatar(
                       backgroundColor: const Color(0xFF1A6B3C).withOpacity(0.1),
                       child: const Icon(Icons.assignment_ind_rounded, color: Color(0xFF1A6B3C)),
                     ),
-                    title: Text('Affecter une mission', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Affecter un collecteur ou groupe à un centre ou une zone', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey)),
+                    title: Text('Affecter une mission', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                    subtitle: Text('Affecter un collecteur ou groupe à un centre ou une zone', style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF64748B))),
                     onTap: () {
                       Navigator.pop(ctx);
                       _showAssignMissionDialog();
@@ -1512,8 +1526,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       backgroundColor: Colors.blue.withOpacity(0.1),
                       child: const Icon(Icons.add_location_alt_rounded, color: Colors.blue),
                     ),
-                    title: Text('Créer une nouvelle zone', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Ajouter une zone territoriale de tri', style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey)),
+                    title: Text('Créer une nouvelle zone', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                    subtitle: Text('Ajouter une zone territoriale de tri', style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF64748B))),
                     onTap: () {
                       Navigator.pop(ctx);
                       _showCreateZoneDialog();
@@ -1530,7 +1544,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     
     if (fab != null) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 76),
+        padding: const EdgeInsets.only(bottom: 84),
         child: fab,
       );
     }
@@ -1633,7 +1647,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         
         return Container(
           decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + math.max(MediaQuery.of(ctx).padding.bottom, 20) + 24),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1641,7 +1655,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               children: [
                 Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 16),
-                Text(title, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
+                Text(title, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B))),
                 const SizedBox(height: 16),
                 
                 // Territory Autocomplete
@@ -1658,11 +1672,17 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   },
                   fieldViewBuilder: (ctx2, textEditingController, focusNode, onFieldSubmitted) {
                     return TextField(
+                      style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                       controller: textEditingController,
                       focusNode: focusNode,
                       decoration: InputDecoration(
                         labelText: 'Territoire (Gouvernorat) *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                       ),
                       onChanged: (val) {
                         setFormState(() {
@@ -1677,11 +1697,18 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 // City Dropdown
                 DropdownButtonFormField<String>(
                   value: cityCtrl.text.isEmpty ? null : cityCtrl.text,
+                  dropdownColor: Colors.white,
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
                     labelText: 'Ville *',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
-                  items: cities.map((c) => DropdownMenuItem<String>(value: c, child: Text(c))).toList(),
+                  items: cities.map((c) => DropdownMenuItem<String>(value: c, child: Text(c, style: const TextStyle(color: Color(0xFF1E293B))))).toList(),
                   onChanged: (val) {
                     setFormState(() {
                       cityCtrl.text = val ?? '';
@@ -1693,11 +1720,18 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 // Waste Type Dropdown
                 DropdownButtonFormField<String>(
                   value: wasteTypeCtrl.text.isEmpty ? null : wasteTypeCtrl.text,
+                  dropdownColor: Colors.white,
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
                     labelText: 'Type de déchet *',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
-                  items: _wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w))).toList(),
+                  items: _wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle(color: Color(0xFF1E293B))))).toList(),
                   onChanged: (val) {
                     setFormState(() {
                       wasteTypeCtrl.text = val ?? '';
@@ -1708,21 +1742,33 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 
                 // Title Field
                 TextField(
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                   controller: titleCtrl,
                   decoration: InputDecoration(
                     labelText: 'Titre de la consigne *',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 
                 // Instruction Field
                 TextField(
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                   controller: instructionCtrl,
                   maxLines: 4,
                   decoration: InputDecoration(
                     labelText: 'Texte de la consigne *',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -1730,11 +1776,12 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 // Save Button
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6C3EB8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     onPressed: onSave,
                     child: Text('Enregistrer', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -1763,9 +1810,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nom du groupe *')),
+                TextField(controller: nameCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: const InputDecoration(labelText: 'Nom du groupe *')),
                 const SizedBox(height: 8),
-                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description')),
+                TextField(controller: descCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: const InputDecoration(labelText: 'Description')),
                 const SizedBox(height: 16),
                 Text('Membres du groupe', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 8),
@@ -1894,10 +1941,17 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               const SizedBox(height: 6),
               DropdownButtonFormField<int>(
                 value: selectedCollectorId,
-                decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                dropdownColor: Colors.white,
+                style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                ),
                 items: _collectors.map((c) => DropdownMenuItem<int>(
                   value: c['id'] as int,
-                  child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}'),
+                  child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: const TextStyle(color: Color(0xFF1E293B))),
                 )).toList(),
                 onChanged: (v) => setSt(() => selectedCollectorId = v),
               ),
@@ -1982,11 +2036,13 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 ),
                 const SizedBox(height: 14),
                 TextField(
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                   controller: titleCtrl,
                   decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                 ),
                 const SizedBox(height: 10),
                 TextField(
+                  style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                   controller: msgCtrl,
                   maxLines: 4,
                   decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
@@ -2132,13 +2188,18 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     else
                       DropdownButtonFormField<int>(
                         value: selectedZoneId,
+                        dropdownColor: Colors.white,
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         ),
                         items: _zones.map((z) => DropdownMenuItem<int>(
                           value: z['id'] as int,
-                          child: Text('${z['name']} · ${z['territory'] ?? ''}', style: GoogleFonts.outfit(fontSize: 13)),
+                          child: Text('${z['name']} · ${z['territory'] ?? ''}', style: const TextStyle(color: Color(0xFF1E293B))),
                         )).toList(),
                         onChanged: (v) => setSt(() => selectedZoneId = v),
                       ),
@@ -2164,6 +2225,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     const SizedBox(height: 8),
                     // Barre de recherche
                     TextField(
+                      style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Rechercher un centre…',
                         hintStyle: GoogleFonts.outfit(fontSize: 13, color: Colors.grey),
@@ -2264,14 +2326,19 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     value: selectedCollectorId,
+                    dropdownColor: Colors.white,
+                    style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       prefixIcon: const Icon(Icons.local_shipping_rounded, size: 18, color: Color(0xFF1A6B3C)),
                     ),
                     items: _collectors.map((c) => DropdownMenuItem<int>(
                       value: c['id'] as int,
-                      child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: GoogleFonts.outfit(fontSize: 13)),
+                      child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: const TextStyle(color: Color(0xFF1E293B))),
                     )).toList(),
                     onChanged: (v) => setSt(() => selectedCollectorId = v),
                   ),
@@ -2284,7 +2351,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     children: [
                       _priorityChip('normal', 'Normal', Colors.blue, priority, (v) => setSt(() => priority = v)),
                       const SizedBox(width: 8),
-                      _priorityChip('urgent', '🚨 Urgent', Colors.red.shade600, priority, (v) => setSt(() => priority = v)),
+                      _priorityChip('urgent', 'ðŸš¨ Urgent', Colors.red.shade600, priority, (v) => setSt(() => priority = v)),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -2371,7 +2438,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       final dt = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
       final diff = now.difference(dt);
-      if (diff.inSeconds < 60) return "À l'instant";
+      if (diff.inSeconds < 60) return "È l'instant";
       if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
       if (diff.inHours < 24) return 'Il y a ${diff.inHours} h';
       if (diff.inDays < 7) return 'Il y a ${diff.inDays} j';
@@ -2464,7 +2531,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
     if (name.isEmpty || terr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-          name.isEmpty ? '⚠️ Nom de la zone obligatoire' : '⚠️ Territoire obligatoire',
+          name.isEmpty ? '⚠ï¸ Nom de la zone obligatoire' : '⚠ï¸ Territoire obligatoire',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.red.shade700,
@@ -2532,7 +2599,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           isDense: true,
                         ),
-                        style: GoogleFonts.inter(fontSize: 13),
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -2547,7 +2614,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           isDense: true,
                         ),
-                        style: GoogleFonts.inter(fontSize: 13),
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13),
                       ),
                     ),
                   ],

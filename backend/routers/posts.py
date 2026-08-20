@@ -717,8 +717,6 @@ async def get_likers(post_id: int, db: Session = Depends(get_db)):
 @router.post("/posts/{post_id}/save")
 async def save_post(post_id: int, db: Session = Depends(get_db),
                     current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role != "user":
-        raise HTTPException(status_code=403, detail="Seuls les citoyens peuvent enregistrer des publications")
     user_id = current_user.id
     existing = db.query(db_models.SavedPost).filter(
         db_models.SavedPost.user_id == user_id,
@@ -751,16 +749,17 @@ async def save_post(post_id: int, db: Session = Depends(get_db),
     return {"message": "Publication enregistrée", "saved": True}
 
 
-@router.get("/users/me/saved-posts", response_model=List[models.Post])
+@router.get("/users/me/saved-posts")
 async def get_saved_posts(db: Session = Depends(get_db),
                           current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role != "user":
-        raise HTTPException(status_code=403, detail="Seuls les citoyens peuvent consulter les publications enregistrées")
     saved_refs = db.query(db_models.SavedPost).filter(
         db_models.SavedPost.user_id == current_user.id).all()
     post_ids = [ref.post_id for ref in saved_refs]
-    return db.query(db_models.Post).options(joinedload(db_models.Post.comments)).filter(
-        db_models.Post.id.in_(post_ids)).all()
+    posts = db.query(db_models.Post).options(joinedload(db_models.Post.comments)).filter(
+        db_models.Post.id.in_(post_ids)).order_by(db_models.Post.created_at.desc()).all()
+    liked_ids = {r[0] for r in db.query(db_models.Like.post_id).filter(db_models.Like.user_id == current_user.id).all()}
+    saved_ids = set(post_ids)
+    return [_format_post(p, liked_ids=liked_ids, saved_ids=saved_ids) for p in posts]
 
 
 # ── Comments ──────────────────────────────────────────────────────────────────

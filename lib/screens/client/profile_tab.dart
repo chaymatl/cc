@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,7 +14,7 @@ import '../../services/theme_service.dart';
 import 'points_history_screen.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({Key? key}) : super(key: key);
+  const ProfileTab({super.key});
 
   @override
   State<ProfileTab> createState() => ProfileTabState();
@@ -84,14 +83,18 @@ class ProfileTabState extends State<ProfileTab> {
 
   Future<void> _loadMyStats() async {
     if (!AuthState.isLoggedIn) return;
-    final stats = await _authService.fetchMyStats();
-    if (mounted) setState(() => _myStats = stats);
+    try {
+      final stats = await _authService.fetchMyStats();
+      if (mounted) setState(() => _myStats = stats);
+    } catch (_) {}
   }
 
   Future<void> _loadUnreadCount() async {
     if (!AuthState.isLoggedIn) return;
-    final count = await _authService.fetchUnreadCount();
-    if (mounted) setState(() => _unreadNotifCount = count);
+    try {
+      final count = await _authService.fetchUnreadCount();
+      if (mounted) setState(() => _unreadNotifCount = count);
+    } catch (_) {}
   }
 
   String get _currentAvatarUrl {
@@ -121,20 +124,18 @@ class ProfileTabState extends State<ProfileTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Caméra uniquement sur mobile (pas supporté sur Chrome web)
-                if (!kIsWeb)
-                  _buildImageSourceOption(
-                    icon: Icons.camera_alt_rounded,
-                    label: 'Caméra',
-                    color: const Color(0xFF5B8DEF),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickAndUploadImage(ImageSource.camera);
-                    },
-                  ),
+                _buildImageSourceOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Caméra',
+                  color: const Color(0xFF5B8DEF),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickAndUploadImage(ImageSource.camera);
+                  },
+                ),
                 _buildImageSourceOption(
                   icon: Icons.photo_library_rounded,
-                  label: kIsWeb ? 'Choisir une image' : 'Galerie',
+                  label: 'Galerie',
                   color: AppTheme.primaryGreen,
                   onTap: () {
                     Navigator.pop(context);
@@ -143,14 +144,6 @@ class ProfileTabState extends State<ProfileTab> {
                 ),
               ],
             ),
-            if (kIsWeb) ...[
-              const SizedBox(height: 12),
-              Text(
-                'La caméra n\'est disponible que sur l\'application mobile',
-                style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8)),
-                textAlign: TextAlign.center,
-              ),
-            ],
             const SizedBox(height: 24),
           ],
         ),
@@ -194,6 +187,7 @@ class ProfileTabState extends State<ProfileTab> {
       );
       if (picked == null) return;
 
+      if (!mounted) return;
       setState(() => _isUploadingAvatar = true);
 
       // Upload l'image
@@ -230,10 +224,12 @@ class ProfileTabState extends State<ProfileTab> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ));
         } else {
+          if (!mounted) return;
           setState(() => _isUploadingAvatar = false);
           _showErrorSnack('Erreur lors de la mise à jour du profil');
         }
       } else {
+        if (!mounted) return;
         setState(() => _isUploadingAvatar = false);
         _showErrorSnack('Échec de l\'upload de l\'image');
       }
@@ -433,7 +429,8 @@ class ProfileTabState extends State<ProfileTab> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 4),
+                        style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 4, color: const Color(0xFF1E293B)),
+                        cursorColor: const Color(0xFF00BFA6),
                         decoration: InputDecoration(
                           hintText: '000000',
                           counterText: '',
@@ -495,6 +492,8 @@ class ProfileTabState extends State<ProfileTab> {
                       TextField(
                         controller: passwordController,
                         obscureText: true,
+                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+                        cursorColor: const Color(0xFF00BFA6),
                         decoration: InputDecoration(
                           hintText: 'Votre mot de passe',
                           filled: true,
@@ -514,7 +513,8 @@ class ProfileTabState extends State<ProfileTab> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 4),
+                        style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 4, color: const Color(0xFF1E293B)),
+                        cursorColor: const Color(0xFF00BFA6),
                         decoration: InputDecoration(
                           hintText: '000000',
                           counterText: '',
@@ -625,7 +625,7 @@ class ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     final user = AuthState.currentUser;
     // Masquer les statistiques de gamification pour les rôles Admin/Directeur
-    final showStats = user?.role == UserRole.user;
+    final showStats = user?.role == UserRole.citoyen;
     final isCollector = user?.role == UserRole.collector;
 
     return Scaffold(
@@ -703,8 +703,8 @@ class ProfileTabState extends State<ProfileTab> {
                     if (showStats)
                       _MenuAction(
                         icon: FontAwesomeIcons.clockRotateLeft,
-                        title: L10n.isArabic ? 'سجل النقاط' : 'Historique des points',
-                        subtitle: L10n.isArabic ? 'النقاط المكتسبة من الاختبارات والفرز' : 'Points gagnés par quiz, tri, etc.',
+                        title: 'Historique des points',
+                        subtitle: 'Points gagnés par quiz, tri, etc.',
                         onTap: () {
                           Navigator.push(
                             context,
@@ -732,15 +732,7 @@ class ProfileTabState extends State<ProfileTab> {
                   const SizedBox(height: 32),
 
                   _buildMenuSection(context, L10n.tr('menu_sec_preferences'), [
-                    _MenuAction(
-                      icon: FontAwesomeIcons.language,
-                      title: L10n.tr('menu_lang'),
-                      subtitle: L10n.locale == 'fr' ? 'Français' : 'العربية',
-                      onTap: () {
-                        final newLang = L10n.locale == 'fr' ? 'ar' : 'fr';
-                        L10n.setLocale(newLang);
-                      },
-                    ),
+
                     _MenuAction(
                       icon: FontAwesomeIcons.moon,
                       title: L10n.tr('menu_dark_mode'),
@@ -752,92 +744,89 @@ class ProfileTabState extends State<ProfileTab> {
                     ),
                   ]),
 
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 24),
 
-                  Animate(
-                    effects: const [FadeEffect(delay: Duration(seconds: 1))],
-                    child: GestureDetector(
-                      onTap: () async {
-                        // Afficher une confirmation avant de déconnecter
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: Row(children: [
-                              Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 22),
-                              const SizedBox(width: 10),
-                              Text(L10n.tr('menu_logout'),
-                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18)),
-                            ]),
-                            content: Text(
-                              L10n.isArabic
-                                  ? 'هل أنت متأكد أنك تريد تسجيل الخروج؟'
-                                  : 'Voulez-vous vraiment vous déconnecter ?',
-                              style: GoogleFonts.inter(fontSize: 14),
+                  GestureDetector(
+                    onTap: () async {
+                      // Afficher une confirmation avant de déconnecter
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Row(children: [
+                            Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                L10n.tr('menu_logout'),
+                                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: Text(L10n.isArabic ? 'إلغاء' : 'Annuler',
-                                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red.shade400,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: Text(
-                                  L10n.isArabic ? 'تسجيل الخروج' : 'Se déconnecter',
-                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
+                          ]),
+                          content: Text(
+                            'Voulez-vous vraiment vous déconnecter ?',
+                            style: GoogleFonts.inter(fontSize: 14),
                           ),
-                        );
-                        if (confirm != true) return;
-                        if (!context.mounted) return;
-                        // Capturer le navigator avant l'await (context.mounted vérifié juste avant)
-                        final nav = Navigator.of(context);
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text('Annuler',
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF4444),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text(
+                                'Se déconnecter',
+                                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true) return;
+                      if (!context.mounted) return;
+                      final nav = Navigator.of(context);
 
-                        // ── Déconnexion complète ──────────────────────────────
-                        // 1. Appel service : efface jwt_token + refresh_token de
-                        //    SharedPreferences, déconnecte Firebase et FCM.
+                      try {
                         await AuthService().logout();
-                        // 2. Vider la mémoire en-cours (AuthState statique)
+                      } catch (_) {
+                      } finally {
                         AuthState.logout();
                         AuthState.authToken = null;
-
-                        if (!mounted) return;
-                        // 3. Naviguer vers la page d'accueil publique (landing)
-                        //    et supprimer tout l'historique de navigation.
-                        nav.pushNamedAndRemoveUntil(
-                          '/', (route) => false,
-                        );
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: _isDarkMode ? Colors.red.shade900.withOpacity(0.2) : const Color(0xFFFFF1F2),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: _isDarkMode ? Colors.red.shade900.withOpacity(0.5) : Colors.red.shade100),
-                        ),
-                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 18),
-                          const SizedBox(width: 10),
-                          Text(L10n.tr('menu_logout'), style: GoogleFonts.outfit(color: Colors.red.shade400, fontWeight: FontWeight.w700, fontSize: 15)),
-                        ]),
+                        if (mounted) {
+                          nav.pushNamedAndRemoveUntil('/', (route) => false);
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        color: _isDarkMode ? const Color(0xFF450A0A) : const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: _isDarkMode ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5), width: 1.2),
                       ),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                          L10n.tr('menu_logout'),
+                          style: GoogleFonts.outfit(color: const Color(0xFFDC2626), fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                      ]),
                     ),
                   ),
 
-
-                  const SizedBox(height: 100),
-                  ],
-                ),
+                  const SizedBox(height: 130),
+                ],
               ),
+            ),
             ),
           );
   }
@@ -915,7 +904,9 @@ class ProfileTabState extends State<ProfileTab> {
                       backgroundImage: NetworkImage(_currentAvatarUrl),
                       onBackgroundImageError: (_, __) {},
                       child: Text(
-                        (user?.name ?? 'U')[0].toUpperCase(),
+                        (user?.name != null && user!.name.trim().isNotEmpty
+                            ? user.name.trim()[0]
+                            : 'U').toUpperCase(),
                         style: GoogleFonts.outfit(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                       ),
                     ),
@@ -1181,7 +1172,7 @@ class ProfileTabState extends State<ProfileTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    L10n.isArabic ? 'بطاقة الجمع' : 'Badge Collecteur',
+                    'Badge Collecteur',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -1189,9 +1180,7 @@ class ProfileTabState extends State<ProfileTab> {
                     ),
                   ),
                   Text(
-                    L10n.isArabic
-                        ? 'رمز QR الخاص بك للتعريف'
-                        : 'Votre QR d\'identification pour les collectes',
+                    'Votre QR d\'identification pour les collectes',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppTheme.primaryGreen.withOpacity(0.85),
@@ -1213,12 +1202,10 @@ class ProfileTabState extends State<ProfileTab> {
     final qrColor  = isCollector ? AppTheme.primaryGreen : AppTheme.primaryGreen;
     final eyeColor = isCollector ? AppTheme.deepSlate    : AppTheme.deepSlate;
     final title    = isCollector
-        ? (L10n.isArabic ? 'بطاقة الجمع' : 'Badge Collecteur')
+        ? 'Badge Collecteur'
         : 'Mon Eco-Badge';
     final subtitle = isCollector
-        ? (L10n.isArabic
-            ? 'يُستخدم هذا الرمز للتعريف بك أثناء عمليات الجمع.'
-            : 'Présentez ce QR lors de vos opérations de collecte.')
+        ? ('Présentez ce QR lors de vos opérations de collecte.')
         : 'Scannez ce code sur une borne pour ouvrir la trappe.';
     final accentColor = isCollector ? AppTheme.primaryGreen : AppTheme.primaryGreen;
 
@@ -1331,9 +1318,7 @@ class ProfileTabState extends State<ProfileTab> {
                                     size: 60, color: Colors.grey.shade300),
                                 const SizedBox(height: 12),
                                 Text(
-                                  L10n.isArabic
-                                      ? 'لا يوجد رمز QR'
-                                      : 'QR code absent',
+                                  'QR code absent',
                                   style: GoogleFonts.inter(
                                       fontSize: 13, color: Colors.grey),
                                 ),
@@ -1390,7 +1375,7 @@ class ProfileTabState extends State<ProfileTab> {
                         elevation: 0,
                       ),
                       child: Text(
-                        L10n.isArabic ? 'إغلاق' : 'FERMER',
+                        'FERMER',
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
@@ -1661,7 +1646,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : Text('METTRE À JOUR', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              : Text('METTRE È JOUR', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ),
       ],
     );
@@ -1736,18 +1721,33 @@ class _SavedPostsSheetState extends State<_SavedPostsSheet> {
     }
   }
 
-  Future<void> _unsavePost(String postId, int index) async {
-    final result = await widget.authService.toggleSavePost(postId);
-    if (result['success'] == true && mounted) {
-      setState(() => _savedPosts.removeAt(index));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Publication retirée des favoris', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          backgroundColor: AppTheme.deepSlate,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+  Future<void> _unsavePost(String postId) async {
+    // Suppression optimiste : retirer immédiatement de la liste avant l'appel réseau
+    // (Flutter Dismissible exige que l'élément soit retiré AVANT la fin du swipe)
+    final idx = _savedPosts.indexWhere((p) => p['id']?.toString() == postId);
+    if (idx == -1) return;
+    final removedPost = _savedPosts[idx];
+    if (mounted) setState(() => _savedPosts.removeAt(idx));
+
+    try {
+      final result = await widget.authService.toggleSavePost(postId);
+      if (result['success'] == true && mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Publication retirée des favoris', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            backgroundColor: AppTheme.deepSlate,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else if (mounted) {
+        // Échec backend : restaurer l'élément
+        setState(() => _savedPosts.insert(idx, removedPost));
+      }
+    } catch (_) {
+      // Erreur réseau : restaurer l'élément
+      if (mounted) setState(() => _savedPosts.insert(idx, removedPost));
     }
   }
 
@@ -1768,12 +1768,26 @@ class _SavedPostsSheetState extends State<_SavedPostsSheet> {
             decoration: BoxDecoration(color: isDark ? const Color(0xFF334155) : Colors.grey[300], borderRadius: BorderRadius.circular(10)),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            padding: const EdgeInsets.fromLTRB(20, 8, 12, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Publications sauvegardées', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.deepSlate)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close_rounded, color: isDark ? Colors.white : Colors.black)),
+                Expanded(
+                  child: Text(
+                    'Publications sauvegardées',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : AppTheme.deepSlate,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close_rounded, color: isDark ? Colors.white : Colors.black),
+                ),
               ],
             ),
           ),
@@ -1817,7 +1831,7 @@ class _SavedPostsSheetState extends State<_SavedPostsSheet> {
                                   ),
                                   child: Icon(Icons.delete_outline_rounded, color: Colors.red.shade400),
                                 ),
-                                onDismissed: (_) => _unsavePost(postId, index),
+                                onDismissed: (_) => _unsavePost(postId),
                                 child: Card(
                                   margin: const EdgeInsets.symmetric(vertical: 6),
                                   elevation: 0,
@@ -1833,7 +1847,7 @@ class _SavedPostsSheetState extends State<_SavedPostsSheet> {
                                     subtitle: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : AppTheme.textMuted)),
                                     trailing: IconButton(
                                       icon: const Icon(Icons.bookmark_rounded, color: AppTheme.primaryGreen, size: 20),
-                                      onPressed: () => _unsavePost(postId, index),
+                                      onPressed: () => _unsavePost(postId),
                                     ),
                                     onTap: () {
                                       Navigator.pop(context); // Fermer le sheet
