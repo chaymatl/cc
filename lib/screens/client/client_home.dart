@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -43,6 +44,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   StreamSubscription<ScoreSnapshot>? _firebaseScoreSub;
   /// /utilisateurs/{qrCode}/score — mis à jour par l'Arduino ESP32 directement
   StreamSubscription<double>? _firebaseArduinoSub;
+  /// Écoute l'état de la session Firebase pour annuler les streams au logout
+  StreamSubscription? _firebaseAuthSub;
 
   @override
   void initState() {
@@ -57,6 +60,18 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       _startArduinoScoreListener();   // chemin Arduino : /utilisateurs/{qrCode}/score
     }
 
+    // Annuler les streams Firebase DÈS que Firebase Auth se déconnecte
+    // (évite les erreurs "permission denied" après logout)
+    _firebaseAuthSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user == null) {
+        _firebaseScoreSub?.cancel();
+        _firebaseScoreSub = null;
+        _firebaseArduinoSub?.cancel();
+        _firebaseArduinoSub = null;
+        debugPrint('[Firebase] Streams annulés suite à la déconnexion Firebase.');
+      }
+    });
+
     if (!_isLoggedIn) {
       Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted) AuthPromptDialog.show(context: context);
@@ -67,7 +82,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   /// Écoute /scores/{userId} — mis à jour par l'API FastAPI.
   void _startFirebaseScoreListener() {
     final userId = int.tryParse(AuthState.currentUser?.id ?? '');
-    if (userId == null) return;
+    if (userId == null || userId <= 0) return; // 0 = session expirée (fallback JWT)
 
     _firebaseScoreSub?.cancel();
     _firebaseScoreSub = FirebaseScoreService()
@@ -119,6 +134,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   void dispose() {
+    _firebaseAuthSub?.cancel();
     _firebaseScoreSub?.cancel();
     _firebaseArduinoSub?.cancel();
     L10n.removeListener(_onLocaleChange);
@@ -162,6 +178,20 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
 
     switch (role) {
+      // ── Rôle Admin / Superadmin : rediriger vers le dashboard admin ──
+      case UserRole.admin:
+      case UserRole.superadmin:
+        // Si un admin arrive ici (par ex. via deep link /home), on le redirige
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/admin');
+          }
+        });
+        // Retourner un placeholder en attendant la redirection
+        return [
+          const Center(child: CircularProgressIndicator()),
+        ];
+
       // ── Rôle Éducateur : 3 onglets (Espace Éducateur + Messages + Profil) ──
       case UserRole.educator:
         return [

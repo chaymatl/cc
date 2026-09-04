@@ -114,3 +114,19 @@ async def invalidate_dashboard_cache(
     _cache["expires_at"] = None
     _cache["computed_at"] = None
     return {"success": True, "message": "Cache invalidé — prochain appel recalculera les données"}
+
+
+@router.post(
+    "/dashboard/sync-firebase",
+    summary="Synchronise les stats admin vers Firebase RTDB",
+    description="Force la mise à jour de /admin_stats dans Firebase. Requiert role=admin.",
+)
+async def sync_firebase_stats(
+    db: Session = Depends(get_db),
+    _admin=Depends(get_admin_user),
+):
+    from services.firebase_service import update_admin_stats
+    ok = update_admin_stats(db)
+    if ok:
+        return {"success": True, "message": "Stats synchronisées vers Firebase"}
+    return {"success": False, "message": "Échec de la synchronisation Firebase"}

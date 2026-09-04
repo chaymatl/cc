@@ -133,7 +133,7 @@ def update_user_score(user_id: int, new_total: float, points_added: float,
         if qr_code:
             user_ref = rtdb.reference(f"utilisateurs/{qr_code}")
             user_data = user_ref.get()
-            if user_data and isinstance(user_data, dict) and user_data.get("role") == "user":
+            if user_data and isinstance(user_data, dict) and user_data.get("role") == "citoyen":
                 user_ref.update({"score": round(new_total, 2)})
 
         _safe_print(f"[Firebase] [OK] Score user {user_id} mis a jour : {new_total} pts (+{points_added})")
@@ -182,7 +182,7 @@ def update_quiz_score(user_id: int, new_total: float, quiz_points: float,
         if qr_code:
             user_ref = rtdb.reference(f"utilisateurs/{qr_code}")
             user_data = user_ref.get()
-            if user_data and isinstance(user_data, dict) and user_data.get("role") == "user":
+            if user_data and isinstance(user_data, dict) and user_data.get("role") == "citoyen":
                 user_ref.update({"score": round(new_total, 2)})
 
         _safe_print(f"[Firebase] [OK] Quiz score user {user_id} : {new_total} pts (+{quiz_points} quiz #{quiz_id})")
@@ -284,7 +284,7 @@ def sync_user_to_firebase(
       - full_name : str  (nom complet)
       - email     : str  (adresse email)
       - role      : str  (ex: "user", "admin", "collector"...)
-      - score     : float  (UNIQUEMENT pour role="user" / citoyens)
+      - score     : float  (UNIQUEMENT pour role="citoyen" / citoyens)
 
     Strategie score (protection contre l'ecrasement Arduino) :
       - Lit le score ACTUEL dans Firebase avant d'ecrire
@@ -322,7 +322,7 @@ def sync_user_to_firebase(
         # On lit le score Firebase existant et on prend le MAXIMUM pour ne jamais
         # regresser le score affiche dans l'app.
         authoritative_score = 0.0
-        if role == "user":
+        if role == "citoyen":
             pg_score = round(float(score), 2) if score is not None else 0.0
             # Lire le score actuel Firebase (ecrit par l'Arduino ou l'API)
             try:
@@ -339,7 +339,7 @@ def sync_user_to_firebase(
         ref.update(data)
         _safe_print(
             f"[Firebase] [OK] Utilisateur {qr_code} ({full_name}) synchro "
-            f"(role={role}" + (f", score={authoritative_score}" if role == "user" else "") + ")"
+            f"(role={role}" + (f", score={authoritative_score}" if role == "citoyen" else "") + ")"
         )
         return authoritative_score
     except Exception as e:
@@ -476,7 +476,11 @@ def update_admin_stats(db) -> bool:
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         since_week  = now - timedelta(days=7)
-        since_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Utiliser le fuseau local Tunisie (UTC+1) pour "aujourd'hui"
+        # afin qu'un scan à 23h43 UTC (= 00h43 locale) compte comme "aujourd'hui"
+        _tz_offset_h = 2  # Tunisie : UTC+2 (heure locale de l'utilisateur)
+        local_now = now + timedelta(hours=_tz_offset_h)
+        since_today = local_now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=_tz_offset_h)
         since_month = now - timedelta(days=30)
 
         # Import des modèles ici pour éviter les imports circulaires
@@ -488,9 +492,17 @@ def update_admin_stats(db) -> bool:
             active_centers = db.query(func.count(CollectionPoint.id)).filter(
                 CollectionPoint.status == 'disponible'
             ).scalar() or 0
+            centers_sature = db.query(func.count(CollectionPoint.id)).filter(
+                CollectionPoint.status == 'saturé'
+            ).scalar() or 0
+            centers_maintenance = db.query(func.count(CollectionPoint.id)).filter(
+                CollectionPoint.status == 'maintenance'
+            ).scalar() or 0
         except Exception:
             total_centers  = 0
             active_centers = 0
+            centers_sature = 0
+            centers_maintenance = 0
 
         try:
             from app.posts.models import Post
@@ -530,7 +542,7 @@ def update_admin_stats(db) -> bool:
         ).scalar() or 0
         avg_score = db.query(func.avg(User.global_score)).scalar() or 0.0
 
-        # Statistiques scans citoyens
+        # Statistiques scans citoyens — PostgreSQL
         total_scans   = db.query(func.count(BinScan.id)).scalar() or 0
         scans_today   = db.query(func.count(BinScan.id)).filter(
             BinScan.scanned_at >= since_today
@@ -540,16 +552,139 @@ def update_admin_stats(db) -> bool:
         ).scalar() or 0
         points_total  = db.query(func.sum(BinScan.points_earned)).scalar() or 0.0
 
-        # Statistiques collecteurs
+        # ── Enrichissement depuis Firebase /scans/ + /scores/ + /poubelles/ ──
+        # L'Arduino écrit chaque scan dans Firebase /scans/ avec :
+        #   { binId, userKey, role, points, timestamp, fillPct, weightKg }
+        # PROBLÈME : beaucoup de /scans/ ont des timestamps numériques Arduino
+        # (millis) qui ne sont pas des dates exploitables.
+        # SOLUTION : on complète avec /scores/{uid}/last_scan pour la récence
+        # et /poubelles/ pour détecter les collectes récentes.
+        fb_total_collections = 0
+        fb_collections_week  = 0
+        try:
+            # ── 1) Compter depuis /scans/ (totaux + dates parsables) ──
+            all_fb_scans = rtdb.reference("scans").get() or {}
+            fb_citizen_total   = 0
+            fb_citizen_today   = 0
+            fb_citizen_week    = 0
+            fb_collector_total = 0
+            fb_collector_week  = 0
+
+            for scan_key, scan_data in all_fb_scans.items():
+                if not isinstance(scan_data, dict):
+                    continue
+
+                role = scan_data.get("role", "user")
+                ts_raw = scan_data.get("timestamp", "")
+
+                # Parser le timestamp (ISO string uniquement)
+                scan_dt = None
+                if isinstance(ts_raw, str) and len(ts_raw) > 8:
+                    try:
+                        scan_dt = datetime.fromisoformat(
+                            ts_raw.replace("+00:00", "").replace("Z", "")
+                        )
+                    except Exception:
+                        pass
+                # Clé du scan = parfois un timestamp ISO (ex: "2026-07-11T18:57:14")
+                if scan_dt is None and isinstance(scan_key, str) and len(scan_key) > 8 and "T" in scan_key:
+                    try:
+                        scan_dt = datetime.fromisoformat(
+                            scan_key.replace("+00:00", "").replace("Z", "")
+                        )
+                    except Exception:
+                        pass
+
+                is_citizen   = role in ("user", "citoyen")
+                is_collector = role == "collector"
+
+                if is_citizen:
+                    fb_citizen_total += 1
+                    if scan_dt:
+                        if scan_dt >= since_today:
+                            fb_citizen_today += 1
+                        if scan_dt >= since_week:
+                            fb_citizen_week += 1
+                elif is_collector:
+                    fb_collector_total += 1
+                    if scan_dt and scan_dt >= since_week:
+                        fb_collector_week += 1
+
+            # ── 2) Compléter avec /scores/ pour la récence ──
+            # Beaucoup de /scans/ ont des timestamps Arduino numériques non
+            # datables. On lit /scores/{uid}/last_scan pour détecter les
+            # utilisateurs ayant scanné récemment.
+            all_scores = rtdb.reference("scores").get() or {}
+            fb_points = 0.0
+            fb_users_today = 0
+            fb_users_week  = 0
+
+            for uid, data in all_scores.items():
+                if not isinstance(data, dict):
+                    continue
+                fb_points += float(data.get("total", 0))
+                last_scan_str = data.get("last_scan", data.get("last_activity", ""))
+                if last_scan_str:
+                    try:
+                        ls = str(last_scan_str).replace("+00:00", "").replace("Z", "")
+                        last_dt = datetime.fromisoformat(ls)
+                        if last_dt >= since_today:
+                            fb_users_today += 1
+                        if last_dt >= since_week:
+                            fb_users_week += 1
+                    except Exception:
+                        pass
+
+            # Combiner : utiliser le MAX de /scans/ datés ET /scores/ récence
+            fb_citizen_today = max(fb_citizen_today, fb_users_today)
+            fb_citizen_week  = max(fb_citizen_week, fb_users_week)
+
+            # ── 3) Collectes récentes depuis /poubelles/ ──
+            # Quand BIN-GENERAL passe à "vide" avec poids=0, c'est une collecte.
+            # On regarde derniere_mise_a_jour pour les collectes récentes.
+            try:
+                all_bins = rtdb.reference("poubelles").get() or {}
+                for bcode, bdata in all_bins.items():
+                    if not isinstance(bdata, dict):
+                        continue
+                    etat = bdata.get("etat", "")
+                    maj_str = bdata.get("derniere_mise_a_jour", "")
+                    if etat == "vide" and maj_str:
+                        try:
+                            maj = datetime.fromisoformat(
+                                str(maj_str).replace("+00:00", "").replace("Z", "")
+                            )
+                            if maj >= since_week:
+                                fb_collector_week += 1
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Utiliser le MAX entre PostgreSQL et Firebase
+            total_scans  = max(total_scans, fb_citizen_total)
+            scans_today  = max(scans_today, fb_citizen_today)
+            scans_week   = max(scans_week, fb_citizen_week)
+            points_total = max(float(points_total), fb_points)
+            fb_total_collections = fb_collector_total
+            fb_collections_week  = fb_collector_week
+
+        except Exception:
+            pass  # Firebase indisponible : on garde les valeurs PostgreSQL
+
+        # Statistiques collecteurs — PostgreSQL + Firebase
         try:
             from app.qr_bins.models import CollectorLog
-            total_collections   = db.query(func.count(CollectorLog.id)).scalar() or 0
-            collections_week    = db.query(func.count(CollectorLog.id)).filter(
+            pg_collections   = db.query(func.count(CollectorLog.id)).scalar() or 0
+            pg_coll_week     = db.query(func.count(CollectorLog.id)).filter(
                 CollectorLog.collected_at >= since_week
             ).scalar() or 0
+            total_collections = max(pg_collections, fb_total_collections)
+            collections_week  = max(pg_coll_week, fb_collections_week)
         except Exception:
-            total_collections = 0
-            collections_week  = 0
+            total_collections = fb_total_collections
+            collections_week  = fb_collections_week
+
 
         stats = {
             # Utilisateurs
@@ -572,6 +707,9 @@ def update_admin_stats(db) -> bool:
             # Centres
             "total_centers":        int(total_centers),
             "active_centers":       int(active_centers),
+            "centers_disponible":   int(active_centers),
+            "centers_sature":      int(centers_sature),
+            "centers_maintenance": int(centers_maintenance),
             "last_updated":         datetime.now(timezone.utc).isoformat(),
         }
 

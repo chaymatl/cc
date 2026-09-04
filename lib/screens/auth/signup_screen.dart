@@ -9,7 +9,7 @@ import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -79,12 +79,13 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       initialDate: DateTime(2000),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
-      builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.primaryGreen)), child: child!),
+      builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.primaryGreen)), child: child!),
     );
     if (picked != null) setState(() => _dobController.text = '${picked.day}/${picked.month}/${picked.year}');
   }
 
   Future<void> _handleSignUp() async {
+    if (_isLoading) return; // Empêche la double soumission
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
@@ -155,6 +156,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   }
 
   Future<void> _verifyOTP() async {
+    if (_isLoading) return; // Empêche la double soumission
     final code = _otpController.text.trim();
     if (code.isEmpty || code.length != 6) {
       setState(() => _errorMessage = 'Veuillez entrer le code à 6 chiffres');
@@ -176,8 +178,10 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         setState(() { _currentStep = 2; _isLoading = false; });
 
         // Navigate to home after 2 seconds
+        // ignore: use_build_context_synchronously
+        final nav = Navigator.of(context);
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          if (mounted) nav.pushNamedAndRemoveUntil('/home', (route) => false);
         });
       } else {
         setState(() { _errorMessage = result['message']; _isLoading = false; });
@@ -222,9 +226,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Center(child: Text('Créer un compte', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w700, color: AppTheme.deepSlate))),
+                  Center(child: Text('Créer un compte', style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface))),
                   const SizedBox(height: 8),
-                  Center(child: Text('Rejoignez la communauté EcoRewind', style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted))),
+                  Center(child: Text('Rejoignez la communauté EcoRewind', style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                   const SizedBox(height: 8),
                   // Progress bar
                   Row(children: [
@@ -391,22 +395,22 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           ],
 
           // Name
-          Text('Nom complet', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Nom complet', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _nameController,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: const InputDecoration(hintText: 'Votre nom', prefixIcon: Icon(Icons.person_outline_rounded, size: 18)),
           ),
           const SizedBox(height: 16),
 
           // Email
-          Text('Email', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Email', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: const InputDecoration(hintText: 'votre@email.com', prefixIcon: Icon(Icons.alternate_email_rounded, size: 18)),
           ),
           const SizedBox(height: 8),
@@ -414,35 +418,35 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           const SizedBox(height: 8),
 
           // Phone
-          Text('Téléphone', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Téléphone', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: const InputDecoration(hintText: '+216 XX XXX XXX', prefixIcon: Icon(Icons.phone_iphone_rounded, size: 18)),
           ),
           const SizedBox(height: 16),
 
           // Date of birth
-          Text('Date de naissance', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Date de naissance', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _dobController,
             readOnly: true,
             onTap: () => _selectDate(context),
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: const InputDecoration(hintText: 'JJ/MM/AAAA', prefixIcon: Icon(Icons.calendar_today_rounded, size: 18)),
           ),
           const SizedBox(height: 16),
 
           // Password
-          Text('Mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
@@ -455,12 +459,12 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           const SizedBox(height: 16),
 
           // Confirm password
-          Text('Confirmer le mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain)),
+          Text('Confirmer le mot de passe', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 6),
           TextField(
             controller: _confirmPasswordController,
             obscureText: _obscureConfirm,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMain),
+            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_reset_rounded, size: 18),
@@ -477,7 +481,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
             onTap: () => setState(() => _acceptTerms = !_acceptTerms),
             child: Row(children: [
               Checkbox(value: _acceptTerms, onChanged: (v) => setState(() => _acceptTerms = v ?? false), activeColor: AppTheme.primaryGreen),
-              Expanded(child: Text("J'accepte les conditions d'utilisation", style: GoogleFonts.inter(color: AppTheme.textMain, fontSize: 13))),
+              Expanded(child: Text("J'accepte les conditions d'utilisation", style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 13))),
             ]),
           ),
           const SizedBox(height: 24),
@@ -496,7 +500,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Déjà un compte ? ', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 14)),
+              Text('Déjà un compte ? ', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
@@ -653,7 +657,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         ).animate().scale(delay: 100.ms, curve: Curves.elasticOut),
 
         const SizedBox(height: 28),
-        Text('Vérifiez votre ${isEmail ? "email" : "téléphone"}', style: GoogleFonts.spaceGrotesk(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 150.ms),
+        Text('Vérifiez votre ${isEmail ? 'email' : 'téléphone'}', style: GoogleFonts.spaceGrotesk(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 150.ms),
 
         const SizedBox(height: 12),
         Text(
@@ -692,7 +696,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
               // Code input field
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.08) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
@@ -701,12 +705,12 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   maxLength: 6,
-                  style: GoogleFonts.spaceGrotesk(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B), letterSpacing: 12),
+                  style: GoogleFonts.spaceGrotesk(fontSize: 32, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 12),
                   cursorColor: AppTheme.primaryGreen,
                   decoration: InputDecoration(
                     counterText: '',
                     hintText: '• • • • • •',
-                    hintStyle: GoogleFonts.inter(color: const Color(0xFFCBD5E1), fontSize: 24, letterSpacing: 8),
+                    hintStyle: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4), fontSize: 24, letterSpacing: 8),
                     filled: false,
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
@@ -814,11 +818,12 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     TextInputType? keyboardType,
     Widget? suffixIcon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.08) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.12 : 0.15)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: TextField(
@@ -827,14 +832,14 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         readOnly: readOnly,
         onTap: onTap,
         keyboardType: keyboardType,
-        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontWeight: FontWeight.w500, fontSize: 14),
+        style: GoogleFonts.inter(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w500, fontSize: 14),
         cursorColor: AppTheme.primaryGreen,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
+          labelStyle: GoogleFonts.inter(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8), fontSize: 13),
           prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryGreen),
           prefixText: prefix,
-          prefixStyle: GoogleFonts.inter(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600),
+          prefixStyle: GoogleFonts.inter(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w600),
           suffixIcon: suffixIcon,
           filled: false,
           border: InputBorder.none,

@@ -20,8 +20,11 @@
 
 services:
 
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # ── PostgreSQL (Autonome pour déploiement sans PostgreSQL local) ────────────
   postgres:
+    profiles:
+      - full
+      - standalone
     image: postgres:16-alpine
     container_name: ecorewind_postgres
     restart: unless-stopped
@@ -31,15 +34,33 @@ services:
       POSTGRES_DB: ecorewind
       TZ: Africa/Tunis
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./backup_ecorewind.sql:/docker-entrypoint-initdb.d/01_backup.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ecorewind"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # ── FastAPI Backend ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecorewind_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/ecorewind}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
 
   # ── AI Worker (modèles IA — OPTIONNEL) ───────────────────────────────────────
   # Activé uniquement avec le profil "ai" :

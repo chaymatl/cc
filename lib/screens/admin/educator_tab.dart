@@ -183,8 +183,8 @@ class _EducatorTabState extends State<EducatorTab> {
             dropdownColor: Colors.white,
             decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
             items: [
-              DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —', style: const TextStyle(color: Color(0xFF1E293B)))),
-              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? '', style: const TextStyle(color: Color(0xFF1E293B))))),
+              DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —', style: const TextStyle())),
+              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? '', style: const TextStyle()))),
             ],
             onChanged: (v) => setDState(() => selectedCatId = v),
           ),
@@ -250,42 +250,65 @@ class _EducatorTabState extends State<EducatorTab> {
     // Demander le titre
     final titleController = TextEditingController(text: file.name.replaceAll('.pdf', ''));
     if (!mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text('Nouveau Quiz', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.purple.shade50,
-                borderRadius: BorderRadius.circular(16),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.purple.shade900.withOpacity(0.3) : Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(children: [
+                  Icon(Icons.picture_as_pdf, color: Colors.red.shade400, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        file.name,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '${(file.size / 1024).toStringAsFixed(1)} Ko',
+                        style: GoogleFonts.inter(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  )),
+                ]),
               ),
-              child: Row(children: [
-                Icon(Icons.picture_as_pdf, color: Colors.red.shade400, size: 32),
-                const SizedBox(width: 12),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(file.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-                    Text('${(file.size / 1024).toStringAsFixed(1)} Ko', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11)),
-                  ],
-                )),
-              ]),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                labelText: 'Titre du quiz',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: titleController,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                decoration: InputDecoration(
+                  labelText: 'Titre du quiz',
+                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),

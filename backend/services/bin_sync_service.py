@@ -155,7 +155,7 @@ def sync_bins_once() -> dict:
             for qr_code, fb_data in all_fb_users.items():
                 if not isinstance(fb_data, dict):
                     continue
-                if fb_data.get("role") != "user":
+                if fb_data.get("role") != "citoyen":
                     continue  # seuls les citoyens ont un score
                 fb_score = float(fb_data.get("score", 0.0))
                 if fb_score <= 0:
@@ -233,6 +233,19 @@ def sync_bins_once() -> dict:
         except Exception as e:
             logger.error("[BinSync] Erreur retry firebase_synced : %s", e)
 
+        # ── Rafraîchir /admin_stats/ dans Firebase RTDB ─────────────────────
+        # Après la sync, on recalcule et pousse les stats admin pour que le
+        # dashboard Flutter reçoive des données fraîches via le StreamBuilder.
+        try:
+            from services.firebase_service import update_admin_stats
+            db2 = SessionLocal()
+            try:
+                update_admin_stats(db2)
+            finally:
+                db2.close()
+        except Exception as e:
+            logger.warning("[BinSync] update_admin_stats echoue : %s", e)
+
     except Exception as e:
         logger.error("[BinSync] Erreur critique : %s", e)
         errors += 1
@@ -248,6 +261,7 @@ def sync_bins_once() -> dict:
         "errors":           errors,
         "updated_postgres": updated_postgres,
         "updated_firebase": updated_firebase,
+
         "synced_retried":   synced_retried,
         "timestamp":        datetime.now(timezone.utc).isoformat(),
     }
