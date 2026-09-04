@@ -51,7 +51,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   // ── F4 : Réponses / notifications reçues ─────────────────────────────────
   List<Map<String, dynamic>> _replies         = [];
   bool   _loadingReplies  = false;
-  int    _unreadRepliesCount = 0;
 
   // ── F5 : Pilotage (zones & affectations) ─────────────────────────────────
   List<Map<String, dynamic>> _zones           = [];
@@ -214,7 +213,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         final replies = data.cast<Map<String, dynamic>>();
         setState(() {
           _replies = replies;
-          _unreadRepliesCount = replies.where((r) => r['is_read'] == false).length;
         });
       }
     } catch (_) {}
@@ -810,17 +808,17 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Theme.of(context).colorScheme.surface,
                         ),
                         selectedItemBuilder: (BuildContext context) {
                           return [
-                            const Text('Tous', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
-                            ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis))),
+                            const Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
+                            ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(overflow: TextOverflow.ellipsis))),
                           ];
                         },
                         items: [
-                          const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets', style: TextStyle(color: Color(0xFF1E293B)))),
-                          ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle(color: Color(0xFF1E293B))))),
+                          const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets', style: TextStyle())),
+                          ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle()))),
                         ],
                         onChanged: (v) => setState(() => _f1FilterWasteType = v ?? ''),
                       ),
@@ -877,7 +875,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
           ),
         );
       },
@@ -980,7 +978,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
               ),
               onChanged: (v) => setState(() => _f2Search = v),
             ),
@@ -1133,17 +1131,17 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       ),
                       selectedItemBuilder: (BuildContext context) {
                         return const [
-                          Text('Tous', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
-                          Text('Gestionnaires', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
-                          Text('Collecteurs', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
-                          Text('Éducateurs', style: TextStyle(color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)),
+                          Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
+                          Text('Gestionnaires', style: TextStyle(overflow: TextOverflow.ellipsis)),
+                          Text('Collecteurs', style: TextStyle(overflow: TextOverflow.ellipsis)),
+                          Text('Éducateurs', style: TextStyle(overflow: TextOverflow.ellipsis)),
                         ];
                       },
                       items: const [
-                        DropdownMenuItem<String>(value: '', child: Text('Tous les rôles', style: TextStyle(color: Color(0xFF1E293B)))),
-                        DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires', style: TextStyle(color: Color(0xFF1E293B)))),
-                        DropdownMenuItem<String>(value: 'collector', child: Text('Collecteurs', style: TextStyle(color: Color(0xFF1E293B)))),
-                        DropdownMenuItem<String>(value: 'educator', child: Text('Éducateurs', style: TextStyle(color: Color(0xFF1E293B)))),
+                        DropdownMenuItem<String>(value: '', child: Text('Tous les rôles', style: TextStyle())),
+                        DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires', style: TextStyle())),
+                        DropdownMenuItem<String>(value: 'collector', child: Text('Collecteurs', style: TextStyle())),
+                        DropdownMenuItem<String>(value: 'educator', child: Text('Éducateurs', style: TextStyle())),
                       ],
                       onChanged: (v) => setState(() => _f3FilterRole = v ?? ''),
                     ),
@@ -1263,7 +1261,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(actor['full_name'] ?? 'Acteur', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.deepSlate)),
+                Text(actor['full_name'] ?? 'Acteur', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.deepSlate), maxLines: 1, overflow: TextOverflow.ellipsis),
                 Text(actor['email'] ?? '', style: GoogleFonts.outfit(fontSize: 11, color: AppTheme.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -1732,7 +1730,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
-                  items: cities.map((c) => DropdownMenuItem<String>(value: c, child: Text(c, style: const TextStyle(color: Color(0xFF1E293B))))).toList(),
+                  items: cities.map((c) => DropdownMenuItem<String>(value: c, child: Text(c, style: const TextStyle()))).toList(),
                   onChanged: (val) {
                     setFormState(() {
                       cityCtrl.text = val ?? '';
@@ -1756,7 +1754,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6C3EB8), width: 1.5)),
                   ),
-                  items: _wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle(color: Color(0xFF1E293B))))).toList(),
+                  items: _wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle()))).toList(),
                   onChanged: (val) {
                     setFormState(() {
                       wasteTypeCtrl.text = val ?? '';
@@ -1949,76 +1947,97 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) => Container(
-          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 16),
-              Text('Affecter à : ${zone['name']}', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
-              Text(zone['territory'] ?? '', style: GoogleFonts.outfit(color: AppTheme.textMuted, fontSize: 13)),
-              const SizedBox(height: 16),
-              Text('Collecteur', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<int>(
-                value: selectedCollectorId,
-                isExpanded: true,
-                dropdownColor: Colors.white,
-                style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                ),
-                items: _collectors.map((c) => DropdownMenuItem<int>(
-                  value: c['id'] as int,
-                  child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: const TextStyle(color: Color(0xFF1E293B))),
-                )).toList(),
-                onChanged: (v) => setSt(() => selectedCollectorId = v),
-              ),
-              const SizedBox(height: 10),
-              Text('Priorité', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Row(
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return StatefulBuilder(
+          builder: (ctx, setSt) => Container(
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _priorityChip('normal',  'Normal',  Colors.blue,   priority, (v) => setSt(() => priority = v)),
-                  const SizedBox(width: 8),
-                  _priorityChip('urgent',  'Urgent',  Colors.orange, priority, (v) => setSt(() => priority = v)),
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+                  const SizedBox(height: 16),
+                  Text('Affecter à : ${zone['name']}', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: Theme.of(ctx).colorScheme.onSurface)),
+                  Text(zone['territory'] ?? '', style: GoogleFonts.outfit(color: Theme.of(ctx).colorScheme.onSurfaceVariant, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  Text('Collecteur', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Theme.of(ctx).colorScheme.onSurface)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<int>(
+                    value: selectedCollectorId,
+                    isExpanded: true,
+                    dropdownColor: Theme.of(ctx).colorScheme.surface,
+                    style: GoogleFonts.inter(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                    ),
+                    items: _collectors.map((c) => DropdownMenuItem<int>(
+                      value: c['id'] as int,
+                      child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface)),
+                    )).toList(),
+                    onChanged: (v) => setSt(() => selectedCollectorId = v),
+                  ),
+                  const SizedBox(height: 10),
+                  Text('Priorité', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Theme.of(ctx).colorScheme.onSurface)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      _priorityChip('normal',  'Normal',  Colors.blue,   priority, (v) => setSt(() => priority = v)),
+                      const SizedBox(width: 8),
+                      _priorityChip('urgent',  'Urgent',  Colors.orange, priority, (v) => setSt(() => priority = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: msgCtrl,
+                    maxLines: 3,
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface),
+                    decoration: InputDecoration(
+                      labelText: 'Message de mission (optionnel)',
+                      labelStyle: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A6B3C),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () {
+                        if (selectedCollectorId == null) return;
+                        Navigator.pop(ctx);
+                        _createAssignment(
+                          zoneId: zone['id'],
+                          collectorId: selectedCollectorId!,
+                          message: msgCtrl.text.trim(),
+                          priority: priority,
+                        );
+                      },
+                      child: Text('Affecter le collecteur', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 10),
-              TextField(controller: msgCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'Message de mission (optionnel)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6B3C),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () {
-                    if (selectedCollectorId == null) return;
-                    Navigator.pop(ctx);
-                    _createAssignment(
-                      zoneId: zone['id'],
-                      collectorId: selectedCollectorId!,
-                      message: msgCtrl.text.trim(),
-                      priority: priority,
-                    );
-                  },
-                  child: Text('Affecter le collecteur', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2226,7 +2245,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                         ),
                         items: _zones.map((z) => DropdownMenuItem<int>(
                           value: z['id'] as int,
-                          child: Text('${z['name']} · ${z['territory'] ?? ''}', style: const TextStyle(color: Color(0xFF1E293B))),
+                          child: Text('${z['name']} · ${z['territory'] ?? ''}', style: const TextStyle()),
                         )).toList(),
                         onChanged: (v) => setSt(() => selectedZoneId = v),
                       ),
@@ -2260,7 +2279,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                         filled: true,
-                        fillColor: Colors.grey.shade100,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                       onChanged: (v) => setSt(() => pointSearch = v),
@@ -2366,7 +2385,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     ),
                     items: _collectors.map((c) => DropdownMenuItem<int>(
                       value: c['id'] as int,
-                      child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: const TextStyle(color: Color(0xFF1E293B))),
+                      child: Text(c['full_name'] ?? c['email'] ?? 'ID ${c['id']}', style: const TextStyle()),
                     )).toList(),
                     onChanged: (v) => setSt(() => selectedCollectorId = v),
                   ),
