@@ -1,0 +1,148 @@
+<mxfile host="drawio" modified="2026-09-10" agent="5.0" version="24.0.0" type="device">
+  <diagram name="Sequence_Sprint2_Publish_Post" id="sequence_publish_post">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Acteurs et objets -->
+        <mxCell id="actor_citizen" value="Citoyen" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="40" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_flutter" value="Flutter App" style="shape=box;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_api" value="FastAPI" style="shape=box;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_db" value="Database" style="shape=box;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_moderation" value="Moderation Task" style="shape=box;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="750" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Lignes de vie -->
+        <mxCell id="lifeline_citizen" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1">
+          <mxGeometry x="65" y="100" width="1" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_flutter" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="100" width="1" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_api" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="100" width="1" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_db" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="100" width="1" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_moderation" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="100" width="1" height="700" as="geometry" />
+        </mxCell>
+        
+        <!-- Interactions -->
+        <!-- 1. Citoyen rédige le contenu -->
+        <mxCell id="msg1" value="1: Rédige le contenu et ajoute un média" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_citizen" target="lifeline_flutter">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" />
+            <mxPoint as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg1_label" value="1: Rédige le contenu et ajoute un média" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" connectable="0" vertex="1" parent="msg1">
+          <mxGeometry x="-0.5" y="-10" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 2. Fragment OPT: Média fourni -->
+        <mxCell id="frag_media" value="opt [média fourni]" style="shape=rect;html=1;rounded=0;fillColor=#f0f0f0;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="160" width="250" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 2a. Téléverse le média -->
+        <mxCell id="msg2a" value="2a: Upload média" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_flutter" target="lifeline_api">
+          <mxGeometry x="1" y="20" relative="1" as="geometry">
+            <mxPoint x="0" y="20" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 2b. Retour URL du média -->
+        <mxCell id="msg2b" value="2b: Média URL" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_flutter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 3. Appel POST /posts -->
+        <mxCell id="msg3" value="3: POST /posts (contenu, média_url)" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_flutter" target="lifeline_api">
+          <mxGeometry x="0" y="260" relative="1" as="geometry">
+            <mxPoint y="260" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 4. Persistance en base avec statut pending_review -->
+        <mxCell id="msg4" value="4: Persiste POST (pending_review)" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 4b. Confirmation DB -->
+        <mxCell id="msg4b" value="4b: OK" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;rounded=0;" edge="1" parent="1" source="lifeline_db" target="lifeline_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 5. Réponse HTTP 201 -->
+        <mxCell id="msg5" value="5: HTTP 201 {post_id, status}" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_flutter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 6. Affiche la publication créée -->
+        <mxCell id="msg6" value="6: Publication créée" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_flutter" target="lifeline_citizen">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 7. Tâche asynchrone de modération -->
+        <mxCell id="msg7" value="7: Déclenche tâche de modération IA" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;strokeDasharray=5,5;" edge="1" parent="1" source="lifeline_api" target="lifeline_moderation">
+          <mxGeometry x="0" y="420" relative="1" as="geometry">
+            <mxPoint y="420" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Fragment ALT: Approbation ou révision -->
+        <mxCell id="frag_alt" value="alt" style="shape=rect;html=1;rounded=0;fillColor=#f0f0f0;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="750" y="460" width="200" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- 8a. Contenu jugé sûr -->
+        <mxCell id="msg8a" value="8a: Contenu sûr" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_moderation" target="lifeline_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 8b. Mise à jour statut published -->
+        <mxCell id="msg8b" value="8b: UPDATE POST status=published" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_db">
+          <mxGeometry x="0" y="540" relative="1" as="geometry">
+            <mxPoint y="540" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 8c. Notification d'approbation -->
+        <mxCell id="msg8c" value="8c: Notification (approuvé)" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_flutter">
+          <mxGeometry x="0" y="580" relative="1" as="geometry">
+            <mxPoint y="580" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- ALT branche 2: Révision humaine -->
+        <mxCell id="msg9a" value="9a: Flagué / Erreur" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_moderation" target="lifeline_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="msg9b" value="9b: Demeure en pending_review" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" edge="1" parent="1" source="lifeline_api" target="lifeline_db">
+          <mxGeometry x="0" y="660" relative="1" as="geometry">
+            <mxPoint y="660" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Annotations -->
+        <mxCell id="note_async" value="Exécution asynchrone&#10;L'API retourne immédiatement" style="shape=note;html=1;fillColor=#ffffcc;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="280" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
