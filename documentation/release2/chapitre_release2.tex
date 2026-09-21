@@ -1,0 +1,159 @@
+% Release 2 -- EcoRewind
+\chapter{Release 2 : Collecte intelligente et IoT}
+\label{chap:release2}
+
+\section{Introduction de la Release}
+Cette deuxième release étend le socle fonctionnel d'EcoRewind vers la collecte intelligente des déchets. Elle est organisée en deux sprints. Le Sprint 3 couvre le dépôt citoyen, l'identification par QR code, l'attribution des points et la gestion des poubelles intelligentes. Le Sprint 4 complète cette fonctionnalité par la gestion opérationnelle des collectes, les tournées des collecteurs, le suivi des équipements et la transmission des informations de collecte.
+
+La release met en relation l'application mobile/web, l'API FastAPI, la base de données et le dispositif de poubelle intelligente. Le QR code personnel du citoyen permet d'identifier l'action de tri. Le QR code de la poubelle identifie le bac utilisé. Le collecteur utilise également son QR code pour enregistrer une opération de vidage.
+
+\section{Sprint 3 : Dépôt des déchets, QR code et gestion des poubelles}
+\subsection{Objectifs et backlog du Sprint 3}
+Le Sprint 3 met en œuvre les fonctionnalités prévues par le backlog de la Release 2 : dépôt des déchets, scan du QR code, gestion des types de déchets et gestion des points et poubelles associés.
+
+\begin{longtable}{|>{\centering\arraybackslash}p{0.8cm}|p{8.0cm}|>{\centering\arraybackslash}p{1.5cm}|>{\centering\arraybackslash}p{1.5cm}|}
+\caption{Backlog du Sprint 3 -- Dépôt et poubelles intelligentes}
+\label{tab:r2_s3_backlog}\\\hline
+\rowcolor{gray!35}
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{État}\\\hline
+\endfirsthead
+\rowcolor{gray!35}
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{État}\\\hline
+\endhead
+3.1 & En tant que citoyen, je veux déposer des déchets et scanner le QR code afin d'enregistrer mon action de tri. & Élevée & Réalisée\\\hline
+3.2 & En tant que citoyen, je veux que le type de déchet soit associé à la poubelle utilisée afin d'appliquer le barème correspondant. & Élevée & Réalisée\\\hline
+3.3 & En tant qu'administrateur, je veux gérer les poubelles intelligentes et leur état afin de superviser les équipements. & Élevée & Réalisée\\\hline
+3.4 & En tant qu'utilisateur, je veux consulter les points de collecte et leurs informations afin de choisir un point adapté. & Élevée & Réalisée\\\hline
+\end{longtable}
+
+\subsection{Raffinement des cas d'utilisation}
+Le citoyen peut scanner le QR code de la poubelle, déposer ses déchets et enregistrer son action. Le système vérifie que la poubelle existe et qu'elle est disponible. Lorsque l'opération est acceptée, le système enregistre le scan et met à jour le score du citoyen. L'administrateur dispose de fonctions de supervision des poubelles et de consultation des statistiques.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.98\textwidth]{image/usecase_sprint3_collection_iot.png}
+\caption{Diagramme de cas d'utilisation du Sprint 3}
+\label{fig:r2_s3_uc}
+\end{figure}
+
+\subsection{Description textuelle du cas « Enregistrer un dépôt par QR code »}
+\begin{longtable}{|p{3.0cm}|p{10.0cm}|}
+\caption{Description du cas « Enregistrer un dépôt par QR code »}\\\hline
+\rowcolor{gray!20}\textbf{Élément} & \textbf{Description}\\\hline
+Acteur principal & Citoyen connecté.\\\hline
+Objectif & Identifier le citoyen et la poubelle afin d'enregistrer le dépôt et attribuer les points correspondants.\\\hline
+Préconditions & Le citoyen possède un QR personnel et la poubelle est enregistrée avec un état actif.\\\hline
+Déclencheur & Le citoyen scanne le QR code de la poubelle.\\\hline
+Scénario nominal & 1. Le citoyen scanne le QR de la poubelle.\newline 2. L'application transmet le code de la poubelle et le QR personnel.\newline 3. Le système vérifie la poubelle et le citoyen.\newline 4. Le système vérifie l'état du bac.\newline 5. Le dépôt est enregistré.\newline 6. Les points sont calculés selon le type de déchet et le poids disponible.\newline 7. Le score du citoyen est mis à jour.\newline 8. L'application affiche le résultat.\\\hline
+Alternative A1 : poubelle indisponible & L'opération est refusée si la poubelle est inactive, en maintenance ou pleine.\\\hline
+Alternative A2 : QR invalide & Le système refuse l'opération si le QR de l'utilisateur ou de la poubelle est inconnu.\\\hline
+Alternative A3 : double scan & Le système refuse un nouveau scan effectué dans la fenêtre anti-double-scan.\\\hline
+Postconditions & Le dépôt accepté est historisé et le score est mis à jour.\\\hline
+\end{longtable}
+
+\subsection{Diagramme de séquence « Enregistrer un dépôt par QR code »}
+\begin{figure}[H]\centering
+\includegraphics[width=0.99\textwidth]{image/sequence_sprint3_qr_depot.png}
+\caption{Diagramme de séquence « Enregistrer un dépôt par QR code »}
+\label{fig:r2_s3_seq}
+\end{figure}
+
+\subsection{Diagramme de classes du Sprint 3}
+Le modèle du Sprint 3 s'appuie notamment sur les entités \texttt{User}, \texttt{SmartBin}, \texttt{BinScan} et \texttt{CollectionPoint}. Un utilisateur peut effectuer plusieurs scans. Une poubelle intelligente peut être associée à plusieurs scans et à un point de collecte.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.98\textwidth]{image/class_sprint3_qr_iot.png}
+\caption{Diagramme de classes du Sprint 3}
+\label{fig:r2_s3_class}
+\end{figure}
+
+\subsection{Scénarios de validation du Sprint 3}
+\begin{longtable}{|p{1.0cm}|p{5.2cm}|p{6.4cm}|}
+\caption{Scénarios de validation du Sprint 3}\\\hline
+\rowcolor{gray!20}\textbf{ID} & \textbf{Situation} & \textbf{Résultat attendu}\\\hline
+V3.1 & Scan d'une poubelle active par un citoyen. & Le dépôt est accepté et l'historique est enregistré.\\\hline
+V3.2 & Scan d'une poubelle pleine ou en maintenance. & Le dépôt est refusé et un message explicatif est affiché.\\\hline
+V3.3 & QR citoyen inconnu. & L'opération est refusée.\\\hline
+V3.4 & Deux scans rapprochés sur le même bac. & Le second scan est bloqué par l'anti-double-scan.\\\hline
+V3.5 & Gestion d'une poubelle par l'administrateur. & Les informations et l'état de la poubelle sont mis à jour.\\\hline
+\end{longtable}
+
+\section{Sprint 4 : Missions de collecte, tournées et suivi IoT}
+\subsection{Objectifs et backlog du Sprint 4}
+Le Sprint 4 transforme les informations issues des poubelles en opérations de collecte. Il couvre les missions et tournées, le suivi des points et équipements, l'enregistrement du vidage d'une poubelle et la notification des acteurs concernés.
+
+\begin{longtable}{|>{\centering\arraybackslash}p{0.8cm}|p{8.0cm}|>{\centering\arraybackslash}p{1.5cm}|>{\centering\arraybackslash}p{1.5cm}|}
+\caption{Backlog du Sprint 4 -- Collecte opérationnelle}\\\hline
+\rowcolor{gray!35}\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{État}\\\hline
+\endfirsthead
+\rowcolor{gray!35}\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{État}\\\hline
+\endhead
+4.1 & En tant que collecteur, je veux consulter et exécuter mes missions de collecte afin de suivre leur avancement. & Élevée & Réalisée\\\hline
+4.2 & En tant que collecteur, je veux suivre les points et poubelles prioritaires afin d'organiser mes opérations. & Élevée & Réalisée\\\hline
+4.3 & En tant que collecteur, je veux scanner une poubelle afin d'enregistrer son vidage et remettre son état à zéro. & Élevée & Réalisée\\\hline
+4.4 & En tant qu'administrateur, je veux superviser les poubelles et les équipements afin de suivre leur état. & Moyenne & Réalisée\\\hline
+4.5 & En tant qu'intercommunalité, je veux recevoir les informations de collecte afin de suivre les opérations réalisées. & Élevée & Réalisée\\\hline
+\end{longtable}
+
+\subsection{Raffinement des cas d'utilisation}
+Le collecteur consulte ses tournées, démarre une mission et la termine après les opérations de terrain. Lorsqu'il scanne une poubelle, le système récupère le poids disponible, enregistre une trace dans \texttt{CollectorLog}, remet le bac à l'état actif et réinitialise son poids côté service IoT. L'intercommunalité est ensuite informée de la collecte réalisée.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.98\textwidth]{image/usecase_sprint4_collecte.png}
+\caption{Diagramme de cas d'utilisation du Sprint 4}
+\label{fig:r2_s4_uc}
+\end{figure}
+
+\subsection{Description textuelle du cas « Enregistrer le vidage d'une poubelle »}
+\begin{longtable}{|p{3.0cm}|p{10.0cm}|}
+\caption{Description du cas « Enregistrer le vidage d'une poubelle »}\\\hline
+\rowcolor{gray!20}\textbf{Élément} & \textbf{Description}\\\hline
+Acteur principal & Collecteur.\\\hline
+Objectif & Enregistrer une opération de collecte et remettre la poubelle dans un état disponible.\\\hline
+Préconditions & Le collecteur est authentifié et la poubelle est connue du système.\\\hline
+Déclencheur & Le collecteur scanne le QR code de la poubelle.\\\hline
+Scénario nominal & 1. Le collecteur scanne la poubelle.\newline 2. Le système identifie le collecteur et le bac.\newline 3. Le poids courant est récupéré depuis les données IoT lorsqu'il est disponible.\newline 4. L'opération est enregistrée dans \texttt{CollectorLog}.\newline 5. La poubelle est remise à l'état actif.\newline 6. Le poids est réinitialisé côté IoT.\newline 7. Une notification de collecte est envoyée aux acteurs concernés.\newline 8. Le système confirme l'opération.\\\hline
+Alternative A1 : poubelle inconnue & Le système refuse le scan.\\\hline
+Alternative A2 : service IoT indisponible & La collecte reste enregistrée ; la synchronisation du poids est traitée de manière non bloquante.\\\hline
+Postconditions & La collecte est historisée et la poubelle est remise dans un état permettant une nouvelle utilisation.\\\hline
+\end{longtable}
+
+\subsection{Diagramme de séquence « Enregistrer le vidage d'une poubelle »}
+\begin{figure}[H]\centering
+\includegraphics[width=0.99\textwidth]{image/sequence_sprint4_collecte.png}
+\caption{Diagramme de séquence « Enregistrer le vidage d'une poubelle »}
+\label{fig:r2_s4_seq}
+\end{figure}
+
+\subsection{Diagramme de classes du Sprint 4}
+Le Sprint 4 introduit principalement \texttt{CollectionRoute} et \texttt{CollectorLog}. La tournée est rattachée au collecteur et référence les points à visiter. Le journal de collecte relie le collecteur à la poubelle et conserve le poids observé avant vidage ainsi que la date de l'opération.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.98\textwidth]{image/class_sprint4_collecte.png}
+\caption{Diagramme de classes du Sprint 4}
+\label{fig:r2_s4_class}
+\end{figure}
+
+\subsection{Scénarios de validation du Sprint 4}
+\begin{longtable}{|p{1.0cm}|p{5.2cm}|p{6.4cm}|}
+\caption{Scénarios de validation du Sprint 4}\\\hline
+\rowcolor{gray!20}\textbf{ID} & \textbf{Situation} & \textbf{Résultat attendu}\\\hline
+V4.1 & Consultation des tournées du collecteur. & Les tournées accessibles et leur état sont affichés.\\\hline
+V4.2 & Démarrage d'une tournée planifiée. & Son état passe à \texttt{in\_progress}.\\\hline
+V4.3 & Scan d'une poubelle par un collecteur. & Une trace de collecte est créée et le bac est réinitialisé.\\\hline
+V4.4 & Consultation des poubelles prioritaires. & Les équipements nécessitant une collecte sont identifiés.\\\hline
+V4.5 & Fin d'une tournée. & La tournée est enregistrée comme terminée avec le bilan de collecte.\\\hline
+\end{longtable}
+
+\section{Implémentation de la Release 2}
+L'implémentation observée dans le dépôt \texttt{chaymatl/cc} repose sur une API FastAPI organisée par fonctionnalités. Le backend inclut notamment les routeurs dédiés aux QR et poubelles intelligentes ainsi qu'aux opérations des collecteurs. Les modèles \texttt{SmartBin}, \texttt{BinScan}, \texttt{CollectorLog} et \texttt{CollectionRoute} structurent la persistance des opérations de la release.
+
+Le traitement du scan citoyen vérifie le code de la poubelle, identifie l'utilisateur par son QR, contrôle l'état du bac, applique une protection contre les scans rapprochés, calcule les points puis enregistre le scan. Le traitement du collecteur enregistre le poids avant vidage, remet la poubelle à l'état actif, réinitialise les données IoT lorsque le service est disponible et déclenche la notification destinée aux acteurs concernés.
+
+\subsection{Intégration avec le dispositif IoT}
+La poubelle intelligente fournit les informations d'état et de poids. Le backend assure une synchronisation avec Firebase et expose l'information nécessaire à l'application. Cette architecture sépare la logique métier de l'interface utilisateur tout en permettant au dispositif physique d'être intégré progressivement au système.
+
+\subsection{Gestion des erreurs et cohérence}
+Les cas de QR invalide, poubelle inexistante, poubelle indisponible et double scan sont traités explicitement. Les opérations de synchronisation IoT ou de notification sont non bloquantes afin de préserver la trace métier de la collecte.
+
+\section{Conclusion de la Release 2}
+Cette deuxième release permet d'intégrer la collecte intelligente au fonctionnement d'EcoRewind. Le Sprint 3 relie l'action citoyenne au QR code, à la poubelle intelligente et au système de points. Le Sprint 4 transforme ensuite les données de terrain en opérations de collecte, avec la planification des tournées, le suivi des équipements et l'historisation des vidages. La release prépare ainsi l'intégration des fonctionnalités de sensibilisation, de coordination territoriale et d'administration prévues dans la Release 3.
