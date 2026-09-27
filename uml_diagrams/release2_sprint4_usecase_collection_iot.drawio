@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-09-28T00:00:00.000Z" agent="5.0" version="24.0.0" type="device">
+  <diagram id="r2-s4-uc" name="Release 2 - Sprint 4 - Collecte intelligente et IoT">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Diagramme de cas d'utilisation — Sprint 4 : Collecte intelligente et IoT" style="text;html=1;fontSize=20;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="350" y="20" width="900" height="40" as="geometry"/></mxCell>
+        <mxCell id="system" value="&lt;b&gt;EcoRewind — Collecte intelligente et IoT&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;fontSize=14;" vertex="1" parent="1"><mxGeometry x="390" y="90" width="850" height="700" as="geometry"/></mxCell>
+
+        <mxCell id="inter" value="Intercommunalité" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="70" y="170" width="120" height="100" as="geometry"/></mxCell>
+        <mxCell id="collector" value="Collecteur" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="70" y="360" width="120" height="100" as="geometry"/></mxCell>
+        <mxCell id="admin" value="Administrateur" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="70" y="560" width="120" height="100" as="geometry"/></mxCell>
+        <mxCell id="superadmin" value="Super Administrateur" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="1340" y="190" width="140" height="100" as="geometry"/></mxCell>
+        <mxCell id="firebase" value="Firebase / IoT" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="1340" y="550" width="140" height="100" as="geometry"/></mxCell>
+
+        <mxCell id="uc1" value="Créer / affecter une mission de collecte" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="510" y="150" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc2" value="Consulter les missions" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="840" y="150" width="210" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc3" value="Mettre à jour l'état d'une mission" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="790" y="280" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc4" value="Recevoir une notification de mission" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="490" y="400" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc5" value="Suivre les centres et équipements" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="810" y="420" width="240" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc6" value="Intégrer / surveiller les SmartBins" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="520" y="550" width="230" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc7" value="Transmettre les données de remplissage" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="810" y="560" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="uc8" value="Suivre l'état des poubelles" style="ellipse;whiteSpace=wrap;html=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="670" y="680" width="220" height="70" as="geometry"/></mxCell>
+
+        <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="inter" target="uc1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="inter" target="uc5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="collector" target="uc2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="collector" target="uc3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a5" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="collector" target="uc4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a6" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a7" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a8" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a9" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="superadmin" target="uc1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a10" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="superadmin" target="uc8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a11" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="firebase" target="uc7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a12" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;html=1;" edge="1" parent="1" source="firebase" target="uc6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="a13" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;html=1;" edge="1" parent="1" source="uc6" target="uc7"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
