@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-09-28T00:00:00.000Z" agent="5.0" version="24.0.0" type="device">
+  <diagram id="r2-s4-state" name="Release 2 - Sprint 4 - Etat mission de collecte">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Diagramme d'état — Mission de collecte" style="text;html=1;fontSize=22;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="300" y="30" width="800" height="45" as="geometry"/></mxCell>
+
+        <mxCell id="start" value="" style="ellipse;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="100" y="350" width="35" height="35" as="geometry"/></mxCell>
+        <mxCell id="pending" value="&lt;b&gt;pending&lt;/b&gt;&lt;br&gt;Mission créée et affectée&lt;br&gt;En attente de prise en charge" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;spacing=8;" vertex="1" parent="1"><mxGeometry x="210" y="300" width="230" height="100" as="geometry"/></mxCell>
+        <mxCell id="progress" value="&lt;b&gt;in_progress&lt;/b&gt;&lt;br&gt;Collecte en cours&lt;br&gt;Mission prise en charge" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;spacing=8;" vertex="1" parent="1"><mxGeometry x="560" y="300" width="230" height="100" as="geometry"/></mxCell>
+        <mxCell id="done" value="&lt;b&gt;done&lt;/b&gt;&lt;br&gt;Collecte terminée&lt;br&gt;completed_at renseigné" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;spacing=8;" vertex="1" parent="1"><mxGeometry x="930" y="190" width="230" height="100" as="geometry"/></mxCell>
+        <mxCell id="cancelled" value="&lt;b&gt;cancelled&lt;/b&gt;&lt;br&gt;Mission annulée&lt;br&gt;Notes éventuelles du collecteur" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;spacing=8;" vertex="1" parent="1"><mxGeometry x="930" y="440" width="230" height="100" as="geometry"/></mxCell>
+        <mxCell id="end" value="" style="ellipse;html=1;aspect=fixed;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="1240" y="345" width="45" height="45" as="geometry"/></mxCell>
+
+        <mxCell id="t1" value="création / affectation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="start" target="pending"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t2" value="prise en charge par le collecteur" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="pending" target="progress"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t3" value="collecte terminée / validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="progress" target="done"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t4" value="annulation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="pending" target="cancelled"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t5" value="annulation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="progress" target="cancelled"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t6" value="fin" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="done" target="end"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t7" value="fin" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;fontSize=12;" edge="1" parent="1" source="cancelled" target="end"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="note" value="Implémentation : CollectorZoneAssignment.status&lt;br&gt;pending → in_progress → done | cancelled" style="shape=note;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=13;" vertex="1" parent="1"><mxGeometry x="470" y="600" width="460" height="100" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
