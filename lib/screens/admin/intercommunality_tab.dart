@@ -2758,7 +2758,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.ecorewind.app',
+              userAgentPackageName: 'com.example.eco_rewind',
               tileProvider: CancellableNetworkTileProvider(),
               errorTileCallback: (tile, error, stackTrace) {},
             ),
@@ -2766,34 +2766,64 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
               markers: widget.points
                   .where((p) => p['lat'] != null && p['lng'] != null)
                   .map((p) {
-                final id  = p['id'] as int? ?? 0;
-                final lat = (p['lat'] as num).toDouble();
-                final lng = (p['lng'] as num).toDouble();
-                final sel = _selectedIds.contains(id);
+                final id   = p['id'] as int? ?? 0;
+                final lat  = (p['lat'] as num).toDouble();
+                final lng  = (p['lng'] as num).toDouble();
+                final name = (p['name'] ?? p['nom'] ?? 'Point').toString();
+                final sel  = _selectedIds.contains(id);
                 return Marker(
                   point: LatLng(lat, lng),
-                  width: 46,
-                  height: 46,
+                  width: 80,
+                  height: 70,
+                  alignment: Alignment.bottomCenter,
                   child: GestureDetector(
                     onTap: () => setState(() {
                       if (sel) { _selectedIds.remove(id); } else { _selectedIds.add(id); }
                     }),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: sel ? const Color(0xFF1A6B3C) : Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: sel ? const Color(0xFF1A6B3C) : Colors.grey.shade400,
-                          width: 2.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Label nom
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: sel ? const Color(0xFF1A6B3C) : Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            name.length > 10 ? '${name.substring(0, 10)}…' : name,
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                          ),
                         ),
-                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3))],
-                      ),
-                      child: Icon(
-                        sel ? Icons.check_rounded : Icons.delete_outline_rounded,
-                        color: sel ? Colors.white : Colors.grey.shade500,
-                        size: 22,
-                      ),
+                        const SizedBox(height: 2),
+                        // Marqueur rond
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: sel ? const Color(0xFF1A6B3C) : Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: sel ? const Color(0xFF1A6B3C) : const Color(0xFFCB3D3D),
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: sel ? const Color(0xFF1A6B3C).withOpacity(0.5) : Colors.black38,
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            sel ? Icons.check_rounded : Icons.delete_outline_rounded,
+                            color: sel ? Colors.white : const Color(0xFFCB3D3D),
+                            size: 22,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
