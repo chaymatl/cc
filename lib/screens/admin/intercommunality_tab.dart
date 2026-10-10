@@ -349,9 +349,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 8),
-              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             ],
           ),
         ),
@@ -391,9 +391,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: titleCtrl, style: GoogleFonts.inter(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 14), decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 8),
-              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: msgCtrl, maxLines: 3, style: GoogleFonts.inter(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 14), decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             ],
           ),
         ),

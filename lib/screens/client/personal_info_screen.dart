@@ -119,10 +119,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           onPressed: () => Navigator.pop(context),
         )),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
             _buildTextField('Nom complet', _nameController, Icons.person_outline, editable: true),
             const SizedBox(height: 16),
             _buildTextField('Email', _emailController, Icons.email_outlined, editable: false,
@@ -136,6 +138,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   ),
           ],
         ),
+      ),
       ),
     );
   }

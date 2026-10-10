@@ -187,11 +187,13 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
             ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
             _SectionLabel('Nom du cours'),
             _StyledField(
               controller: _titleCtrl,
@@ -322,7 +324,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ]),
             ),
             const SizedBox(height: 30),
-          ],
+            ],
+          ),
         ),
       ),
     );

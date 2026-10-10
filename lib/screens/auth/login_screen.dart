@@ -175,8 +175,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     // ── Mobile : design Pinterest-like avec PinterestBackground ───────────────────
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
-      body: Stack(
-        children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
           // ── Pinterest Masonry Background ──
           const Positioned.fill(child: PinterestBackground()),
 
@@ -379,7 +381,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

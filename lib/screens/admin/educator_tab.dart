@@ -180,7 +180,7 @@ class _EducatorTabState extends State<EducatorTab> {
           DropdownButtonFormField<int?>(
             value: selectedCatId,
             isExpanded: true,
-            dropdownColor: Colors.white,
+            dropdownColor: Theme.of(ctx).colorScheme.surface,
             decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
             items: [
               DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —', style: const TextStyle())),

@@ -312,7 +312,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
-      body: _isLoading
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _isLoading
           ? ListView(
               padding: const EdgeInsets.only(top: 12),
               children: [
@@ -457,6 +459,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                     ),
                   ]),
                 ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_user_management_add',
         onPressed: () => _showUserDialog(),

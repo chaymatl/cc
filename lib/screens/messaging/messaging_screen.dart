@@ -101,11 +101,14 @@ class _MessagingScreenState extends State<MessagingScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1A),
       appBar: _buildAppBar(),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
-          : _conversations.isEmpty
-              ? _buildEmpty()
-              : _buildConversationList(),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
+            : _conversations.isEmpty
+                ? _buildEmpty()
+                : _buildConversationList(),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_messaging_new',
         onPressed: _openNewMessage,

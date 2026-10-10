@@ -193,7 +193,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundSoft,
-      body: Stack(children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(children: [
         _background(),
         SafeArea(
           child: Column(children: [
@@ -238,6 +240,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ]),
         ),
       ]),
+      ),
     );
   }
 

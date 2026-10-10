@@ -199,25 +199,28 @@ class _ManageGroupsScreenState extends State<ManageGroupsScreen> {
         icon: const Icon(Icons.add_rounded),
         label: Text('Nouveau groupe', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _kGreen))
-          : _groups.isEmpty
-              ? _EmptyGroups(onCreate: () => _showGroupDialog())
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                  itemCount: _groups.length,
-                  itemBuilder: (_, i) {
-                    final g = _groups[i] as Map<String, dynamic>;
-                    final color = _hexColor(g['color'] ?? '#00C896');
-                    return _GroupCard(
-                      group: g,
-                      color: color,
-                      onTap: () => _openGroupDetail(g),
-                      onEdit: () => _showGroupDialog(existing: g),
-                      onDelete: () => _deleteGroup(g),
-                    ).animate().fadeIn(delay: Duration(milliseconds: i * 60)).slideY(begin: 0.05);
-                  },
-                ),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: _kGreen))
+            : _groups.isEmpty
+                ? _EmptyGroups(onCreate: () => _showGroupDialog())
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                    itemCount: _groups.length,
+                    itemBuilder: (_, i) {
+                      final g = _groups[i] as Map<String, dynamic>;
+                      final color = _hexColor(g['color'] ?? '#00C896');
+                      return _GroupCard(
+                        group: g,
+                        color: color,
+                        onTap: () => _openGroupDetail(g),
+                        onEdit: () => _showGroupDialog(existing: g),
+                        onDelete: () => _deleteGroup(g),
+                      ).animate().fadeIn(delay: Duration(milliseconds: i * 60)).slideY(begin: 0.05);
+                    },
+                  ),
+      ),
     );
   }
 
