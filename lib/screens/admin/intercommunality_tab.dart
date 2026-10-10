@@ -607,18 +607,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   // ── HEADER ───────────────────────────────────────────────────────────────
   Widget _buildHeader() {
-    return StreamBuilder<AdminStatsSnapshot>(
-      stream: FirebaseAdminStatsService().watchAdminStats(),
-      builder: (context, snapshot) {
-        final stats = snapshot.data ?? const AdminStatsSnapshot();
-        final f1 = (_dashboard?['f1_consignes'] as Map?) ?? {};
-        final f3 = (_dashboard?['f3_acteurs'] as Map?) ?? {};
-        final f2 = (_dashboard?['f2_points_de_collecte'] as Map?) ?? {};
-        
-        final totalScans = stats.totalScans > 0 ? stats.totalScans : (f1['total_scans'] ?? 0);
-        final totalUsers = stats.totalUsers > 0 ? stats.totalUsers : (f3['total_users'] ?? 0);
-
-        return Container(
+    return Container(
           padding: EdgeInsets.fromLTRB(20, math.max(MediaQuery.of(context).padding.top, 28) + 12, 20, 16),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -627,143 +616,61 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               end: Alignment.bottomRight,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      L10n.tr('Coordination Territoriale'),
+                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      L10n.tr('Gérez les politiques de tri et les acteurs locaux.'),
+                      style: GoogleFonts.inter(color: Colors.white.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          L10n.tr('Coordination Territoriale'),
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          L10n.tr('Gérez les politiques de tri et les acteurs locaux.'),
-                          style: GoogleFonts.inter(color: Colors.white.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const MessagingScreen())),
+                    child: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white30),
+                      ),
+                      child: const Icon(Icons.forum_outlined, color: Colors.white, size: 18),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-                    child: Text('En ligne', style: GoogleFonts.outfit(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w600)),
-
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  Stack(
-
-                    clipBehavior: Clip.none,
-
-                    children: [
-
-                      GestureDetector(
-
-                        onTap: () => Navigator.push(context,
-
-                          MaterialPageRoute(builder: (_) => const MessagingScreen())),
-
-                        child: Container(
-
-                          padding: const EdgeInsets.all(7),
-
-                          decoration: BoxDecoration(
-
-                            color: Colors.white.withOpacity(0.15),
-
-                            borderRadius: BorderRadius.circular(10),
-
-                            border: Border.all(color: Colors.white30),
-
-                          ),
-
-                          child: const Icon(Icons.forum_outlined, color: Colors.white, size: 18),
-
+                  if (_unreadMessages > 0)
+                    Positioned(
+                      top: -4, right: -4,
+                      child: Container(
+                        width: 16, height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF00E676), shape: BoxShape.circle),
+                        child: Center(
+                          child: Text('$_unreadMessages',
+                            style: const TextStyle(color: Colors.black,
+                              fontSize: 9, fontWeight: FontWeight.w900)),
                         ),
-
                       ),
-
-                      if (_unreadMessages > 0)
-
-                        Positioned(
-
-                          top: -4, right: -4,
-
-                          child: Container(
-
-                            width: 16, height: 16,
-
-                            decoration: const BoxDecoration(
-
-                              color: Color(0xFF00E676), shape: BoxShape.circle),
-
-                            child: Center(
-
-                              child: Text('$_unreadMessages',
-
-                                style: const TextStyle(color: Colors.black,
-
-                                  fontSize: 9, fontWeight: FontWeight.w900)),
-
-                            ),
-
-                          ),
-
-                        ),
-
-                    ],
-
-                  ),
-
-                ],
-
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _headerStat('$totalScans', 'Scans', Icons.qr_code_scanner_rounded),
-                  _headerDivider(),
-                  _headerStat('$totalUsers', 'Acteurs', Icons.people_alt_rounded),
-                  _headerDivider(),
-                  _headerStat('${f2['verified'] ?? 0}/${f2['total'] ?? 0}', 'Points', Icons.location_city_rounded),
-                  _headerDivider(),
-                  _headerStat(
-                    '${_assignments.where((a) => a['status'] == 'pending' || a['status'] == 'in_progress').length}',
-                    'Missions',
-                    Icons.route_rounded,
-                  ),
+                    ),
                 ],
               ),
             ],
           ),
         ).animate().fadeIn(duration: 300.ms);
-      },
-    );
-  }
-
-  Widget _headerStat(String value, String label, IconData icon) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white.withOpacity(0.6), size: 16),
-          const SizedBox(height: 4),
-          Text(value, style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
-          Text(label, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 9, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerDivider() {
-    return Container(height: 24, width: 1, color: Colors.white.withOpacity(0.15));
   }
 
   // ── F1 : UI Consignes ────────────────────────────────────────────────────
