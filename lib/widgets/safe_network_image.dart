@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import '../constants.dart';
 
 /// Widget simple et réutilisable pour charger des images réseau sans planter
@@ -17,13 +17,12 @@ class SafeNetworkImage extends StatelessWidget {
   final Widget? placeholder;
 
   const SafeNetworkImage(
-    this.url, {
-    Key? key,
+    this.url, {super.key,
     this.fit = BoxFit.cover,
     this.width,
     this.height,
     this.placeholder,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +60,7 @@ class SafeNetworkImage extends StatelessWidget {
     // Résout les chemins relatifs (/uploads/...) → URL absolue sur mobile
     String finalUrl = ApiConstants.resolveUrl(url);
     // Sur Android : normalise aussi localhost → 127.0.0.1 (ADB reverse)
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       finalUrl = finalUrl.replaceAll('//localhost:', '//127.0.0.1:');
     }
 
@@ -115,7 +114,7 @@ class SafeNetworkCircleAvatar extends StatelessWidget {
   final double radius;
   final Widget? placeholder;
 
-  const SafeNetworkCircleAvatar({Key? key, required this.url, this.radius = 20, this.placeholder}) : super(key: key);
+  const SafeNetworkCircleAvatar({super.key, required this.url, this.radius = 20, this.placeholder});
 
   @override
   Widget build(BuildContext context) {

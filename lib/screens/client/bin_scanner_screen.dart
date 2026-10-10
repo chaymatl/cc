@@ -32,7 +32,7 @@ const Map<String, Map<String, dynamic>> _wasteTypes = {
 };
 
 class BinScannerScreen extends StatefulWidget {
-  const BinScannerScreen({Key? key}) : super(key: key);
+  const BinScannerScreen({super.key});
 
   @override
   State<BinScannerScreen> createState() => _BinScannerScreenState();
@@ -77,7 +77,7 @@ class _BinScannerScreenState extends State<BinScannerScreen>
     setState(() { _scanning = false; _loading = true; });
     HapticFeedback.heavyImpact();
 
-    // scannedQr = bin_code de la poubelle (ex: "BIN-PLASTIQUE-001")
+    // scannedQr = bin_code de la poubelle (ex: 'BIN-PLASTIQUE-001')
     // Le backend identifie le citoyen via son qr_code personnel
     final userQr = AuthState.currentUser?.qrCode ?? '';
     if (userQr.isEmpty) {
@@ -239,8 +239,7 @@ class _BinScannerScreenState extends State<BinScannerScreen>
                 height: 260,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: AppTheme.primaryGreen.withOpacity(
-                      0.5 + _pulseController.value * 0.5,
+                    color: AppTheme.primaryGreen.withOpacity(0.5 + _pulseController.value * 0.5,
                     ),
                     width: 2.5,
                   ),

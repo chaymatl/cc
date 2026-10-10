@@ -43,21 +43,27 @@ router = APIRouter(prefix="/messages", tags=["messaging"])
 # ──────────────────────────────────────────────────────────────────────────────
 
 ALLOWED_TARGETS: dict[str, list[str]] = {
-    "admin":            ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user"],
-    "superadmin":       ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user"],
+    "admin":            ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user", "citoyen"],
+    "superadmin":       ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user", "citoyen"],
     "intercommunality": ["admin", "superadmin", "collector", "pointManager"],
     "collector":        ["admin", "superadmin", "intercommunality", "pointManager"],
     "pointManager":     ["admin", "superadmin", "intercommunality", "collector"],
-    "educator":         ["admin", "superadmin", "user"],
-    "educateur":        ["admin", "superadmin", "user"],   # variante française
-    "user":             ["educator", "educateur"],
+    "educator":         ["admin", "superadmin", "user", "citoyen"],
+    "educateur":        ["admin", "superadmin", "user", "citoyen"],   # variante française
+    "user":             ["educator", "educateur", "admin", "superadmin"],
+    "citoyen":          ["educator", "educateur", "admin", "superadmin"],  # alias DB de 'user'
 }
 
 
 def _normalize_role(role: str) -> str:
-    """Normalise les variantes de rôle (ex: 'educateur' → 'educator')."""
+    """Normalise les variantes de rôle.
+    IMPORTANT : 'citoyen' est le rôle stocké en base de données pour les citoyens.
+    Il est DISTINCT de 'user' (variante anglaise) mais doit avoir les mêmes droits.
+    On NE normalise PAS 'citoyen' → 'user' ici pour garder les deux entrées dans
+    ALLOWED_TARGETS, ce qui permet une gestion symétrique des permissions.
+    """
     _map = {
-        "educateur": "educator",
+        "educateur":    "educator",
         "point_manager": "pointManager",
         "point manager": "pointManager",
     }
@@ -248,6 +254,8 @@ async def send_message(
                 "sender_name": sender_name,
                 "partner_id": str(current_user.id),
             },
+            channel_id="ecorewind_messages",
+            notification_color="#0288D1",
         )
     except Exception:
         pass  # Push non bloquant
@@ -314,6 +322,8 @@ async def send_group_message(
                     "group_id": str(group.id),
                     "group_name": group.name,
                 },
+                channel_id="ecorewind_messages",
+                notification_color="#0288D1",
             )
     except Exception:
         pass  # Push non bloquant

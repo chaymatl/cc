@@ -43,7 +43,7 @@ class _MessagingScreenState extends State<MessagingScreen>
     _pollTimer = Timer.periodic(
       const Duration(seconds: 15),
       (_) {
-        if (AuthState.isLoggedIn) _load(silent: true);
+        if (AuthState.hasValidToken) _load(silent: true);
       },
     );
   }
@@ -55,18 +55,23 @@ class _MessagingScreenState extends State<MessagingScreen>
   }
 
   Future<void> _load({bool silent = false}) async {
-    // Ne pas appeler l'API si non connecté (évite les 401 en boucle)
-    if (!AuthState.isLoggedIn) {
+    // Ne pas appeler l'API si aucun token valide (évite les 401 en boucle)
+    if (!AuthState.hasValidToken) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     if (!silent) setState(() => _loading = true);
-    final convs = await MessagingService.getConversations();
-    if (mounted) {
-      setState(() {
-        _conversations = convs;
-        _loading = false;
-      });
+    try {
+      final convs = await MessagingService.getConversations();
+      if (mounted) {
+        setState(() {
+          _conversations = convs;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      // Serveur inaccessible — on affiche simplement la liste vide
+      if (mounted) setState(() => _loading = false);
     }
   }
 

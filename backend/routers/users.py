@@ -243,9 +243,18 @@ async def get_my_stats(db: Session = Depends(get_db),
         db_models.Post.status == "published",
     ).scalar() or 0
 
-    likes_received = db.query(func.sum(db_models.Post.likes_count)).filter(
+    # Likes reçus : nombre de Like dans la table Like sur les posts de l'utilisateur
+    # (plus fiable que la colonne dénormalisée likes_count qui peut diverger)
+    likes_received = db.query(func.count(db_models.Like.id)).join(
+        db_models.Post, db_models.Like.post_id == db_models.Post.id
+    ).filter(
         db_models.Post.user_id == current_user.id,
         db_models.Post.status == "published",
+    ).scalar() or 0
+
+    # Likes donnés : nombre de posts que l'utilisateur a aimés
+    likes_given = db.query(func.count(db_models.Like.id)).filter(
+        db_models.Like.user_id == current_user.id,
     ).scalar() or 0
 
     comments_count = db.query(func.count(db_models.Comment.id)).filter(
@@ -259,6 +268,7 @@ async def get_my_stats(db: Session = Depends(get_db),
     return {
         "posts_count": posts_count,
         "likes_received": int(likes_received),
+        "likes_given": int(likes_given),
         "comments_count": comments_count,
         "saved_count": saved_count,
         "eco_score": posts_count * 10 + int(likes_received) * 2 + comments_count * 5,

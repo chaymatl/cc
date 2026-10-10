@@ -16,13 +16,12 @@ class WebShell extends StatefulWidget {
   final List<Widget> pages;
   final bool isLoggedIn;
 
-  const WebShell({
-    Key? key,
+  const WebShell({super.key,
     required this.currentIndex,
     required this.onTabSelected,
     required this.pages,
     this.isLoggedIn = true,
-  }) : super(key: key);
+  });
 
   @override
   State<WebShell> createState() => _WebShellState();
@@ -47,7 +46,7 @@ class _WebShellState extends State<WebShell> {
 
   @override
   Widget build(BuildContext context) {
-    final role = AuthState.currentUser?.role ?? UserRole.user;
+    final role = AuthState.currentUser?.role ?? UserRole.citoyen;
     final items = _getNavItems(role);
 
     return Scaffold(
@@ -82,11 +81,11 @@ class _WebShellState extends State<WebShell> {
   }
 
   List<_NavItem> _getNavItems(UserRole role) {
-    final principalSec = L10n.isArabic ? 'الرئيسية' : 'PRINCIPAL';
-    final decouvrirSec = L10n.isArabic ? 'اكتشف' : 'DÉCOUVRIR';
-    final espaceProSec = L10n.isArabic ? 'المساحة المهنية' : 'ESPACE PRO';
-    final communauteSec = L10n.isArabic ? 'المجتمع' : 'COMMUNAUTÉ';
-    final compteSec = L10n.isArabic ? 'الحساب' : 'COMPTE';
+    final principalSec = 'PRINCIPAL';
+    final decouvrirSec = 'DÉCOUVRIR';
+    final espaceProSec = 'ESPACE PRO';
+    final communauteSec = 'COMMUNAUTÉ';
+    final compteSec = 'COMPTE';
 
     // ── Visiteur non connecté ──
     if (!widget.isLoggedIn) {
@@ -103,7 +102,7 @@ class _WebShellState extends State<WebShell> {
         _NavItem(icon: FontAwesomeIcons.user, label: L10n.tr('tab_profile'), section: compteSec),
       ];
     }
-    if (role == UserRole.user) {
+    if (role == UserRole.citoyen) {
       return [
         _NavItem(icon: FontAwesomeIcons.house, label: L10n.tr('tab_feed'), section: principalSec),
         _NavItem(icon: FontAwesomeIcons.graduationCap, label: L10n.tr('tab_multimedia')),

@@ -113,6 +113,8 @@ def send_push_to_user(
     body: str,
     data: Optional[Dict[str, str]] = None,
     image_url: Optional[str] = None,
+    channel_id: str = "ecorewind_notifications",
+    notification_color: str = "#2E7D32",
 ) -> bool:
     """
     Envoie une push notification FCM à un utilisateur spécifique.
@@ -140,10 +142,10 @@ def send_push_to_user(
             android=_firebase_messaging.AndroidConfig(
                 priority="high",
                 notification=_firebase_messaging.AndroidNotification(
-                    icon="ic_stat_notify",
-                    color="#2E7D32",
+                    icon="ic_launcher",
+                    color=notification_color,
                     sound="default",
-                    channel_id="ecorewind_notifications",
+                    channel_id=channel_id,
                 ),
             ),
             apns=_firebase_messaging.APNSConfig(

@@ -71,32 +71,37 @@ class _CommunityScreenState extends State<CommunityScreen> {
             // En-tête sans bouton retour — navigation assurée par la barre/sidebar
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF059669), Color(0xFF0D9488), Color(0xFF0891B2)],
+                  colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    L10n.tr('Espace Communauté'),
-                    style: GoogleFonts.spaceGrotesk(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1,
-                    ),
-                  ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, end: 0),
-                  const SizedBox(height: 6),
-                  Text(
-                    L10n.tr('Témoignages et propositions de nos éco-citoyens'),
-                    style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14),
-                  ).animate().fadeIn(delay: 150.ms),
-                ],
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        L10n.tr('Espace Communauté'),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                        ),
+                      ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, end: 0),
+                      const SizedBox(height: 6),
+                      Text(
+                        L10n.tr('Témoignages et propositions de nos éco-citoyens'),
+                        style: GoogleFonts.inter(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                      ).animate().fadeIn(delay: 150.ms),
+                    ],
+                  ),
+                ),
               ),
             ),
             _buildContent(),

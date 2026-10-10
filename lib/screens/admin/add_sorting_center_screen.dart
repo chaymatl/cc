@@ -16,7 +16,7 @@ import '../../services/auth_service.dart';
 
 class AddSortingCenterScreen extends StatefulWidget {
   final Map<String, dynamic>? existingCenter;
-  const AddSortingCenterScreen({Key? key, this.existingCenter}) : super(key: key);
+  const AddSortingCenterScreen({super.key, this.existingCenter});
 
   @override
   State<AddSortingCenterScreen> createState() => _AddSortingCenterScreenState();
@@ -36,9 +36,9 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
 
   List<String> _availableTypes = [];
   final Map<String, List<String>> _categorizedTypes = {
-    "disponible": [],
-    "sature": [],
-    "maintenance": []
+    'disponible': [],
+    'sature': [],
+    'maintenance': []
   };
   bool _isLoadingTypes = true;
 
@@ -54,7 +54,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     _nameController = TextEditingController(text: existing?['name'] ?? '');
     _hoursController = TextEditingController(text: existing?['hours'] ?? '');
     
-    String rawStatus = existing?['status']?.toString().toLowerCase() ?? 'disponible';
+    final String rawStatus = existing?['status']?.toString().toLowerCase() ?? 'disponible';
     if (rawStatus == 'disponible') {
       _selectedStatus = 'Disponible';
     } else if (rawStatus == 'saturé') {
@@ -67,11 +67,11 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     
     if (existing != null && existing['types_detail'] != null && existing['types_detail'] is Map) {
       final detail = existing['types_detail'] as Map<String, dynamic>;
-      _categorizedTypes["disponible"] = (detail["disponible"] as List?)?.map((e) => e.toString()).toList() ?? [];
-      _categorizedTypes["sature"] = (detail["sature"] as List?)?.map((e) => e.toString()).toList() ?? [];
-      _categorizedTypes["maintenance"] = (detail["maintenance"] as List?)?.map((e) => e.toString()).toList() ?? [];
+      _categorizedTypes['disponible'] = (detail['disponible'] as List?)?.map((e) => e.toString()).toList() ?? [];
+      _categorizedTypes['sature'] = (detail['sature'] as List?)?.map((e) => e.toString()).toList() ?? [];
+      _categorizedTypes['maintenance'] = (detail['maintenance'] as List?)?.map((e) => e.toString()).toList() ?? [];
     } else if (existing != null && existing['types'] is List) {
-      _categorizedTypes["disponible"] = (existing['types'] as List).map((e) => e.toString()).toList();
+      _categorizedTypes['disponible'] = (existing['types'] as List).map((e) => e.toString()).toList();
     }
 
     if (existing == null) {
@@ -117,7 +117,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     setState(() => _isFetchingLocation = true);
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw 'Le service de localisation est désactivé.';
       }
@@ -231,28 +231,34 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomInsets = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         leading: webLeading(IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+              border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
             ),
-            child: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppTheme.deepNavy, size: 20),
+            child: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppTheme.deepNavy, size: 18),
           ),
           onPressed: () => Navigator.pop(context),
         )),
         title: Text(
           widget.existingCenter == null ? 'Ajouter un Point' : 'Modifier le Point',
           style: GoogleFonts.outfit(
-            color: AppTheme.deepNavy,
+            color: isDark ? Colors.white : AppTheme.deepNavy,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
         actions: [
@@ -266,14 +272,25 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.my_location_rounded, color: AppTheme.primaryGreen),
-              onPressed: _fetchExactLocation,
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.my_location_rounded, color: AppTheme.primaryGreen, size: 20),
+                ),
+                onPressed: _fetchExactLocation,
+              ),
             ),
         ],
       ),
       body: Stack(
         children: [
+          // 1. Interactive Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -288,7 +305,10 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.ecorewind.app',
                 tileProvider: CancellableNetworkTileProvider(),
+                errorTileCallback: (tile, error, stackTrace) {},
+                fallbackUrl: 'https://tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
               ),
               MarkerLayer(
                 markers: [
@@ -310,254 +330,309 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
               ),
             ],
           ),
-          // Search Bar Overlay
-          SafeArea(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 70, 16, 0),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.5)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: _onSearchChanged,
-                          decoration: InputDecoration(
-                            hintText: 'Rechercher une adresse...',
-                            prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryGreen),
-                            suffixIcon: _isSearching
-                                ? const Padding(
-                                    padding: EdgeInsets.all(12.0),
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen),
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            filled: false,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_searchResults.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          constraints: const BoxConstraints(maxHeight: 250),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withOpacity(0.5)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: _searchResults.length,
-                            separatorBuilder: (context, index) => const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final result = _searchResults[index];
-                              return ListTile(
-                                leading: const Icon(Icons.location_on_outlined, color: AppTheme.textMuted),
-                                title: Text(
-                                  result['display_name'],
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(fontSize: 13),
-                                ),
-                                onTap: () => _selectSearchResult(result),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
+
+          // 2. Bottom Details Sheet (placed before search overlay in stack)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(36), topRight: Radius.circular(36)),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(36),
-                      topRight: Radius.circular(36),
-                    ),
-                    border: Border(top: BorderSide(color: Colors.white.withOpacity(0.6), width: 1.5)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, -10))],
+                  constraints: BoxConstraints(
+                    maxHeight: bottomInsets > 0
+                        ? (screenHeight - bottomInsets - kToolbarHeight - 60).clamp(180.0, 360.0)
+                        : screenHeight * 0.46,
                   ),
-                  child: SafeArea(
-                    top: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'DÉTAILS DU CENTRE',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.5,
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: 'Nom du centre (ex: Tunis Nord)',
-                            prefixIcon: const Icon(Icons.edit_note_rounded, color: AppTheme.primaryGreen),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B).withOpacity(0.96) : Colors.white.withOpacity(0.94),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                    border: Border(top: BorderSide(color: isDark ? Colors.white12 : Colors.black.withOpacity(0.06), width: 1.5)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, -10))],
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 36,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white24 : Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _hoursController,
-                          decoration: InputDecoration(
-                            hintText: 'Horaires (ex: 8h-18h)',
-                            prefixIcon: const Icon(Icons.access_time_rounded, color: AppTheme.primaryGreen),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
+                          Text(
+                            'DÉTAILS DU CENTRE',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                              fontSize: 11,
+                              color: AppTheme.textMuted,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text('CLASSIFICATION DES DÉCHETS', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
-                            Text('(Cliquez pour changer l\'état)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontStyle: FontStyle.italic)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (_isLoadingTypes)
-                          const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen))
-                        else
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: _nameController,
+                            style: GoogleFonts.inter(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
+                            cursorColor: const Color(0xFF00BFA6),
+                            decoration: InputDecoration(
+                              hintText: 'Nom du centre (ex: Tunis Nord)',
+                              hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
+                              prefixIcon: const Icon(Icons.edit_note_rounded, color: AppTheme.primaryGreen),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0F172A) : Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _hoursController,
+                            style: GoogleFonts.inter(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
+                            cursorColor: const Color(0xFF00BFA6),
+                            decoration: InputDecoration(
+                              hintText: 'Horaires (ex: 8h-18h)',
+                              hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
+                              prefixIcon: const Icon(Icons.access_time_rounded, color: AppTheme.primaryGreen),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF0F172A) : Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _availableTypes.map((type) {
-                              String state = "none";
-                              if (_categorizedTypes["disponible"]!.contains(type)) { state = "disponible"; }
-                              else if (_categorizedTypes["sature"]!.contains(type)) { state = "sature"; }
-                              else if (_categorizedTypes["maintenance"]!.contains(type)) { state = "maintenance"; }
-
-                              Color color = Colors.grey.shade400;
-                              Color bgColor = Colors.transparent;
-                              IconData? icon;
-                              
-                              if (state == "disponible") {
-                                color = Colors.green;
-                                bgColor = Colors.green.withOpacity(0.15);
-                                icon = Icons.check_circle;
-                              } else if (state == "sature") {
-                                color = Colors.red;
-                                bgColor = Colors.red.withOpacity(0.15);
-                                icon = Icons.warning_rounded;
-                              } else if (state == "maintenance") {
-                                color = Colors.orange;
-                                bgColor = Colors.orange.withOpacity(0.15);
-                                icon = Icons.build_circle;
-                              }
-
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _categorizedTypes["disponible"]!.remove(type);
-                                    _categorizedTypes["sature"]!.remove(type);
-                                    _categorizedTypes["maintenance"]!.remove(type);
-                                    
-                                    if (state == "none") {
-                                      _categorizedTypes["disponible"]!.add(type);
-                                    } else if (state == "disponible") {
-                                      _categorizedTypes["sature"]!.add(type);
-                                    } else if (state == "sature") {
-                                      _categorizedTypes["maintenance"]!.add(type);
-                                    }
-                                    // state == "maintenance" stays removed
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: bgColor,
-                                    border: Border.all(color: state == "none" ? Colors.grey.shade300 : color, width: 1.5),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 4)],
-                                      Text(type, style: GoogleFonts.inter(fontSize: 12, color: state == "none" ? Colors.grey.shade600 : color, fontWeight: state != "none" ? FontWeight.bold : FontWeight.w500)),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text('CLASSIFICATION DES DÉCHETS', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 11, color: AppTheme.textMuted)),
+                              Text('(Cliquez pour changer l\'état)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontStyle: FontStyle.italic)),
+                            ],
                           ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(child: _buildStatusChip('Disponible', Colors.green)),
-                            const SizedBox(width: 8),
-                            Expanded(child: _buildStatusChip('Saturé', Colors.red)),
-                            const SizedBox(width: 8),
-                            Expanded(child: _buildStatusChip('Maintenance', Colors.orange)),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        PremiumButton(
-                          text: widget.existingCenter == null ? 'CONFIRMER L\'AJOUT' : 'ENREGISTRER',
-                          onPressed: _saveNewCenter,
-                        ),
-                      ],
+                          const SizedBox(height: 10),
+                          if (_isLoadingTypes)
+                            const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen)))
+                          else
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _availableTypes.map((type) {
+                                String state = 'none';
+                                if (_categorizedTypes['disponible']!.contains(type)) { state = 'disponible'; }
+                                else if (_categorizedTypes['sature']!.contains(type)) { state = 'sature'; }
+                                else if (_categorizedTypes['maintenance']!.contains(type)) { state = 'maintenance'; }
+
+                                Color color = Colors.grey.shade400;
+                                Color bgColor = Colors.transparent;
+                                IconData? icon;
+                                
+                                if (state == 'disponible') {
+                                  color = Colors.green;
+                                  bgColor = Colors.green.withOpacity(0.15);
+                                  icon = Icons.check_circle;
+                                } else if (state == 'sature') {
+                                  color = Colors.red;
+                                  bgColor = Colors.red.withOpacity(0.15);
+                                  icon = Icons.warning_rounded;
+                                } else if (state == 'maintenance') {
+                                  color = Colors.orange;
+                                  bgColor = Colors.orange.withOpacity(0.15);
+                                  icon = Icons.build_circle;
+                                }
+
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _categorizedTypes['disponible']!.remove(type);
+                                      _categorizedTypes['sature']!.remove(type);
+                                      _categorizedTypes['maintenance']!.remove(type);
+                                      
+                                      if (state == 'none') {
+                                        _categorizedTypes['disponible']!.add(type);
+                                      } else if (state == 'disponible') {
+                                        _categorizedTypes['sature']!.add(type);
+                                      } else if (state == 'sature') {
+                                        _categorizedTypes['maintenance']!.add(type);
+                                      }
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: bgColor,
+                                      border: Border.all(color: state == 'none' ? (isDark ? Colors.white24 : Colors.grey.shade300) : color, width: 1.5),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 4)],
+                                        Text(type, style: GoogleFonts.inter(fontSize: 12, color: state == 'none' ? (isDark ? Colors.grey.shade300 : Colors.grey.shade600) : color, fontWeight: state != 'none' ? FontWeight.bold : FontWeight.w500)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Expanded(child: _buildStatusChip('Disponible', Colors.green)),
+                              const SizedBox(width: 8),
+                              Expanded(child: _buildStatusChip('Saturé', Colors.red)),
+                              const SizedBox(width: 8),
+                              Expanded(child: _buildStatusChip('Maintenance', Colors.orange)),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          PremiumButton(
+                            text: widget.existingCenter == null ? 'CONFIRMER L\'AJOUT' : 'ENREGISTRER',
+                            onPressed: _saveNewCenter,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ).animate().slideY(begin: 1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
+          ).animate().slideY(begin: 1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
+
+          // 3. Search Bar Overlay (at the top of Stack so dropdown is never covered)
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B).withOpacity(0.92) : Colors.white.withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: isDark ? Colors.white12 : Colors.white),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 18,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _onSearchChanged,
+                        style: GoogleFonts.inter(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
+                        cursorColor: const Color(0xFF00BFA6),
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher une adresse...',
+                          hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
+                          prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryGreen, size: 20),
+                          suffixIcon: _isSearching
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12.0),
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen),
+                                  ),
+                                )
+                              : _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 18, color: AppTheme.textMuted),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _searchResults = []);
+                                      },
+                                    )
+                                  : null,
+                          border: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_searchResults.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        constraints: BoxConstraints(
+                          maxHeight: (screenHeight * 0.35).clamp(120.0, 220.0),
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B).withOpacity(0.96) : Colors.white.withOpacity(0.96),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: isDark ? Colors.white12 : Colors.white),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.12),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          itemCount: _searchResults.length,
+                          separatorBuilder: (context, index) => Divider(
+                            height: 1,
+                            color: isDark ? Colors.white10 : Colors.grey.shade200,
+                          ),
+                          itemBuilder: (context, index) {
+                            final result = _searchResults[index];
+                            return ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.location_on_outlined, color: AppTheme.primaryGreen, size: 18),
+                              title: Text(
+                                result['display_name'],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                ),
+                              ),
+                              onTap: () => _selectSearchResult(result),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

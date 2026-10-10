@@ -15,7 +15,7 @@ import '../../widgets/app_states.dart';
 
 // Écran principal gérant l'affichage des contenus éducatifs (Vidéos, Articles, Quiz)
 class MultimediaTab extends StatefulWidget {
-  const MultimediaTab({Key? key}) : super(key: key);
+  const MultimediaTab({super.key});
 
   @override
   State<MultimediaTab> createState() => _MultimediaTabState();
@@ -58,10 +58,15 @@ class _MultimediaTabState extends State<MultimediaTab> {
   }
 
   Future<void> _loadApiQuizzes() async {
-    final quizzes = await _authService.fetchAvailableQuizzes();
-    if (mounted) {
-      setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
-      _checkCompletedQuizzes(quizzes);
+    try {
+      final quizzes = await _authService.fetchAvailableQuizzes();
+      if (mounted) {
+        setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
+        _checkCompletedQuizzes(quizzes);
+      }
+    } catch (e) {
+      debugPrint('[Multimedia] Erreur chargement quiz: $e');
+      if (mounted) setState(() => _quizzesLoaded = true);
     }
   }
 
@@ -79,13 +84,22 @@ class _MultimediaTabState extends State<MultimediaTab> {
   }
 
   Future<void> _loadEducatorVideos() async {
-    final videos = await _authService.fetchEducatorVideos();
-    if (mounted) setState(() { _educatorVideos = videos; _videosLoaded = true; });
+    try {
+      final videos = await _authService.fetchEducatorVideos();
+      if (mounted) setState(() { _educatorVideos = videos; _videosLoaded = true; });
+    } catch (e) {
+      debugPrint('[Multimedia] Erreur chargement vidéos: $e');
+      if (mounted) setState(() => _videosLoaded = true);
+    }
   }
 
   Future<void> _loadVideoCategories() async {
-    final cats = await _authService.fetchVideoCategories();
-    if (mounted) setState(() => _videoCategories = cats);
+    try {
+      final cats = await _authService.fetchVideoCategories();
+      if (mounted) setState(() => _videoCategories = cats);
+    } catch (e) {
+      debugPrint('[Multimedia] Erreur chargement catégories: $e');
+    }
   }
 
   void _openQuiz(Map<String, dynamic> quiz) {
@@ -185,7 +199,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
           // Loading globaux
           if (!_quizzesLoaded || !_videosLoaded)
             const SliverFillRemaining(
-              child: AppLoadingView(message: "Chargement du contenu pédagogique..."),
+              child: AppLoadingView(message: 'Chargement du contenu pédagogique...'),
             )
           else ...[
             // ── Séances Google Meet ──────────────────────────────────────
@@ -249,7 +263,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                            child: Text(L10n.isArabic ? '${_apiQuizzes.length} اختبارات' : '${_apiQuizzes.length} quiz', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.purple)),
+                            child: Text('${_apiQuizzes.length} quiz', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.purple)),
                           ),
                         ],
                       ),
@@ -375,8 +389,8 @@ class _MultimediaTabState extends State<MultimediaTab> {
                   const SizedBox(height: 4),
                   Text(
                     isCompleted
-                        ? (L10n.isArabic ? 'اكتمل الاختبار ✓ • تم تسجيل النتيجة' : 'Quiz complété ✓  •  Score enregistré')
-                        : (desc.isNotEmpty ? desc : (L10n.isArabic ? '$totalQ أسئلة • مصحح بالذكاء الاصطناعي' : '$totalQ questions • Corrigé par IA')),
+                        ? 'Quiz complété ✓  •  Score enregistré'
+                        : (desc.isNotEmpty ? desc : '$totalQ questions • Corrigé par IA'),
                     style: GoogleFonts.inter(
                       color: Colors.white.withOpacity(0.75),
                       fontSize: 12,
@@ -392,7 +406,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                isCompleted ? (L10n.isArabic ? 'مكتمل' : 'TERMINÉ') : (L10n.isArabic ? 'لعب' : 'JOUER'),
+                isCompleted ? 'TERMINÉ' : 'JOUER',
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -546,7 +560,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
                       Expanded(child: Text(educatorName, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppTheme.deepSlate), overflow: TextOverflow.ellipsis)),
                       const Icon(Icons.access_time_rounded, size: 13, color: AppTheme.textMuted),
                       const SizedBox(width: 4),
-                      Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                      Flexible(child: Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                 ],
@@ -777,7 +791,7 @@ class _CategoryDetailPageState extends State<_CategoryDetailPage> {
             child: Text(_description, style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted, height: 1.5)),
           )),
         if (_loading)
-          const SliverFillRemaining(child: AppLoadingView(message: "Chargement des vidéos..."))
+          const SliverFillRemaining(child: AppLoadingView(message: 'Chargement des vidéos...'))
         else if (_videos.isEmpty)
           SliverFillRemaining(child: AppEmptyView(
             title: L10n.tr('Aucune vidéo'),
@@ -823,7 +837,7 @@ class _CategoryDetailPageState extends State<_CategoryDetailPage> {
                           Flexible(child: Text(educator, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                           const SizedBox(width: 8),
                         ],
-                        if (dateLabel.isNotEmpty) Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+                        if (dateLabel.isNotEmpty) Flexible(child: Text(dateLabel, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis)),
                       ]),
                     ])),
                     if (duration.isNotEmpty) Container(

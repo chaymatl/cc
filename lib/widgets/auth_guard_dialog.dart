@@ -6,7 +6,7 @@ import 'premium_widgets.dart';
 class AuthGuardDialog extends StatelessWidget {
   final String? featureName;
 
-  const AuthGuardDialog({Key? key, this.featureName}) : super(key: key);
+  const AuthGuardDialog({super.key, this.featureName});
 
   @override
   Widget build(BuildContext context) {

@@ -8,14 +8,14 @@ from typing import Optional
 class UserBase(BaseModel):
     email: str
     full_name: Optional[str] = None
-    role: str = "user"
+    role: str = "citoyen"
     qr_code: Optional[str] = None
 
 
 class UserCreate(BaseModel):
     email: str
     full_name: Optional[str] = None
-    role: str = "user"
+    role: str = "citoyen"
     password: str
 
 

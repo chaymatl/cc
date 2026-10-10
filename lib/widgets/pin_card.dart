@@ -1,5 +1,3 @@
-import 'dart:ui';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'safe_network_image.dart';
@@ -17,8 +15,7 @@ class PinCard extends StatefulWidget {
   final VoidCallback? onTap;
   final String? badgeText;
 
-  const PinCard({
-    Key? key,
+  const PinCard({super.key,
     required this.title,
     required this.subtitle,
     required this.icon,
@@ -28,18 +25,18 @@ class PinCard extends StatefulWidget {
     this.height = 200.0,
     this.onTap,
     this.badgeText,
-  }) : super(key: key);
+  });
 
   @override
   State<PinCard> createState() => _PinCardState();
 }
 
 class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
+  // Sur mobile il n'y a pas de hover — toujours false
+  static const bool _isHovered = false;
   late AnimationController _hoverController;
   late Animation<double> _scaleAnim;
   late Animation<double> _elevationAnim;
-  late Animation<double> _overlayOpacityAnim;
 
   @override
   void initState() {
@@ -54,9 +51,6 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
     _elevationAnim = Tween<double>(begin: 8, end: 24).animate(
       CurvedAnimation(parent: _hoverController, curve: Curves.easeOut),
     );
-    _overlayOpacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _hoverController, curve: Curves.easeOut),
-    );
   }
 
   @override
@@ -65,19 +59,6 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void _onEnter() {
-    if (!_isHovered) {
-      setState(() => _isHovered = true);
-      _hoverController.forward();
-    }
-  }
-
-  void _onExit() {
-    if (_isHovered) {
-      setState(() => _isHovered = false);
-      _hoverController.reverse();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,27 +106,12 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
                       height: 70,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: widget.color.withOpacity(
-                          _isHovered ? 0.35 : 0.25,
+                        color: widget.color.withOpacity(0.25,
                         ),
                       ),
                     ),
                   ),
 
-                  // Hover blur overlay (web only)
-                  if (kIsWeb)
-                    Opacity(
-                      opacity: _overlayOpacityAnim.value,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                          child: Container(
-                            color: widget.color.withOpacity(0.12),
-                          ),
-                        ),
-                      ),
-                    ),
 
                   // Content at bottom
                   _buildContent(),
@@ -164,24 +130,10 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
       },
     );
 
-    // Wrap with mouse region for web hover
-    Widget result;
-    if (kIsWeb) {
-      result = MouseRegion(
-        onEnter: (_) => _onEnter(),
-        onExit: (_) => _onExit(),
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: card,
-        ),
-      );
-    } else {
-      result = GestureDetector(
-        onTap: widget.onTap,
-        child: card,
-      );
-    }
+    final result = GestureDetector(
+      onTap: widget.onTap,
+      child: card,
+    );
 
     return result;
   }
@@ -289,7 +241,7 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
           // Arrow CTA
           AnimatedSlide(
             duration: const Duration(milliseconds: 250),
-            offset: _isHovered ? const Offset(0.05, 0) : Offset.zero,
+            offset: Offset.zero,
             child: Row(
               children: [
                 Text(
@@ -303,9 +255,7 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
                 const SizedBox(width: 4),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  transform: Matrix4.translationValues(
-                    _isHovered ? 4.0 : 0.0, 0, 0,
-                  ),
+                  transform: Matrix4.translationValues(0.0, 0, 0),
                   child: Icon(
                     Icons.arrow_forward_rounded,
                     color: Colors.white.withOpacity(0.85),
@@ -370,19 +320,17 @@ class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _isHovered
-              ? Colors.white
-              : Colors.white.withOpacity(0.9),
+          color: Colors.white.withOpacity(0.9),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.15 : 0.1),
-              blurRadius: _isHovered ? 12 : 8,
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
             ),
           ],
         ),
         child: Icon(
-          _isHovered ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+          Icons.bookmark_outline_rounded,
           size: 16,
           color: widget.color,
         ),

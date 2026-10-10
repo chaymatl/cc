@@ -49,6 +49,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
   }
 
   Future<void> _loadUsers() async {
+    if (!AuthState.hasValidToken) return;
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final users = await _authService.getAllUsers();
@@ -92,99 +93,140 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
         : ['citoyen', 'educator', 'pointManager', 'collector', 'intercommunality'];
     if (isEditing && !availableRoles.contains(selectedRole)) availableRoles.add(selectedRole);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDS) {
-          final screenH = MediaQuery.of(ctx).size.height;
           final bottomInsets = MediaQuery.of(ctx).viewInsets.bottom;
-          return AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            insetPadding: EdgeInsets.only(
-              left: 24, right: 24,
-              top: 24,
-              bottom: bottomInsets > 0 ? bottomInsets + 8 : 24,
-            ),
-            title: Row(children: [
-              Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-                child: Icon(isEditing ? Icons.edit_rounded : Icons.person_add_rounded, color: AppTheme.primaryGreen, size: 20),
+          return AnimatedPadding(
+            padding: EdgeInsets.only(bottom: bottomInsets),
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E293B),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  isEditing ? 'Modifier Utilisateur' : 'Nouvel Utilisateur',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ]),
-            content: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: (screenH - bottomInsets) * 0.58,
-                minWidth: double.maxFinite,
-              ),
-              child: SingleChildScrollView(physics: const BouncingScrollPhysics(), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const SizedBox(height: 8),
-                if (errorMsg != null) Container(
-                  padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(color: Colors.red.shade900.withOpacity(0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade400)),
-                  child: Row(children: [Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 18), const SizedBox(width: 8), Expanded(child: Text(errorMsg!, style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade200)))]),
-                ),
-                if (!isEditing) ...[_buildField(emailCtrl, 'Email', Icons.email_outlined, hint: 'exemple@gmail.com', keyboardType: TextInputType.emailAddress), const SizedBox(height: 12)],
-                _buildField(nameCtrl, 'Nom complet', Icons.person_outline_rounded),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedRole, isExpanded: true,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                  items: availableRoles.map((r) => DropdownMenuItem(value: r, child: Row(children: [Icon(_getRoleIcon(r), size: 16, color: _getRoleColor(r)), const SizedBox(width: 8), Text(_getRoleLabel(r), style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500))]))).toList(),
-                  onChanged: (v) => selectedRole = v!,
-                  decoration: InputDecoration(
-                    labelText: 'Rôle',
-                    labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
-                    prefixIcon: const Icon(Icons.badge_outlined, size: 20, color: Color(0xFF00BFA6)),
-                    filled: true,
-                    fillColor: const Color(0xFF0F172A),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF00BFA6), width: 1.5)),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _buildField(pwdCtrl, isEditing ? 'Nouveau mot de passe' : 'Mot de passe', Icons.lock_outline_rounded, obscure: true, helper: isEditing ? 'Laisser vide pour garder l\'actuel' : null),
-                const SizedBox(height: 12),
-                _buildField(confirmPwdCtrl, 'Confirmer le mot de passe', Icons.lock_rounded, obscure: true),
-                const SizedBox(height: 8),
-              ])),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Annuler', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w700))),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-                onPressed: () {
-                  if (!isEditing) {
-                    final email = emailCtrl.text.trim();
-                    if (email.isEmpty || !RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$').hasMatch(email)) { setDS(() => errorMsg = 'Email invalide'); return; }
-                  }
-                  if (nameCtrl.text.trim().isEmpty) { setDS(() => errorMsg = 'Nom requis'); return; }
-                  final pwd = pwdCtrl.text;
-                  if (!isEditing && pwd.isEmpty) { setDS(() => errorMsg = 'Mot de passe requis'); return; }
-                  if (pwd.isNotEmpty && pwd.length < 6) { setDS(() => errorMsg = 'Au moins 6 caracteres'); return; }
-                  if (pwd.isNotEmpty && pwd != confirmPwdCtrl.text) { setDS(() => errorMsg = 'Mots de passe differents'); return; }
-                  Navigator.pop(ctx);
-                  _processUser(isEditing: isEditing, userId: user?['id'], email: emailCtrl.text.trim(), name: nameCtrl.text.trim(), role: selectedRole, password: pwd);
-                },
-                child: Text(isEditing ? 'Sauvegarder' : 'Créer', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                    child: Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                        child: Icon(isEditing ? Icons.edit_rounded : Icons.person_add_rounded, color: AppTheme.primaryGreen, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isEditing ? 'Modifier Utilisateur' : 'Nouvel Utilisateur',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ]),
+                  ),
+                  const Divider(color: Color(0xFF334155), height: 20),
+                  // Scrollable form content
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      if (errorMsg != null) Container(
+                        padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(color: Colors.red.shade900.withOpacity(0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade400)),
+                        child: Row(children: [Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 18), const SizedBox(width: 8), Expanded(child: Text(errorMsg!, style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade200)))]),
+                      ),
+                      if (!isEditing) ...[_buildField(emailCtrl, 'Email', Icons.email_outlined, hint: 'exemple@gmail.com', keyboardType: TextInputType.emailAddress), const SizedBox(height: 12)],
+                      _buildField(nameCtrl, 'Nom complet', Icons.person_outline_rounded),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedRole, isExpanded: true,
+                        dropdownColor: const Color(0xFF1E293B),
+                        style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                        items: availableRoles.map((r) => DropdownMenuItem(value: r, child: Row(children: [Icon(_getRoleIcon(r), size: 16, color: _getRoleColor(r)), const SizedBox(width: 8), Text(_getRoleLabel(r), style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500))]))).toList(),
+                        onChanged: (v) => setDS(() => selectedRole = v!),
+                        decoration: InputDecoration(
+                          labelText: 'Rôle',
+                          labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
+                          prefixIcon: const Icon(Icons.badge_outlined, size: 20, color: Color(0xFF00BFA6)),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF00BFA6), width: 1.5)),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildField(pwdCtrl, isEditing ? 'Nouveau mot de passe' : 'Mot de passe', Icons.lock_outline_rounded, obscure: true, helper: isEditing ? 'Laisser vide pour garder l\'actuel' : null),
+                      const SizedBox(height: 12),
+                      _buildField(confirmPwdCtrl, 'Confirmer le mot de passe', Icons.lock_rounded, obscure: true),
+                      const SizedBox(height: 20),
+                      // Action buttons
+                      Row(children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF94A3B8),
+                              side: const BorderSide(color: Color(0xFF334155)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text('Annuler', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryGreen,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () {
+                              if (!isEditing) {
+                                final email = emailCtrl.text.trim();
+                                if (email.isEmpty || !RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$').hasMatch(email)) { setDS(() => errorMsg = 'Email invalide'); return; }
+                              }
+                              if (nameCtrl.text.trim().isEmpty) { setDS(() => errorMsg = 'Nom requis'); return; }
+                              final pwd = pwdCtrl.text;
+                              if (!isEditing && pwd.isEmpty) { setDS(() => errorMsg = 'Mot de passe requis'); return; }
+                              if (pwd.isNotEmpty && pwd.length < 6) { setDS(() => errorMsg = 'Au moins 6 caracteres'); return; }
+                              if (pwd.isNotEmpty && pwd != confirmPwdCtrl.text) { setDS(() => errorMsg = 'Mots de passe differents'); return; }
+                              Navigator.pop(ctx);
+                              _processUser(isEditing: isEditing, userId: user?['id'], email: emailCtrl.text.trim(), name: nameCtrl.text.trim(), role: selectedRole, password: pwd);
+                            },
+                            child: Text(isEditing ? 'Sauvegarder' : 'Créer', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+                          ),
+                        ),
+                      ]),
+                    ]),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
@@ -269,6 +311,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: false,
       body: _isLoading
           ? ListView(
               padding: const EdgeInsets.only(top: 12),

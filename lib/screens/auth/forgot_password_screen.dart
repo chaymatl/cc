@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/fcm_service.dart';
 import '../../models/user_model.dart';
 
 // ══════════════════════════════════════════════════════
@@ -14,7 +15,7 @@ import '../../models/user_model.dart';
 // ══════════════════════════════════════════════════════
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({Key? key}) : super(key: key);
+  const ForgotPasswordScreen({super.key});
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -55,6 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   // ── Étape 0 → Envoyer le code ──────────────────────
   Future<void> _sendCode() async {
+    if (_isLoading) return;
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       _toast('Veuillez entrer un email valide', isError: true);
@@ -79,6 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   // ── Étape 1 → Valider le code ──────────────────────
   Future<void> _verifyCode() async {
+    if (_isLoading) return;
     final code = _otpCode;
     if (code.length < 6) {
       _toast('Entrez les 6 chiffres du code', isError: true);
@@ -103,6 +106,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   // ── Étape 2 → Réinitialiser le MDP ─────────────────
   Future<void> _resetPassword() async {
+    if (_isLoading) return;
     final newPwd = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;
     if (newPwd.length < 6) {
@@ -118,30 +122,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final res = await _authService.resetPassword(_otpCode, newPwd);
       if (!mounted) return;
       if (res['success'] == true) {
-        // Connexion automatique
-        final login = await _authService.login(
-            _emailController.text.trim(), newPwd);
-        if (!mounted) return;
-        if (login['success'] == true) {
-          final roleStr = login['role'] as String? ?? 'user';
-          UserRole role = UserRole.values.firstWhere(
+        // Le backend retourne directement le token + infos utilisateur
+        final token = res['access_token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          // Auto-login : le token est déjà sauvegardé par resetPassword()
+          final roleStr = res['role'] as String? ?? 'citoyen';
+          final UserRole role = UserRole.values.firstWhere(
             (e) => e.toString().split('.').last == roleStr,
-            orElse: () => UserRole.user,
+            orElse: () => UserRole.citoyen,
           );
+          final fullName = res['full_name'] as String? ?? 'Utilisateur';
           AuthState.currentUser = User(
-            id: (login['id'] ?? 0).toString(),
-            name: login['full_name'] ?? 'Utilisateur',
+            id: (res['id'] ?? 0).toString(),
+            name: fullName,
             email: _emailController.text.trim(),
             role: role,
-            avatarUrl: login['avatar_url'] ??
-                'https://ui-avatars.com/api/?name=${Uri.encodeComponent(login['full_name'] ?? 'User')}&size=300&background=059669&color=fff&bold=true',
-            qrCode: login['qr_code'] as String? ?? '',
+            avatarUrl: res['avatar_url'] as String? ??
+                'https://ui-avatars.com/api/?name=${Uri.encodeComponent(fullName)}&size=300&background=059669&color=fff&bold=true',
+            qrCode: res['qr_code'] as String? ?? '',
           );
+          // Enregistrer le token FCM pour les notifications push
+          FcmService.onUserLoggedIn();
           if (!mounted) return;
           _toast('Mot de passe mis à jour ! Bienvenue 🌿');
           Navigator.pushNamedAndRemoveUntil(
               context, '/home', (route) => false);
         } else {
+          // Fallback : pas de token retourné (ancien backend)
           if (!mounted) return;
           _toast('Mot de passe mis à jour ! Veuillez vous connecter.');
           Navigator.pop(context);
@@ -155,6 +162,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
 
   void _goToStep(int step) {
     setState(() => _step = step);

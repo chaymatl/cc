@@ -53,10 +53,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (!mounted) return;
 
       if (result['success'] == true) {
-        if (result['mfa_required'] == true) {
-          _showMfaVerificationDialog(result['mfa_token']);
-          return;
-        }
         // Tenter de charger le profil complet depuis /users/me
         final userDetailsResult = await _authService.getCurrentUserDetails();
         if (userDetailsResult['success'] == true && mounted) {
@@ -96,10 +92,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _handleSocialAuthResult(Map<String, dynamic> result) async {
     if (!mounted) return;
     if (result['success'] == true) {
-      if (result['mfa_required'] == true) {
-        _showMfaVerificationDialog(result['mfa_token']);
-        return;
-      }
       // Tenter de charger le profil complet depuis /users/me
       final userDetailsResult = await _authService.getCurrentUserDetails();
       if (userDetailsResult['success'] == true && mounted) {
@@ -155,161 +147,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     } finally {
       if (mounted) setState(() { _isLoading = false; });
     }
-  }
-
-  void _showMfaVerificationDialog(String mfaToken) {
-    final TextEditingController otpController = TextEditingController();
-    String? dialogError;
-    bool dialogLoading = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> submitCode() async {
-              final code = otpController.text.trim();
-              if (code.isEmpty || code.length != 6) {
-                setDialogState(() {
-                  dialogError = 'Veuillez entrer un code à 6 chiffres';
-                });
-                return;
-              }
-
-              setDialogState(() {
-                dialogLoading = true;
-                dialogError = null;
-              });
-
-              try {
-                final result = await _authService.verifyMfaLogin(mfaToken, code);
-                if (result['success'] == true) {
-                  // Fermer le dialog AVANT l'await suivant
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                  
-                  final userDetailsResult = await _authService.getCurrentUserDetails();
-                  if (userDetailsResult['success'] == true && mounted) {
-                    final userData = userDetailsResult['user'] as Map<String, dynamic>;
-                    AuthState.currentUser = User.fromBackend(userData);
-                  } else {
-                    AuthState.currentUser = User.fromBackend({
-                      'id': result['id'],
-                      'full_name': result['full_name'],
-                      'email': result['email'],
-                      'role': result['role'] ?? 'citoyen',
-                      'points': 0,
-                      'qr_code': result['qr_code'] ?? '',
-                      'avatar_url': result['avatar_url'] ?? '',
-                    });
-                  }
-
-                  // Enregistrer token FCM après MFA
-                  FcmService.onUserLoggedIn();
-
-                  if (!context.mounted) return;
-                  final nav = Navigator.of(context);
-                  if (AuthState.isAdmin) {
-                    nav.pushReplacementNamed('/admin');
-                  } else {
-                    nav.pushReplacementNamed('/home');
-                  }
-                } else {
-                  setDialogState(() {
-                    dialogError = result['message'] ?? ('Code MFA invalide');
-                    dialogLoading = false;
-                  });
-                }
-              } catch (e) {
-                setDialogState(() {
-                  dialogError = 'Erreur réseau';
-                  dialogLoading = false;
-                });
-              }
-            }
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: Row(
-                children: [
-                  const Icon(Icons.security_rounded, color: Colors.teal, size: 28),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Double Authentification',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Entrez le code à 6 chiffres généré par votre application Google Authenticator ou Authy.',
-                    style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: otpController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    style: GoogleFonts.outfit(fontSize: 18, letterSpacing: 8, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                    cursorColor: const Color(0xFF00BFA6),
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: '000000',
-                      counterText: '',
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Colors.teal, width: 2),
-                      ),
-                    ),
-                    onSubmitted: (_) => dialogLoading ? null : submitCode(),
-                  ),
-                  if (dialogError != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      dialogError!,
-                      style: GoogleFonts.inter(color: Colors.red.shade400, fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: dialogLoading ? null : () => Navigator.pop(dialogContext),
-                  child: Text(
-                    'ANNULER',
-                    style: GoogleFonts.inter(color: Colors.grey, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: dialogLoading ? null : submitCode,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  child: dialogLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text(
-                          'VALIDER',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).whenComplete(() => otpController.dispose());
   }
 
   void _navigateToForgotPassword() {

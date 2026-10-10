@@ -13,8 +13,10 @@ Exécution :
 """
 import os, sys
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
+# Racine du projet backend (trois niveaux au-dessus de scripts/utils/)
+# scripts/utils/reset_utilisateurs.py -> scripts/utils/ -> scripts/ -> backend/
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BACKEND_DIR)
 
 # Fix encodage Windows
 try:
@@ -22,11 +24,26 @@ try:
 except Exception:
     pass
 
+# Charger .env depuis le dossier backend/
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
+    _env_file = os.path.join(BACKEND_DIR, ".env")
+    if os.path.exists(_env_file):
+        load_dotenv(_env_file)
+        print(f"[ENV] .env charge depuis : {_env_file}")
+    else:
+        print(f"[WARN] .env introuvable a : {_env_file}")
 except ImportError:
-    pass
+    # Chargement manuel si python-dotenv absent
+    _env_file = os.path.join(BACKEND_DIR, ".env")
+    if os.path.exists(_env_file):
+        with open(_env_file, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+        print("[ENV] .env charge manuellement.")
 
 from services.firebase_service import _init_firebase, sync_user_to_firebase
 
@@ -66,7 +83,7 @@ def main():
         err = 0
         for u in users:
             qr    = u.qr_code   or ""
-            role  = u.role      or "user"
+            role  = u.role      or "citoyen"
             name  = u.full_name or ""
             mail  = u.email     or ""
             score = getattr(u, 'global_score', 0) or 0
@@ -86,7 +103,7 @@ def main():
             )
             if success:
                 ok += 1
-                extra = f", score={score}" if role == 'user' else ""
+                extra = f", score={score}" if role == 'citoyen' else ""
                 print(f"  [OK] {qr[:40]}  role={role}{extra}")
             else:
                 err += 1

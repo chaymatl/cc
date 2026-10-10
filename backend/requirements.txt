@@ -48,3 +48,13 @@ fastapi-mail
 
 # ── Environnement ─────────────────────────────────────────────────────────────
 python-dotenv
+
+# ── Rate Limiting ─────────────────────────────────────────────────────────────
+slowapi==0.1.10
+
+# ── Vision par ordinateur & QR Code ──────────────────────────────────────────
+opencv-python-headless>=5.0.0    # Traitement d'image (scan QR, modération)
+qrcode[pil]>=8.0                 # Génération de QR codes
+
+# ── Stockage Cloud (AWS S3) ───────────────────────────────────────────────────
+boto3>=1.43.0                    # AWS S3 pour avatars et fichiers uploadés

@@ -41,9 +41,9 @@ from sqlalchemy import func
 def sync_all_scores(dry_run: bool = False, user_id: int = None):
     db = SessionLocal()
     try:
-        # Charger les utilisateurs citoyens (role=user) avec un score > 0
+        # Charger les utilisateurs citoyens (role=citoyen) avec un score > 0
         query = db.query(db_models.User).filter(
-            db_models.User.role == "user",
+            db_models.User.role == "citoyen",
             db_models.User.global_score > 0,
         )
         if user_id:

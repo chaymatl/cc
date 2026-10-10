@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,7 +10,7 @@ import '../../constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SectionImpact extends StatefulWidget {
-  const SectionImpact({Key? key}) : super(key: key);
+  const SectionImpact({super.key});
 
   @override
   State<SectionImpact> createState() => _SectionImpactState();
@@ -202,7 +201,6 @@ class _SectionImpactState extends State<SectionImpact>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Back button — masqué sur web
-                  if (!kIsWeb)
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -236,8 +234,7 @@ class _SectionImpactState extends State<SectionImpact>
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen.withOpacity(
-                                0.5 + 0.5 * _pulseController.value),
+                            color: AppTheme.primaryGreen.withOpacity(0.5 + 0.5 * _pulseController.value),
                             shape: BoxShape.circle,
                           ),
                         ),

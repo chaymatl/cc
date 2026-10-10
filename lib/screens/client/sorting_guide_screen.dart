@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
@@ -6,7 +6,7 @@ import '../../widgets/glass_card.dart';
 
 // Écran affichant le guide complet du tri avec règles et conseils
 class SortingGuideScreen extends StatelessWidget {
-  const SortingGuideScreen({Key? key}) : super(key: key);
+  const SortingGuideScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

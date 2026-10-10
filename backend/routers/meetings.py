@@ -168,7 +168,7 @@ async def create_meeting(
     else:
         # audience == "all"
         target_users = db.query(db_models.User).filter(
-            db_models.User.role == "user"
+            db_models.User.role == "citoyen"
         ).all()
 
     for user in target_users:

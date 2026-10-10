@@ -21,7 +21,6 @@ class ProfileTab extends StatefulWidget {
 }
 
 class ProfileTabState extends State<ProfileTab> {
-  bool _mfaEnabled = false;
   bool get _isDarkMode => ThemeService.isDarkMode;
   final AuthService _authService = AuthService();
   final ImagePicker _imagePicker = ImagePicker();
@@ -32,12 +31,9 @@ class ProfileTabState extends State<ProfileTab> {
   @override
   void initState() {
     super.initState();
-    _mfaEnabled = AuthState.currentUser?.mfaEnabled ?? false;
     L10n.addListener(_onLocaleChange);
     ThemeService.addListener(_onThemeChange);
-    _loadUnreadCount();
-    _loadMyStats();
-    refreshScore(); // Charge le score au premier montage
+    refreshScore(); // Charge score + stats + unread count au premier montage
   }
 
   void _onThemeChange() {
@@ -64,7 +60,16 @@ class ProfileTabState extends State<ProfileTab> {
   /// Fetch SQL → mais garde le max entre SQL et la valeur Firebase en mémoire
   /// pour éviter que le profil affiche une valeur périmée.
   Future<void> refreshScore() async {
-    if (!AuthState.isLoggedIn) return;
+    if (!AuthState.hasValidToken) return;
+    // Rafraîchir le score et les stats (posts/likes/commentaires) en parallèle
+    await Future.wait([
+      _refreshProfile(),
+      _loadMyStats(),
+      _loadUnreadCount(),
+    ]);
+  }
+
+  Future<void> _refreshProfile() async {
     try {
       final userData = await _authService.fetchUserProfile();
       if (userData != null && mounted) {
@@ -75,14 +80,13 @@ class ProfileTabState extends State<ProfileTab> {
           ...userData,
           'global_score': best,
         });
-        _mfaEnabled = AuthState.currentUser?.mfaEnabled ?? false;
         if (mounted) setState(() {});
       }
     } catch (_) {}
   }
 
   Future<void> _loadMyStats() async {
-    if (!AuthState.isLoggedIn) return;
+    if (!AuthState.hasValidToken) return;
     try {
       final stats = await _authService.fetchMyStats();
       if (mounted) setState(() => _myStats = stats);
@@ -90,7 +94,7 @@ class ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _loadUnreadCount() async {
-    if (!AuthState.isLoggedIn) return;
+    if (!AuthState.hasValidToken) return;
     try {
       final count = await _authService.fetchUnreadCount();
       if (mounted) setState(() => _unreadNotifCount = count);
@@ -109,11 +113,13 @@ class ProfileTabState extends State<ProfileTab> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -147,7 +153,8 @@ class ProfileTabState extends State<ProfileTab> {
             const SizedBox(height: 24),
           ],
         ),
-      ),
+      );
+      },
     );
   }
 
@@ -251,357 +258,6 @@ class ProfileTabState extends State<ProfileTab> {
     ));
   }
 
-  void _showMfaDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        bool showSetupStep = false;
-        bool showDisableStep = false;
-        bool setupLoading = false;
-        bool actionLoading = false;
-        String? setupSecret;
-        String? setupOtpauthUrl;
-        String? dialogError;
-        
-        final TextEditingController codeController = TextEditingController();
-        final TextEditingController passwordController = TextEditingController();
-
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> startSetup() async {
-              setDialogState(() {
-                setupLoading = true;
-                dialogError = null;
-              });
-              final result = await _authService.setupMfa();
-              if (result['success'] == true) {
-                setDialogState(() {
-                  setupSecret = result['secret'];
-                  setupOtpauthUrl = result['otpauth_url'];
-                  showSetupStep = true;
-                  setupLoading = false;
-                });
-              } else {
-                setDialogState(() {
-                  dialogError = result['message'];
-                  setupLoading = false;
-                });
-              }
-            }
-
-            Future<void> submitEnable() async {
-              final code = codeController.text.trim();
-              if (code.isEmpty || code.length != 6) {
-                setDialogState(() => dialogError = 'Veuillez entrer le code à 6 chiffres');
-                return;
-              }
-              setDialogState(() {
-                actionLoading = true;
-                dialogError = null;
-              });
-              // Capturer les deux contexts avant l'await
-              final messenger = ScaffoldMessenger.of(context);
-              final dialogNav = Navigator.of(dialogContext);
-              final result = await _authService.verifyEnableMfa(code);
-              if (result['success'] == true) {
-                dialogNav.pop();
-                if (mounted) {
-                  setState(() => _mfaEnabled = true);
-                  refreshScore();
-                  messenger.showSnackBar(SnackBar(
-                    content: Text('Authentification forte activée avec succès.', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                    backgroundColor: AppTheme.primaryGreen,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                }
-              } else {
-                setDialogState(() {
-                  dialogError = result['message'];
-                  actionLoading = false;
-                });
-              }
-            }
-
-            Future<void> submitDisable() async {
-              final password = passwordController.text.trim();
-              final code = codeController.text.trim();
-
-              if (password.isEmpty && code.isEmpty) {
-                setDialogState(() => dialogError = 'Veuillez saisir votre mot de passe ou un code MFA.');
-                return;
-              }
-
-              setDialogState(() {
-                actionLoading = true;
-                dialogError = null;
-              });
-
-              // Capturer les deux contexts avant l'await
-              final messenger = ScaffoldMessenger.of(context);
-              final dialogNav = Navigator.of(dialogContext);
-              final result = await _authService.disableMfa(
-                password: password.isNotEmpty ? password : null,
-                code: code.isNotEmpty ? code : null,
-              );
-
-              if (result['success'] == true) {
-                dialogNav.pop();
-                if (mounted) {
-                  setState(() => _mfaEnabled = false);
-                  refreshScore();
-                  messenger.showSnackBar(SnackBar(
-                    content: Text('Authentification forte désactivée.', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                    backgroundColor: Colors.amber.shade700,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                }
-              } else {
-                setDialogState(() {
-                  dialogError = result['message'];
-                  actionLoading = false;
-                });
-              }
-            }
-
-            if (setupLoading) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                content: const SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
-                ),
-              );
-            }
-
-            if (showSetupStep) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                title: Text('Activer la validation TOTP', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '1. Scannez ce code QR avec Google Authenticator ou Authy :',
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ),
-                      const SizedBox(height: 15),
-                      if (setupOtpauthUrl != null)
-                        Container(
-                          width: 200,
-                          height: 200,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-                          ),
-                          child: QrImageView(
-                            data: setupOtpauthUrl!,
-                            version: QrVersions.auto,
-                          ),
-                        ),
-                      const SizedBox(height: 15),
-                      Text(
-                        'Ou saisissez cette clé manuellement :',
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ),
-                      const SizedBox(height: 5),
-                      SelectableText(
-                        setupSecret ?? '',
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryGreen,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        '2. Entrez le code à 6 chiffres affiché par l\'application :',
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: codeController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 4, color: const Color(0xFF1E293B)),
-                        cursorColor: const Color(0xFF00BFA6),
-                        decoration: InputDecoration(
-                          hintText: '000000',
-                          counterText: '',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                        onSubmitted: (_) => actionLoading ? null : submitEnable(),
-                      ),
-                      if (dialogError != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          dialogError!,
-                          style: GoogleFonts.inter(color: Colors.red.shade400, fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: actionLoading ? null : () => Navigator.pop(dialogContext),
-                    child: const Text('ANNULER'),
-                  ),
-                  ElevatedButton(
-                    onPressed: actionLoading ? null : submitEnable,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: actionLoading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('ACTIVER'),
-                  ),
-                ],
-              );
-            }
-
-            if (showDisableStep) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                title: Text('Désactiver l\'authentification forte', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pour des raisons de sécurité, veuillez confirmer votre identité.',
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Entrez votre mot de passe actuel :',
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
-                        cursorColor: const Color(0xFF00BFA6),
-                        decoration: InputDecoration(
-                          hintText: 'Votre mot de passe',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                        onSubmitted: (_) => actionLoading ? null : submitDisable(),
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        'Ou entrez un code MFA actuel (si compte social) :',
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: codeController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 4, color: const Color(0xFF1E293B)),
-                        cursorColor: const Color(0xFF00BFA6),
-                        decoration: InputDecoration(
-                          hintText: '000000',
-                          counterText: '',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
-                        onSubmitted: (_) => actionLoading ? null : submitDisable(),
-                      ),
-                      if (dialogError != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          dialogError!,
-                          style: GoogleFonts.inter(color: Colors.red.shade400, fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: actionLoading ? null : () => Navigator.pop(dialogContext),
-                    child: const Text('ANNULER'),
-                  ),
-                  ElevatedButton(
-                    onPressed: actionLoading ? null : submitDisable,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: actionLoading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('DÉSACTIVER'),
-                  ),
-                ],
-              );
-            }
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: Text('Authentification Forte', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.security_rounded, size: 60, color: AppTheme.primaryGreen),
-                    const SizedBox(height: 20),
-                    const Text('Sécurisez l\'accès à votre compte en activant la validation en deux étapes (MFA/TOTP).'),
-                    const SizedBox(height: 20),
-                    ListTile(
-                      title: const Text('Validation TOTP'),
-                      subtitle: const Text('Google Authenticator / Authy'),
-                      trailing: Switch(
-                        value: _mfaEnabled,
-                        onChanged: (v) {
-                          if (v) {
-                            startSetup();
-                          } else {
-                            setDialogState(() {
-                              showDisableStep = true;
-                              dialogError = null;
-                            });
-                          }
-                        },
-                        activeColor: AppTheme.primaryGreen,
-                      ),
-                    ),
-                    if (dialogError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        dialogError!,
-                        style: GoogleFonts.inter(color: Colors.red.shade400, fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('FERMER')),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _showPasswordDialog(BuildContext context) {
     showDialog(
@@ -609,6 +265,7 @@ class ProfileTabState extends State<ProfileTab> {
       builder: (dialogContext) => _ChangePasswordDialog(authService: _authService, isDarkMode: _isDarkMode),
     );
   }
+
 
   void _viewSavedPosts(BuildContext context) {
     showModalBottomSheet(
@@ -680,12 +337,6 @@ class ProfileTabState extends State<ProfileTab> {
                   const SizedBox(height: 40),
 
                   _buildMenuSection(context, L10n.tr('menu_sec_security'), [
-                    _MenuAction(
-                      icon: FontAwesomeIcons.userShield,
-                      title: L10n.tr('menu_mfa'),
-                      subtitle: _mfaEnabled ? L10n.tr('menu_mfa_enabled') : L10n.tr('menu_mfa_disabled'),
-                      onTap: () => _showMfaDialog(context),
-                    ),
                     _MenuAction(
                       icon: FontAwesomeIcons.key,
                       title: L10n.tr('menu_change_pass'),

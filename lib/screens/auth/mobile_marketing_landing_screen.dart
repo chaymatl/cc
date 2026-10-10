@@ -13,7 +13,7 @@ import '../client/map_tab.dart';
 import '../../services/auth_service.dart';
 
 class MobileMarketingLandingScreen extends StatefulWidget {
-  const MobileMarketingLandingScreen({Key? key}) : super(key: key);
+  const MobileMarketingLandingScreen({super.key});
 
   @override
   State<MobileMarketingLandingScreen> createState() => _MobileMarketingLandingScreenState();
@@ -173,18 +173,19 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
             ),
           ),
           
-          // Gradient Overlay
+          // Gradient Overlay (plus clair, lumineux et naturel)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.black.withOpacity(0.1),
-                  Colors.black.withOpacity(0.4),
-                  const Color(0xFF0F172A).withOpacity(1.0),
+                  Colors.transparent,
+                  const Color(0xFF042F2E).withOpacity(0.2),
+                  const Color(0xFF064E3B).withOpacity(0.8),
+                  const Color(0xFF022C22).withOpacity(0.95),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: const [0.0, 0.6, 1.0],
+                stops: const [0.0, 0.45, 0.75, 1.0],
               ),
             ),
           ),
@@ -518,7 +519,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
 
 class _ContinuousKenBurns extends StatefulWidget {
   final List<String> imageUrls;
-  const _ContinuousKenBurns({Key? key, required this.imageUrls}) : super(key: key);
+  const _ContinuousKenBurns({super.key, required this.imageUrls});
 
   @override
   State<_ContinuousKenBurns> createState() => _ContinuousKenBurnsState();

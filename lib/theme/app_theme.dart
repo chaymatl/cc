@@ -248,6 +248,9 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF1E293B),
+        iconColor: const Color(0xFF94A3B8),
+        prefixIconColor: primaryGreen,
+        suffixIconColor: const Color(0xFF94A3B8),
         labelStyle: GoogleFonts.inter(
           fontSize: 14,
           color: const Color(0xFF94A3B8),
@@ -255,7 +258,7 @@ class AppTheme {
         ),
         hintStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: const Color(0xFF94A3B8),
+          color: const Color(0xFF64748B),
           textBaseline: TextBaseline.alphabetic,
         ),
         floatingLabelStyle: GoogleFonts.inter(
@@ -277,6 +280,14 @@ class AppTheme {
           borderSide: const BorderSide(color: primaryGreen, width: 1.5),
         ),
         contentPadding: const EdgeInsets.all(20),
+      ),
+      // Dropdown menus — fond sombre avec texte clair
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+        menuStyle: const MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(Color(0xFF1E293B)),
+          surfaceTintColor: WidgetStatePropertyAll(Colors.transparent),
+        ),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +9,7 @@ import '../../widgets/safe_network_image.dart';
 import '../../constants.dart';
 
 class SectionTestimonials extends StatefulWidget {
-  const SectionTestimonials({Key? key}) : super(key: key);
+  const SectionTestimonials({super.key});
 
   @override
   State<SectionTestimonials> createState() => _SectionTestimonialsState();
@@ -149,7 +148,6 @@ class _SectionTestimonialsState extends State<SectionTestimonials>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Back button — masqué sur web
-                  if (!kIsWeb)
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(

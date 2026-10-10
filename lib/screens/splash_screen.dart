@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -88,10 +88,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
       if (result['success'] == true) {
         final userData = result['user'] as Map<String, dynamic>;
-        final roleStr = userData['role'] as String? ?? 'user';
+        final roleStr = userData['role'] as String? ?? 'citoyen';
         final role = UserRole.values.firstWhere(
           (e) => e.toString().split('.').last == roleStr,
-          orElse: () => UserRole.user,
+          orElse: () => UserRole.citoyen,
         );
         AuthState.currentUser = User(
           id: (userData['id'] ?? 0).toString(),

@@ -24,7 +24,7 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True, index=True)
     is_verified = Column(Boolean, default=False)
-    role = Column(String, default="user", index=True)  # user, admin, educator, intercommunality, pointManager, collector
+    role = Column(String, default="citoyen", index=True)  # citoyen, admin, superadmin, educator, intercommunality, pointManager, collector
     google_id = Column(String, unique=True, index=True, nullable=True)
     facebook_id = Column(String, unique=True, index=True, nullable=True)
     qr_code = Column(String, unique=True, index=True, nullable=False, default=generate_unique_qr_token)

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/user_model.dart';
-import '../services/l10n_service.dart';
 
 /// Wrapper widget qui affiche le dialogue d'auth après l'ouverture de la page.
 /// Utilisation : Enveloppez n'importe quelle page avec ce widget.
@@ -10,7 +9,7 @@ import '../services/l10n_service.dart';
 /// Le dialogue s'affiche 600ms après l'ouverture de la page.
 class AuthPromptWrapper extends StatefulWidget {
   final Widget child;
-  const AuthPromptWrapper({Key? key, required this.child}) : super(key: key);
+  const AuthPromptWrapper({super.key, required this.child});
 
   @override
   State<AuthPromptWrapper> createState() => _AuthPromptWrapperState();
@@ -56,7 +55,7 @@ class AuthPromptDialog {
       isScrollControlled: true,
       builder: (ctx) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        String t(String fr, String ar) => L10n.isArabic ? ar : fr;
+        String t(String fr, String ar) => fr;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(28, 8, 28, 40),
@@ -107,7 +106,7 @@ class AuthPromptDialog {
 
               // Title
               Text(
-                t('Bienvenue sur EcoRewind', 'مرحباً بكم في EcoRewind'),
+                t('Bienvenue sur EcoRewind', 'Ù…Ø±Ø­Ø¨Ø§Ù‹ Ø¨ÙƒÙ… ÙÙŠ EcoRewind'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 22,
@@ -121,7 +120,7 @@ class AuthPromptDialog {
               Text(
                 t(
                   'Connectez-vous pour profiter pleinement de toutes les fonctionnalités.',
-                  'قم بتسجيل الدخول للاستفادة الكاملة من جميع الميزات.',
+                  'Ù‚Ù… Ø¨ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù„Ù„Ø§Ø³ØªÙØ§Ø¯Ø© Ø§Ù„ÙƒØ§Ù…Ù„Ø© Ù…Ù† Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…ÙŠØ²Ø§Øª.',
                 ),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
@@ -155,7 +154,7 @@ class AuthPromptDialog {
                       const Icon(Icons.person_add_rounded, size: 20),
                       const SizedBox(width: 10),
                       Text(
-                        t('CRÉER UN COMPTE', 'إنشاء حساب'),
+                        t('CRÉER UN COMPTE', 'Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨'),
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
@@ -192,7 +191,7 @@ class AuthPromptDialog {
                           size: 20, color: AppTheme.primaryGreen),
                       const SizedBox(width: 10),
                       Text(
-                        t('J\'AI DÉJÀ UN COMPTE', 'لدي حساب بالفعل'),
+                        t('J\'AI DÉJÈ UN COMPTE', 'Ù„Ø¯ÙŠ Ø­Ø³Ø§Ø¨ Ø¨Ø§Ù„ÙØ¹Ù„'),
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
@@ -226,7 +225,7 @@ class AuthPromptDialog {
                           size: 18, color: isDark ? Colors.grey.shade400 : AppTheme.textMuted),
                       const SizedBox(width: 8),
                       Text(
-                        t('Continuer sans compte', 'المتابعة بدون حساب'),
+                        t('Continuer sans compte', 'Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø¯ÙˆÙ† Ø­Ø³Ø§Ø¨'),
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,

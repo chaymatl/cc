@@ -1,0 +1,58 @@
+# ── Flutter / Dart ────────────────────────────────────
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# ── Android ──────────────────────────────────────────
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# ── iOS ──────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ── Git ──────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Fichiers temporaires & logs ──────────────────────
+*.log
+*.txt
+analysis*.txt
+dart_analyze*.txt
+run_output*.txt
+pub_get_output*.txt
+
+# ── Secrets & env ─────────────────────────────────────
+*.env
+.env*
+google-services.json
+GoogleService-Info.plist
+firebase_credentials.json
+firebase-debug.log
+
+# ── Backend (séparé) ─────────────────────────────────
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/backup_ecorewind.sql
+
+# ── Dossiers de dev ───────────────────────────────────
+.idea/
+.vscode/
+scrcpy/
+uml_diagrams/
+rapport_tex/
+scripts/
+arduino/
+
+# ── Windows scripts ────────────────────────────────────
+*.bat
+*.ps1

@@ -30,13 +30,13 @@ Map<String, dynamic> _waste(String? type) =>
 
 // ── Médailles pour le leaderboard ───────────────────────────────────────────
 const List<Map<String, dynamic>> _medals = [
-  {'icon': '🥇', 'color': Color(0xFFFFD700)},
-  {'icon': '🥈', 'color': Color(0xFFC0C0C0)},
-  {'icon': '🥉', 'color': Color(0xFFCD7F32)},
+  {'icon': 'ðŸ¥‡', 'color': Color(0xFFFFD700)},
+  {'icon': 'ðŸ¥ˆ', 'color': Color(0xFFC0C0C0)},
+  {'icon': 'ðŸ¥‰', 'color': Color(0xFFCD7F32)},
 ];
 
 class ScanHistoryScreen extends StatefulWidget {
-  const ScanHistoryScreen({Key? key}) : super(key: key);
+  const ScanHistoryScreen({super.key});
 
   @override
   State<ScanHistoryScreen> createState() => _ScanHistoryScreenState();
@@ -208,7 +208,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Score global : ${user?.globalScore.toStringAsFixed(0) ?? "0"} pts',
+                    'Score global : ${user?.globalScore.toStringAsFixed(0) ?? '0'} pts',
                     style: GoogleFonts.inter(
                       color: AppTheme.accentMint,
                       fontSize: 13,

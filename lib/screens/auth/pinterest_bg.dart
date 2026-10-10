@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class PinterestBackground extends StatefulWidget {
-  const PinterestBackground({Key? key}) : super(key: key);
+  const PinterestBackground({super.key});
 
   @override
   State<PinterestBackground> createState() => _PinterestBackgroundState();

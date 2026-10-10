@@ -126,7 +126,7 @@ class UtilisateurSnapshot {
   /// Identifiant PostgreSQL de l'utilisateur.
   final int id;
 
-  /// Rôle de l'utilisateur (ex: "user", "admin", "collector"...)
+  /// Rôle de l'utilisateur (ex: 'user', 'admin', 'collector'...)
   final String role;
 
   /// QR code unique de la carte de l'utilisateur.
@@ -139,7 +139,7 @@ class UtilisateurSnapshot {
   final String email;
 
   /// Score cumulé du citoyen.
-  /// Présent UNIQUEMENT pour les utilisateurs avec role="user" (citoyens).
+  /// Présent UNIQUEMENT pour les utilisateurs avec role='citoyen' (citoyens).
   /// Vaut null pour les admins, collecteurs et autres rôles.
   final double? score;
 
@@ -153,7 +153,7 @@ class UtilisateurSnapshot {
   });
 
   factory UtilisateurSnapshot.fromMap(Map<dynamic, dynamic> map) {
-    final role = map['role']?.toString() ?? 'user';
+    final role = map['role']?.toString() ?? 'citoyen';
     return UtilisateurSnapshot(
       id:       (map['id'] as num?)?.toInt() ?? 0,
       role:     role,
@@ -161,7 +161,7 @@ class UtilisateurSnapshot {
       fullName: map['full_name']?.toString() ?? '',
       email:    map['email']?.toString() ?? '',
       // score uniquement présent pour les citoyens
-      score: role == 'user'
+      score: (role == 'citoyen' || role == 'user')
           ? (map['score'] as num?)?.toDouble()
           : null,
     );
@@ -169,19 +169,19 @@ class UtilisateurSnapshot {
 
   factory UtilisateurSnapshot.empty() => const UtilisateurSnapshot(
         id:       0,
-        role:     'user',
+        role:     'citoyen',
         qrCode:   '',
         fullName: '',
         email:    '',
         score:    null,
       );
 
-  /// Indique si cet utilisateur est un citoyen (rôle "user").
-  bool get isCitoyen => role == 'user';
+  /// Indique si cet utilisateur est un citoyen (rôle 'citoyen').
+  bool get isCitoyen => role == 'citoyen' || role == 'user';
 
   @override
   String toString() =>
       'UtilisateurSnapshot(id=$id, role=$role, fullName=$fullName, email=$email, '
-      'score=${score != null ? score!.toStringAsFixed(1) : "N/A"}, '
-      'qrCode=${qrCode.isNotEmpty ? "${qrCode.substring(0, 8)}..." : ""})';
+      'score=${score != null ? score!.toStringAsFixed(1) : 'N/A'}, '
+      'qrCode=${qrCode.isNotEmpty ? '${qrCode.substring(0, 8)}...' : ''})';
 }

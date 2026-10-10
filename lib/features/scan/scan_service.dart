@@ -8,9 +8,11 @@
 library scan_service;
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../../constants.dart';
 import '../../models/user_model.dart';
+import '../../core/firebase/firebase_admin_stats_service.dart';
 
 /// Résultat d'un scan QR renvoyé par FastAPI.
 class ScanResult {
@@ -78,13 +80,13 @@ class ScanService {
 
   /// Scanne une poubelle intelligente.
   ///
-  /// [binCode]  : code unique inscrit sur le QR de la poubelle (ex: "BIN-PLASTIQUE-001").
+  /// [binCode]  : code unique inscrit sur le QR de la poubelle (ex: 'BIN-PLASTIQUE-001').
   /// [qrCode]   : QR code personnel du citoyen (stocké dans users.qr_code).
   /// [weightKg] : poids optionnel si la poubelle dispose d'un capteur.
   ///
   /// FastAPI valide :
   ///   1. bin_code existe dans smart_bins
-  ///   2. smart_bins.status == "active"
+  ///   2. smart_bins.status == 'active'
   ///   3. qr_code correspond à un citoyen actif
   ///   4. Anti double-scan (60 s)
   Future<ScanResult> scanBin({
@@ -108,7 +110,25 @@ class ScanService {
 
       final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
 
-      if (response.statusCode == 200) return ScanResult.fromMap(data);
+      if (response.statusCode == 200) {
+        final result = ScanResult.fromMap(data);
+        // ── Synchronisation score → Firebase RTDB /utilisateurs/{qrCode}/ ──
+        // Écrire le score dans le nœud existant du citoyen (clé = QR code).
+        if (result.success && result.scoreAfter > 0) {
+          final user = AuthState.currentUser;
+          final qrCode = user?.qrCode ?? '';
+          if (qrCode.isNotEmpty) {
+            FirebaseAdminStatsService().writeCitoyenScore(
+              qrCode:   qrCode,
+              name:     user?.name ?? result.userName ?? 'Citoyen',
+              newScore: result.scoreAfter,
+            ).ignore(); // fire-and-forget — non bloquant
+            debugPrint('[SCAN] Score RTDB mis à jour : ${result.scoreAfter} pts ($qrCode)');
+          }
+        }
+        return result;
+      }
+
 
       // Erreurs métier : 404 bin inconnu, 409 hors service, 429 double-scan
       final detail = data['detail'] as String? ?? 'Erreur ${response.statusCode}';

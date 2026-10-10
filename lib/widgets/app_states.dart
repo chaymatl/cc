@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 /// ── Standardized Loading View ──────────────────────────────────────────────
 class AppLoadingView extends StatelessWidget {
   final String? message;
-  const AppLoadingView({Key? key, this.message}) : super(key: key);
+  const AppLoadingView({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -74,14 +74,13 @@ class AppEmptyView extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onActionPressed;
 
-  const AppEmptyView({
-    Key? key,
+  const AppEmptyView({super.key,
     required this.title,
     required this.description,
     this.icon = Icons.eco_rounded,
     this.actionLabel,
     this.onActionPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -177,11 +176,10 @@ class AppErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const AppErrorView({
-    Key? key,
+  const AppErrorView({super.key,
     required this.message,
     required this.onRetry,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -248,12 +246,11 @@ class AppStatusBadge extends StatelessWidget {
   final Color color;
   final IconData? icon;
 
-  const AppStatusBadge({
-    Key? key,
+  const AppStatusBadge({super.key,
     required this.label,
     required this.color,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -298,21 +295,20 @@ class AppCard extends StatelessWidget {
   final Color? backgroundColor;
   final VoidCallback? onTap;
 
-  const AppCard({
-    Key? key,
+  const AppCard({super.key,
     required this.child,
     this.padding,
     this.margin,
     this.borderRadius = 20.0,
     this.backgroundColor,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    Widget content = Container(
+    final Widget content = Container(
       margin: margin,
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(

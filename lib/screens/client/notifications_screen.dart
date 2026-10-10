@@ -40,7 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     // Rafraîchir toutes les 30 s → nouvelles notifs visibles sans action
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted && AuthState.isLoggedIn) _silentRefresh();
+      if (mounted && AuthState.hasValidToken) _silentRefresh();
     });
 
     // Rafraîchissement immédiat quand FCM reçoit un message foreground
@@ -348,10 +348,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             title: Text(
               notif['title'] ?? 'Notification',
-              style: GoogleFonts.outfit(
+            style: GoogleFonts.outfit(
                 fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
                 fontSize: 15,
-                color: const Color(0xFF1E293B),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             subtitle: Column(
@@ -531,7 +531,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: color.withOpacity(0.2)),
                   ),
@@ -542,7 +542,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     minLines: 1,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendReply(notif),
-                    style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1E293B)),
+                    style: GoogleFonts.inter(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Écrire votre réponse...',
                       hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),

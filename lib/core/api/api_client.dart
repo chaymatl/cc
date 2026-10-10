@@ -14,10 +14,13 @@ library api_client;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants.dart';
+import '../../models/user_model.dart'; // AuthState
+
 
 /// Réponse normalisée retournée par ApiClient.
 class ApiResponse {
@@ -49,32 +52,45 @@ class ApiClient {
   final http.Client _http = http.Client();
   static const Duration _timeout = Duration(seconds: 20);
 
-  // ── Token Management ────────────────────────────────────────────────────────
+  // ── Secure Token Storage ───────────────────────────────────────────────────
+  // ⚠️ Les options Android doivent correspondre exactement à celles utilisées
+  // dans AuthService et main.dart (AndroidOptions()) pour accéder au même
+  // espace de stockage Keystore. Une instance sans options utiliserait un
+  // cipher différent et ne lirait pas les tokens écrits par AuthService.
+  static const FlutterSecureStorage _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(), // AES-256 via Keystore — idem AuthService
+  );
+  static const String _kToken   = 'jwt_token';
+  static const String _kRefresh = 'refresh_token';
 
+  // ── Token Management ──────────────────────────────────────────────────────
+
+  /// Retourne le token JWT : d'abord depuis AuthState (mémoire, sans I/O),
+  /// puis fallback vers le SecureStorage. Retourne null si AuthState.authToken
+  /// est null (token effacé après refresh raté) même si le SecureStorage
+  /// contient encore un token expiré.
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
+    // AuthState est la source de vérité en mémoire.
+    // Si null → session expirée/déconnectée, ne pas lire le stockage.
+    final memToken = AuthState.authToken;
+    if (memToken != null) return memToken;
+    return null;
   }
 
-  Future<String?> _getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refresh_token');
-  }
+  Future<String?> _getRefreshToken() => _storage.read(key: _kRefresh);
 
   Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token);
+    await _storage.write(key: _kToken, value: token);
+    AuthState.authToken = token;
   }
 
-  Future<void> saveRefreshToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('refresh_token', token);
-  }
+  Future<void> saveRefreshToken(String token) =>
+      _storage.write(key: _kRefresh, value: token);
 
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    await prefs.remove('refresh_token');
+    await _storage.delete(key: _kToken);
+    await _storage.delete(key: _kRefresh);
+    AuthState.authToken = null;
   }
 
   /// Headers JSON + Bearer token (si disponible).
@@ -100,13 +116,17 @@ class ApiClient {
           .timeout(_timeout);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        await saveToken(data['access_token'] as String);
+        final accessToken = data['access_token']?.toString();
+        if (accessToken == null || accessToken.isEmpty) return false;
+        await saveToken(accessToken);
         if (data['refresh_token'] != null) {
-          await saveRefreshToken(data['refresh_token'] as String);
+          await saveRefreshToken(data['refresh_token'].toString());
         }
         return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      developer.log('[ApiClient] Token refresh failed: $e', name: 'ApiClient');
+    }
     return false;
   }
 
@@ -117,13 +137,13 @@ class ApiClient {
     final uri = Uri.parse('${ApiConstants.baseUrl}$path')
         .replace(queryParameters: query);
     try {
-      var headers = await _headers();
+      final headers = await _headers();
       var response = await _http.get(uri, headers: headers).timeout(_timeout);
 
       if (response.statusCode == 401) {
         if (await _tryRefresh()) {
-          headers = await _headers();
-          response = await _http.get(uri, headers: headers).timeout(_timeout);
+          final newHeaders = await _headers();
+          response = await _http.get(uri, headers: newHeaders).timeout(_timeout);
         }
       }
       return _parse(response);
@@ -136,6 +156,7 @@ class ApiClient {
   Future<ApiResponse> post(String path, {Map<String, dynamic>? body, bool requireAuth = true}) async {
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     try {
+      // ignore: prefer_final_locals — headers est muté si !requireAuth
       var headers = await _headers();
       if (!requireAuth) headers.remove('Authorization');
       final response = await _http
@@ -241,9 +262,19 @@ class ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.success(response.statusCode, body);
     }
-    final error = body['detail'] as String? ??
-        body['message'] as String? ??
-        'Erreur HTTP ${response.statusCode}';
+    // FastAPI renvoie detail: String en 401/404 mais detail: List<Map> en 422
+    final rawDetail = body['detail'];
+    final String error;
+    if (rawDetail is String) {
+      error = rawDetail;
+    } else if (rawDetail is List) {
+      // 422 Unprocessable Entity — extraire le premier message de validation
+      error = rawDetail.isNotEmpty
+          ? (rawDetail.first['msg'] ?? 'Validation error').toString()
+          : 'Erreur de validation';
+    } else {
+      error = body['message'] as String? ?? 'Erreur HTTP ${response.statusCode}';
+    }
     return ApiResponse.failure(response.statusCode, error, body);
   }
 

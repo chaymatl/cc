@@ -304,11 +304,11 @@ async def submit_quiz_answers(
     if not quiz or quiz.status != "ready":
         raise HTTPException(status_code=404, detail="Quiz non trouvé ou pas encore prêt")
 
-    # Seul le role 'user' (citoyen) gagne des points de quiz.
-    if current_user.role != "user":
+    # Seul le role 'citoyen' gagne des points de quiz.
+    if current_user.role != "citoyen":
         raise HTTPException(
             status_code=403,
-            detail="Seuls les citoyens (role=user) peuvent soumettre un quiz et gagner des points.",
+            detail="Seuls les citoyens (role=citoyen) peuvent soumettre un quiz et gagner des points.",
         )
 
     # Vérifier si l'utilisateur a déjà soumis ce quiz
@@ -417,11 +417,11 @@ async def submit_quiz_pdf(
     if not quiz or quiz.status != "ready":
         raise HTTPException(status_code=404, detail="Quiz non trouvé ou pas encore prêt")
 
-    # Seul le role 'user' (citoyen) gagne des points de quiz.
-    if current_user.role != "user":
+    # Seul le role 'citoyen' gagne des points de quiz.
+    if current_user.role != "citoyen":
         raise HTTPException(
             status_code=403,
-            detail="Seuls les citoyens (role=user) peuvent soumettre un quiz et gagner des points.",
+            detail="Seuls les citoyens (role=citoyen) peuvent soumettre un quiz et gagner des points.",
         )
 
     if not file.filename or not file.filename.lower().endswith(".pdf"):

@@ -485,23 +485,25 @@ class _MapTabState extends State<MapTab> {
       final profile = _selectedVehicle.osrmProfile;
       final vehicle = _selectedVehicle;
 
+      // Le serveur project-osrm supporte tous les profils (foot, car…)
+      // routing.openstreetmap.de/routed-{profile} utilise /foot/ ou /driving/
+      // selon le profil — pas toujours /driving/.
       final List<String> osrmServers = [
         'https://router.project-osrm.org',
         'https://routing.openstreetmap.de/routed-$profile',
         if (profile == 'car') 'https://routing.openstreetmap.de/routed-car',
       ];
-
       http.Response? response;
-      bool usedFallbackCarServer = false;
 
       for (final server in osrmServers) {
         try {
           final isProjectOsrm = server.contains('project-osrm');
+          // Pour routing.openstreetmap.de : le chemin API correspond au profil
+          // (/foot/ pour piéton, /driving/ pour voiture/moto)
+          final apiPath = profile == 'foot' ? 'foot' : 'driving';
           final url = isProjectOsrm
               ? '$server/route/v1/$profile/${start.longitude},${start.latitude};$destLng,$destLat?overview=full&geometries=geojson&steps=false'
-              : '$server/route/v1/driving/${start.longitude},${start.latitude};$destLng,$destLat?overview=full&geometries=geojson&steps=false';
-
-          usedFallbackCarServer = server.contains('routed-car') && profile == 'foot';
+              : '$server/route/v1/$apiPath/${start.longitude},${start.latitude};$destLng,$destLat?overview=full&geometries=geojson&steps=false';
 
           debugPrint('[OSRM] Tentative : $server (profil: $profile)');
           response = await http
@@ -515,11 +517,9 @@ class _MapTabState extends State<MapTab> {
             }
           }
           response = null;
-          usedFallbackCarServer = false;
         } catch (e) {
           debugPrint('[OSRM] Échec $server : $e');
           response = null;
-          usedFallbackCarServer = false;
         }
       }
 
@@ -527,12 +527,24 @@ class _MapTabState extends State<MapTab> {
         final data = json.decode(response.body);
         final route = data['routes'][0];
         final double distanceM = (route['distance'] as num).toDouble();
-        double durationS  = (route['duration'] as num).toDouble();
+        // Durée OSRM brute — tient compte des types de routes et limites de vitesse
+        double durationS = (route['duration'] as num).toDouble();
 
-        if (usedFallbackCarServer) {
-          final double distKm = distanceM / 1000;
-          durationS = (distKm / vehicle.speedKmh) * 3600;
-          debugPrint('[OSRM] Durée recalculée pour ${vehicle.label} (${vehicle.speedKmh} km/h) : ${(durationS/60).ceil()} min');
+        // ── Durée selon le mode de transport ─────────────────────────────────
+        // • Voiture → durée OSRM directe (limites de vitesse réelles par route)
+        // • Moto    → durée OSRM car × 0.80 (moto dépasse, accélère plus vite)
+        // • À pied  → calcul manuel distance / 5 km/h
+        //             ⚠️ router.project-osrm.org retourne la durée VOITURE
+        //             même avec le profil 'foot' → on ne peut pas s'y fier.
+        final double distKm = distanceM / 1000;
+        if (vehicle == VehicleMode.moto) {
+          durationS = durationS * 0.80;
+          debugPrint('[OSRM] Moto : durée car × 0.80 = ${(durationS / 60).ceil()} min');
+        } else if (vehicle == VehicleMode.foot) {
+          durationS = (distKm / vehicle.speedKmh) * 3600; // 5 km/h marche
+          debugPrint('[OSRM] À pied : ${distKm.toStringAsFixed(1)} km ÷ ${vehicle.speedKmh} km/h = ${(durationS / 60).ceil()} min');
+        } else {
+          debugPrint('[OSRM] Voiture : durée OSRM réelle = ${(durationS / 60).ceil()} min');
         }
 
         final List<dynamic> coords = route['geometry']['coordinates'];

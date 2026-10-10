@@ -9,8 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants.dart';
+import '../../models/user_model.dart';
 
 /// Écran carte mission pour le collecteur.
 /// Accessible via notification push de type 'assignment'.
@@ -62,10 +62,13 @@ class _MissionMapScreenState extends State<MissionMapScreen> {
   }
 
   Future<void> _loadAssignment() async {
+    if (!AuthState.hasValidToken) {
+      setState(() { _error = 'Non connecté'; _loading = false; });
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
+      final jwt = AuthState.authToken;
       final resp = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/intercommunality/assignments/${widget.assignmentId}'),
         headers: {'Authorization': 'Bearer $jwt'},
@@ -131,8 +134,7 @@ class _MissionMapScreenState extends State<MissionMapScreen> {
     );
     if (confirm != true) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
+      final jwt = AuthState.authToken;
       final resp = await http.patch(
         Uri.parse('${ApiConstants.baseUrl}/intercommunality/assignments/${widget.assignmentId}/status'),
         headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},

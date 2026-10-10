@@ -9,7 +9,7 @@ import '../../models/user_model.dart';
 import '../../widgets/web_back_button.dart';
 
 class BadgeScreen extends StatelessWidget {
-  const BadgeScreen({Key? key}) : super(key: key);
+  const BadgeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

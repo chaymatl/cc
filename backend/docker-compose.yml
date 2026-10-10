@@ -1,26 +1,26 @@
-# docker-compose.yml — Services EcoRewind
-# =========================================================
+# ================================================================
+# docker-compose.yml — EcoRewind Full Stack
+# ================================================================
 #
-# USAGE RAPIDE (développement / jury) :
-#   docker compose up -d                    → PostgreSQL uniquement (léger)
-#   docker compose --profile ai up -d      → PostgreSQL + Worker IA
+# PROFILS DISPONIBLES :
+#   docker compose up -d                        → API seule (PostgreSQL local requis)
+#   docker compose --profile standalone up -d  → API + PostgreSQL intégré
+#   docker compose --profile ai up -d          → API + PostgreSQL + Worker IA
+#   docker compose --profile full up -d        → Tout (API + PG + IA)
 #
-# Commandes utiles :
-#   docker compose down                     → Arrêter les conteneurs
-#   docker compose down -v                  → Arrêter + supprimer les données
-#   docker compose logs -f                  → Voir les logs en temps réel
-#   docker compose logs -f ai_worker        → Logs du worker IA uniquement
+# COMMANDES UTILES :
+#   docker compose logs -f api                 → Logs backend en temps réel
+#   docker compose down                        → Arrêter les conteneurs
+#   docker compose down -v                     → Arrêter + supprimer volumes
+#   docker compose pull                        → Mettre à jour les images
 #
-# Prérequis .env :
-#   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ecorewind
-#
-# Migrations (après démarrage) :
-#   cd backend && alembic upgrade head
-# =========================================================
+# MIGRATIONS (après démarrage) :
+#   docker compose exec api alembic upgrade head
+# ================================================================
 
 services:
 
-  # ── PostgreSQL (Autonome pour déploiement sans PostgreSQL local) ────────────
+  # ── PostgreSQL ───────────────────────────────────────────────
   postgres:
     profiles:
       - full
@@ -45,11 +45,12 @@ services:
       retries: 5
       start_period: 10s
 
-  # ── FastAPI Backend ─────────────────────────────────────────────────────────
+  # ── FastAPI Backend ─────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ghcr.io/chaymatl/cc-backend:latest
     container_name: ecorewind_api
     restart: unless-stopped
     env_file: .env
@@ -61,40 +62,43 @@ services:
       - "8000:8000"
     volumes:
       - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    labels:
+      org.opencontainers.image.title: "EcoRewind API"
+      org.opencontainers.image.description: "FastAPI backend for EcoRewind waste management app"
+      org.opencontainers.image.source: "https://github.com/chaymatl/cc"
+      org.opencontainers.image.version: "1.0.0"
 
-  # ── AI Worker (modèles IA — OPTIONNEL) ───────────────────────────────────────
-  # Activé uniquement avec le profil "ai" :
-  #   docker compose --profile ai up -d
-  #
-  # ⚠️  Premier démarrage lent (~5–10 min) : téléchargement des modèles IA
-  # Les modèles sont mis en cache dans le volume "ai_models" (persistant)
+  # ── AI Worker (OPTIONNEL — profil ai) ───────────────────────
   ai_worker:
     profiles:
       - ai
+      - full
     build:
       context: .
       dockerfile: ai_worker/Dockerfile
+    image: ghcr.io/chaymatl/cc-ai-worker:latest
     container_name: ecorewind_ai_worker
     restart: unless-stopped
     env_file: .env
     environment:
-      # Surcharge pour pointer vers le service postgres Docker (pas localhost)
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ecorewind
       AI_WORKER_POLL_INTERVAL: 5
       AI_WORKER_BATCH_SIZE: 10
       AI_WORKER_LOG_LEVEL: INFO
-      # Cache HuggingFace persistant entre redémarrages
       TRANSFORMERS_CACHE: /app/models
       HF_HOME: /app/models
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      # Partage le dossier uploads avec l'API FastAPI (si elle tourne aussi en Docker)
       - ./uploads:/app/uploads
-      # Cache des modèles HuggingFace — évite re-téléchargement à chaque restart
       - ai_models:/app/models
-    # Limite ressources pour éviter de saturer la machine de démonstration
     deploy:
       resources:
         limits:
@@ -105,6 +109,5 @@ services:
 volumes:
   pgdata:
     driver: local
-  # Volume persistant pour les modèles IA (HuggingFace cache)
   ai_models:
     driver: local

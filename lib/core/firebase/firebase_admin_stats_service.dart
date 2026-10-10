@@ -15,6 +15,7 @@ library firebase_admin_stats_service;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 // ── Modèles de données ────────────────────────────────────────────────────────
 
@@ -33,6 +34,9 @@ class AdminStatsSnapshot {
   final int pendingProposals;
   final int totalCenters;
   final int activeCenters;
+  final int centersDisponible;
+  final int centersSature;
+  final int centersMaintenance;
   final int totalCollections;
   final int collectionsWeek;
   final DateTime? lastUpdated;
@@ -51,6 +55,9 @@ class AdminStatsSnapshot {
     this.pendingProposals = 0,
     this.totalCenters = 0,
     this.activeCenters = 0,
+    this.centersDisponible = 0,
+    this.centersSature = 0,
+    this.centersMaintenance = 0,
     this.totalCollections = 0,
     this.collectionsWeek = 0,
     this.lastUpdated,
@@ -79,6 +86,9 @@ class AdminStatsSnapshot {
       pendingProposals:    _int(map['pending_proposals']),
       totalCenters:        _int(map['total_centers']),
       activeCenters:       _int(map['active_centers']),
+      centersDisponible:   _int(map['centers_disponible']),
+      centersSature:       _int(map['centers_sature']),
+      centersMaintenance:  _int(map['centers_maintenance']),
       totalCollections:    _int(map['total_collections']),
       collectionsWeek:     _int(map['collections_week']),
       lastUpdated:         lastUpdated,
@@ -99,7 +109,7 @@ class LeaderboardEntry {
   const LeaderboardEntry({
     required this.name,
     required this.score,
-    this.role = 'user',
+    this.role = 'citoyen',
     this.userId,
   });
 
@@ -107,7 +117,7 @@ class LeaderboardEntry {
     return LeaderboardEntry(
       name:   map['full_name']?.toString() ?? map['name']?.toString() ?? 'Anonyme',
       score:  (map['score'] as num?)?.toDouble() ?? 0.0,
-      role:   map['role']?.toString() ?? 'user',
+      role:   map['role']?.toString() ?? 'citoyen',
       userId: (map['id'] as num?)?.toInt(),
     );
   }
@@ -159,7 +169,58 @@ class PoubelleSnapshot {
   }
 }
 
-// ── Service principal ─────────────────────────────────────────────────────────
+/// Snapshot d'un citoyen depuis /utilisateurs/{qrCode}/
+/// La clé du nœud est le QR code (ex: ECOREWIND-156328c9-...).
+/// Champs attendus dans RTDB :
+/// {
+///   'full_name': 'Ahmed Ben Ali',
+///   'role': 'citoyen',
+///   'score': 1250,
+///   'last_scan': '2026-07-28T18:30:00Z',
+///   'email': 'ahmed@email.com'   (optionnel)
+/// }
+class CitoyenSnapshot {
+  final String qrCode;   // clé du nœud RTDB = QR code du citoyen
+  final String name;
+  final double score;
+  final String role;
+  final DateTime? lastScan;
+
+  const CitoyenSnapshot({
+    required this.qrCode,
+    required this.name,
+    this.score = 0.0,
+    this.role = 'citoyen',
+    this.lastScan,
+  });
+
+  factory CitoyenSnapshot.fromMap(String qrCode, Map<dynamic, dynamic> map) {
+    DateTime? lastScan;
+    try {
+      final raw = map['last_scan'];
+      if (raw != null) lastScan = DateTime.parse(raw.toString()).toLocal();
+    } catch (_) {}
+    return CitoyenSnapshot(
+      qrCode:   qrCode,
+      // Les deux variantes de nom (full_name de UtilisateurSnapshot, name utilisé ailleurs)
+      name:     map['full_name']?.toString()
+             ?? map['name']?.toString()
+             ?? 'Anonyme',
+      score:    (map['score'] as num?)?.toDouble() ?? 0.0,
+      role:     map['role']?.toString() ?? 'citoyen',
+      lastScan: lastScan,
+    );
+  }
+
+  /// Rang visuel basé sur le score
+  String get rankEmoji {
+    if (score >= 1000) return '🥇';
+    if (score >= 500)  return '🥈';
+    if (score >= 100)  return '🥉';
+    return '🌱';
+  }
+}
+
 
 /// Service singleton pour écouter les données admin depuis Firebase RTDB.
 ///
@@ -229,6 +290,33 @@ class FirebaseAdminStatsService {
     }).handleError((_) => <LeaderboardEntry>[]);
   }
 
+  /// Stream temps réel des citoyens depuis /utilisateurs/
+  /// Filtre automatiquement pour ne garder que les rôles 'citoyen' ou 'user'.
+  /// Tri par score décroissant.
+  Stream<List<CitoyenSnapshot>> watchCitoyens() {
+    if (!_isAuth) return Stream.value([]);
+    return _db.ref('utilisateurs').onValue.map((event) {
+      final data = event.snapshot.value;
+      if (data == null) return <CitoyenSnapshot>[];
+      if (data is Map) {
+        return data.entries
+            .map((e) {
+              if (e.value is! Map) return null;
+              final map = e.value as Map;
+              final role = map['role']?.toString() ?? 'citoyen';
+              // Garder uniquement les citoyens (role = 'citoyen' ou 'user')
+              if (role != 'citoyen' && role != 'user') return null;
+              // La clé est le QR code (ex: ECOREWIND-*)
+              return CitoyenSnapshot.fromMap(e.key.toString(), map);
+            })
+            .whereType<CitoyenSnapshot>()
+            .toList()
+          ..sort((a, b) => b.score.compareTo(a.score));
+      }
+      return <CitoyenSnapshot>[];
+    }).handleError((_) => <CitoyenSnapshot>[]);
+  }
+
   /// Stream temps réel de l'état de toutes les poubelles depuis /poubelles/
   Stream<List<PoubelleSnapshot>> watchPoubelles() {
     if (!_isAuth) return Stream.value([]);
@@ -253,6 +341,40 @@ class FirebaseAdminStatsService {
       return <PoubelleSnapshot>[];
     }).handleError((_) => <PoubelleSnapshot>[]);
   }
+
+  // ── Écritures RTDB ────────────────────────────────────────────────────────────────
+
+  /// Écrit ou met à jour le score d'un citoyen dans /utilisateurs/{qrCode}/score
+  ///
+  /// La clé est le QR code du citoyen (ex: ECOREWIND-156328c9-...).
+  /// C'est le même chemin que l'ESP32 Arduino utilise pour écrire.
+  ///
+  /// [qrCode]   : QR code du citoyen (AuthState.currentUser?.qrCode)
+  /// [name]     : nom complet du citoyen
+  /// [newScore] : nouveau score total après le scan (ScanResult.scoreAfter)
+  Future<void> writeCitoyenScore({
+    required String qrCode,
+    required String name,
+    required double newScore,
+  }) async {
+    if (!_isAuth) return;
+    if (qrCode.isEmpty) {
+      debugPrint('[RTDB] writeCitoyenScore : qrCode vide, écriture ignorée');
+      return;
+    }
+    try {
+      await _db.ref('utilisateurs/$qrCode').update({
+        'score':     newScore,
+        'full_name': name,
+        'role':      'citoyen',
+        'last_scan': DateTime.now().toUtc().toIso8601String(),
+      });
+      debugPrint('[RTDB] Score citoyen $qrCode mis à jour : $newScore pts');
+    } catch (e) {
+      debugPrint('[RTDB] Erreur writeCitoyenScore ($qrCode) : $e');
+    }
+  }
+
 
   // ── Lectures ponctuelles ──────────────────────────────────────────────────
 

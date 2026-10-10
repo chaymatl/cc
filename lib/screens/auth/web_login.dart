@@ -20,8 +20,7 @@ class WebLoginBody extends StatefulWidget {
   final VoidCallback onFacebookSignIn;
   final VoidCallback onSignUp;
 
-  const WebLoginBody({
-    Key? key,
+  const WebLoginBody({super.key,
     required this.emailController,
     required this.passwordController,
     required this.isLoading,
@@ -33,7 +32,7 @@ class WebLoginBody extends StatefulWidget {
     required this.onGoogleSignIn,
     required this.onFacebookSignIn,
     required this.onSignUp,
-  }) : super(key: key);
+  });
 
   @override
   State<WebLoginBody> createState() => _WebLoginBodyState();
@@ -418,7 +417,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
 
                                 const SizedBox(height: 32),
 
-                                // Divider "Ou continuer avec"
+                                // Divider 'Ou continuer avec'
                                 Row(children: [
                                   const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
                                   Padding(
@@ -459,7 +458,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
                                     TextButton(
                                       onPressed: widget.onSignUp,
                                       style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero),
-                                      child: Text("Créer un compte", style: GoogleFonts.inter(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14)),
+                                      child: Text('Créer un compte', style: GoogleFonts.inter(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14)),
                                     ),
                                   ],
                                 ).animate().fadeIn(delay: 700.ms),

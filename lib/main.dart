@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'theme/app_theme.dart';
-import 'theme/platform_ui.dart';
-import 'theme/web_theme.dart';
 import 'services/theme_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -29,8 +28,6 @@ import 'screens/client/bin_scanner_screen.dart';
 import 'screens/client/notifications_screen.dart';
 import 'screens/collector/mission_map_screen.dart';
 import 'screens/messaging/messaging_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'models/post_model.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
@@ -58,7 +55,10 @@ class _BlockedHttpClient implements HttpClient {
   _BlockedHttpClient(this._real);
 
   static bool _isBlocked(Uri uri) =>
-      uri.host.contains('unsplash.com');
+      uri.host.contains('unsplash.com') ||
+      uri.host.contains('openstreetmap.org') ||
+      uri.host.contains('openstreetmap.fr') ||
+      uri.host.contains('openstreetmap.de');
 
   @override
   Future<HttpClientRequest> openUrl(String method, Uri url) =>
@@ -109,7 +109,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Bloquer silencieusement les domaines d'images inaccessibles hors-ligne
-  if (!kIsWeb) HttpOverrides.global = _OfflineImageOverrides();
+  HttpOverrides.global = _OfflineImageOverrides();
+
+  // Supprimer le spam Dio "Image host blocked" et erreurs réseau répétitives
+  // Ces erreurs sont attendues en mode hors-ligne et déjà gérées silencieusement.
+  debugPrint = (String? msg, {int? wrapWidth}) {
+    if (msg != null &&
+        (msg.contains('Image host blocked') ||
+         msg.contains('DioException [connection error]') && msg.contains('blocked'))) {
+      return; // silencieux
+    }
+    developer.log(msg ?? '', name: 'flutter');
+  };
 
   await ThemeService.init();
 
@@ -118,44 +129,32 @@ void main() async {
   // ── Enregistrer le handler FCM de fond AVANT Firebase.initializeApp() ─────
   // OBLIGATOIRE : doit être top-level ET appelé avant runApp().
   // Sans ça, les notifications reçues quand l'app est FERMÉE ne s'affichent pas.
-  if (!kIsWeb) {
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  }
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // ── Initialisation Firebase (Score temps réel — QR Poubelle) ──────────────
   // DefaultFirebaseOptions fournit la config correcte selon la plateforme
   // (Web, Android, iOS). Si le Web App ID n'est pas encore configuré,
   // Firebase est ignoré silencieusement (app continue en mode dégradé).
-    try {
-    final webAppId = DefaultFirebaseOptions.web.appId;
-    final webReady = !webAppId.contains('REMPLACER');
-    if (!kIsWeb || webReady) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } else {
-      debugPrint('[Firebase] Web App ID non configuré → mode dégradé (pas de RTDB temps réel)');
-    }
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
-    debugPrint('[Firebase] Initialisation échouée : $e');
+    debugPrint('[Firebase] Initialisation echouee : $e');
   }
 
-  // Initialiser le SDK Facebook pour le web
-  if (kIsWeb) {
-    await FacebookAuth.i.webAndDesktopInitialize(
-      appId: "1420513346522756",
-      cookie: true,
-      xfbml: true,
-      version: "v18.0",
-    );
-  }
-  
+
   await PostRegistry.loadSavedStates();
 
   // ── Restauration de session (reload navigateur / cold start) ──────────────
   // Lire le token JWT sauvegardé et reconstruire AuthState.currentUser AVANT
   // que Flutter rende la première route. Sans cela, un reload sur /#/home
   // trouvait AuthState.currentUser == null et affichait le dialog de connexion.
+  // ── Migration transparente : déplacer jwt_token vers le Keystore sécurisé ──
+  // Aucun impact pour les nouveaux utilisateurs (clé absente → rien à faire)
+  // Les utilisateurs existants voient leur token migré silencieusement
+  await AuthService.migrateTokensIfNeeded();
+
   await _restoreSessionIfAvailable();
 
   // ── Initialiser Firebase Cloud Messaging (push notifications mobile) ──────
@@ -163,25 +162,22 @@ void main() async {
   // Android soient accordées AVANT d'appeler onUserLoggedIn().
   // Sans ce await, getToken() retourne null car les permissions ne sont
   // pas encore accordées → token jamais envoyé → aucun push reçu.
-  if (!kIsWeb) {
-    await FcmService.initialize();
-    if (AuthState.currentUser != null) {
-      // Session restaurée : enregistrer le token FCM et afficher notifs manquées
-      unawaited(FcmService.onUserLoggedIn());
-    }
-  } else {
-    FcmService.initialize(); // Web : pas de push natif, juste init
+  await FcmService.initialize();
+  if (AuthState.currentUser != null) {
+    unawaited(FcmService.onUserLoggedIn());
   }
 
   runApp(const EcoRewindApp());
 }
 
-/// Restaure la session utilisateur depuis SharedPreferences.
+/// Restaure la session utilisateur depuis le stockage sécurisé (Keystore/Keychain).
 /// Appelé une seule fois au démarrage, avant runApp().
 Future<void> _restoreSessionIfAvailable() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+    const secureStorage = FlutterSecureStorage(
+      aOptions: AndroidOptions(), // AES-256 custom ciphers (Keystore)
+    );
+    final token = await secureStorage.read(key: 'jwt_token');
     if (token == null) return; // Pas de session sauvegardée
 
     // Mettre le token en mémoire pour les requêtes HTTP
@@ -189,14 +185,25 @@ Future<void> _restoreSessionIfAvailable() async {
 
     // Vérifier que le token est encore valide côté backend
     final authService = AuthService();
-    final result = await authService.getCurrentUserDetails();
+    Map<String, dynamic> result = await authService.getCurrentUserDetails();
+
+    // Si le token a expiré (401), tenter un refresh silencieux avant d'abandonner
+    if (result['success'] != true &&
+        result['message']?.toString().contains('Session expirée') == true) {
+      debugPrint('[Session] Token expiré, tentative de refresh...');
+      final refreshed = await authService.refreshAccessToken();
+      if (refreshed) {
+        debugPrint('[Session] Refresh réussi, retry getCurrentUserDetails...');
+        result = await authService.getCurrentUserDetails();
+      }
+    }
 
     if (result['success'] == true) {
       final userData = result['user'] as Map<String, dynamic>;
-      final roleStr = userData['role'] as String? ?? 'user';
+      final roleStr = userData['role'] as String? ?? 'citoyen';
       final role = UserRole.values.firstWhere(
         (e) => e.toString().split('.').last == roleStr,
-        orElse: () => UserRole.user,
+        orElse: () => UserRole.citoyen,
       );
       AuthState.currentUser = User(
         id: userData['id'].toString(),
@@ -212,45 +219,89 @@ Future<void> _restoreSessionIfAvailable() async {
       // ── Reconnexion Firebase pour activer le stream de score temps réel ──
       // Sans cette étape, watchScore() retourne Stream.empty() car
       // FirebaseAuth.instance.currentUser == null après un cold start.
-      if (!kIsWeb && role == UserRole.user) {
+      if (role == UserRole.citoyen) {
         unawaited(_refreshFirebaseToken());
       }
-    } else {
-      if (result['message']?.toString().contains('Erreur réseau') == true || result['message']?.toString().contains('Erreur serveur') == true) {
-        debugPrint('[Session] Erreur réseau ignorée. Décodage local du token en fallback.');
-        try {
-          final parts = token.split('.');
-          if (parts.length == 3) {
-            final payload = parts[1];
-            final normalized = base64Url.normalize(payload);
-            final resp = utf8.decode(base64Url.decode(normalized));
-            final payloadData = json.decode(resp);
-            
-            final roleStr = payloadData['role'] as String? ?? 'user';
-            final role = UserRole.values.firstWhere(
-              (e) => e.toString().split('.').last == roleStr,
-              orElse: () => UserRole.user,
-            );
-            
+    } else if (result['message']?.toString().contains('Erreur réseau') == true ||
+               result['message']?.toString().contains('Erreur serveur') == true) {
+      // Hors-ligne ou erreur serveur → décodage local du token JWT en fallback
+      debugPrint('[Session] Erreur réseau ignorée. Décodage local du token en fallback.');
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final payload = parts[1];
+          final normalized = base64Url.normalize(payload);
+          final resp = utf8.decode(base64Url.decode(normalized));
+          final payloadData = json.decode(resp);
+
+          final roleStr = payloadData['role'] as String? ?? 'citoyen';
+          final role = UserRole.values.firstWhere(
+            (e) => e.toString().split('.').last == roleStr,
+            orElse: () => UserRole.citoyen,
+          );
+
+          AuthState.currentUser = User(
+            id: payloadData['id']?.toString() ?? '0',
+            name: payloadData['full_name'] ?? payloadData['sub'] ?? 'Utilisateur (Hors ligne)',
+            email: payloadData['sub'] ?? '',
+            role: role,
+          );
+          debugPrint('[Session] Fallback local réussi pour : ${AuthState.currentUser?.email}');
+        }
+      } catch (e) {
+        debugPrint('[Session] Échec du fallback local : $e');
+      }
+    } else if (result['message']?.toString().contains('Session expirée') == true) {
+      // Refresh token aussi épuisé → fallback JWT local pour éviter la déconnexion
+      debugPrint('[Session] Refresh échoué. Décodage local du token en fallback.');
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final payload = parts[1];
+          final normalized = base64Url.normalize(payload);
+          final resp = utf8.decode(base64Url.decode(normalized));
+          final payloadData = json.decode(resp);
+
+          final roleStr = payloadData['role'] as String? ?? 'citoyen';
+          final role = UserRole.values.firstWhere(
+            (e) => e.toString().split('.').last == roleStr,
+            orElse: () => UserRole.citoyen,
+          );
+
+          // Vérifier que le token n'est pas périmé depuis trop longtemps (7j)
+          final exp = payloadData['exp'] as int?;
+          final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          if (exp != null && now - exp < 7 * 24 * 3600) {
             AuthState.currentUser = User(
               id: payloadData['id']?.toString() ?? '0',
-              name: payloadData['full_name'] ?? payloadData['sub'] ?? 'Utilisateur (Hors ligne)',
+              name: payloadData['full_name'] ?? payloadData['sub'] ?? 'Utilisateur',
               email: payloadData['sub'] ?? '',
               role: role,
             );
-            debugPrint('[Session] Fallback local réussi pour : ${AuthState.currentUser?.email}');
+            // ⚠️ Effacer le token expiré : le refresh a échoué, envoyer ce token
+            // aux requêtes HTTP ne ferait que générer des 401 en masse.
+            // currentUser est conservé pour afficher l'UI (nom, avatar…)
+            // mais toute action protégée redirigera vers la page de login.
+            AuthState.authToken = null;
+            await secureStorage.delete(key: 'jwt_token');
+            await secureStorage.delete(key: 'refresh_token');
+            debugPrint('[Session] Fallback JWT local (session expirée) : ${AuthState.currentUser?.email}');
+          } else {
+            // Token trop ancien (> 7j) → vraiment invalide
+            AuthState.authToken = null;
+            AuthState.currentUser = null;
+            await secureStorage.delete(key: 'jwt_token');
+            await secureStorage.delete(key: 'refresh_token');
+            debugPrint('[Session] Token trop ancien, session effacée');
           }
-        } catch (e) {
-          debugPrint('[Session] Échec du fallback local : $e');
         }
-      } else {
-        // Token expiré ou invalide → nettoyer
-        AuthState.authToken = null;
-        AuthState.currentUser = null;
-        await prefs.remove('jwt_token');
-        await prefs.remove('refresh_token');
-        debugPrint('[Session] Token invalide, session effacée');
+      } catch (e) {
+        debugPrint('[Session] Échec du fallback local après refresh : $e');
       }
+    } else {
+      // Erreur non reconnue : conserver le token en mémoire mais sans currentUser
+      // L'utilisateur verra le contenu public mais les actions protégées demanderont la reconnexion
+      debugPrint('[Session] Erreur inconnue (${result['message']}), session maintenue en mode dégradé.');
     }
   } catch (e) {
     debugPrint('[Session] Erreur restauration : $e');
@@ -280,7 +331,7 @@ Future<void> _refreshFirebaseToken() async {
 }
 
 class EcoRewindApp extends StatefulWidget {
-  const EcoRewindApp({Key? key}) : super(key: key);
+  const EcoRewindApp({super.key});
 
   @override
   State<EcoRewindApp> createState() => _EcoRewindAppState();
@@ -316,7 +367,7 @@ class _EcoRewindAppState extends State<EcoRewindApp> {
       navigatorObservers: [scanHistoryRouteObserver],
       title: 'EcoRewind',
       debugShowCheckedModeBanner: false,
-      theme: PlatformUI.isWeb ? WebTheme.theme : AppTheme.seniorTheme,
+      theme: AppTheme.seniorTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/splash',
@@ -324,14 +375,6 @@ class _EcoRewindAppState extends State<EcoRewindApp> {
         // ─── Sur Web : pas d'historique Flutter — Chrome gère Retour/Avancer ───
         // Sur Mobile : MaterialPageRoute classique avec animation
         Route<T> buildRoute<T>(WidgetBuilder builder, {bool fullscreen = false}) {
-          if (kIsWeb) {
-            return PageRouteBuilder<T>(
-              settings: settings,
-              pageBuilder: (context, _, __) => builder(context),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            );
-          }
           return MaterialPageRoute<T>(
             settings: settings,
             builder: builder,
@@ -363,8 +406,8 @@ class _EcoRewindAppState extends State<EcoRewindApp> {
           case '/community':
             return tabRoute(4);
           case '/profile':
-            final role = AuthState.currentUser?.role ?? UserRole.user;
-            final profileIdx = role == UserRole.educator ? 1 : (role == UserRole.user ? 5 : 4);
+            final role = AuthState.currentUser?.role ?? UserRole.citoyen;
+            final profileIdx = role == UserRole.educator ? 1 : (role == UserRole.citoyen ? 5 : 4);
             return tabRoute(profileIdx);
 
           case '/splash':

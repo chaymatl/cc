@@ -20,7 +20,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:eco_rewind/models/bin_model.dart';
+import '../models/bin_model.dart';
 
 class ScoreSnapshot {
   final double total;
@@ -120,7 +120,7 @@ class FirebaseScoreService {
   // CHEMIN ARDUINO : /utilisateurs/{qrCode}/score
   //
   // L'ESP32 écrit directement :
-  //   Firebase.setInt(fbdo, "/utilisateurs/" + qrID + "/score", newScore)
+  //   Firebase.setInt(fbdo, '/utilisateurs/' + qrID + '/score', newScore)
   //
   // Ce stream écoute CE chemin pour que Flutter reçoive les points Arduino
   // EN TEMPS RÉEL, sans attendre le BinSync (cycle 5 min côté backend).
@@ -208,7 +208,7 @@ extension FirebaseBinReader on FirebaseScoreService {
   /// Écoute l'état d'une poubelle en temps réel.
   ///
   /// Nœud écouté : /poubelles/{binId}
-  /// binId = bin_code de la poubelle (ex: "BIN-PLASTIC-A3F2")
+  /// binId = bin_code de la poubelle (ex: 'BIN-PLASTIC-A3F2')
   ///
   /// LECTURE SEULE — seul le backend FastAPI écrit dans ce nœud.
   Stream<BinSnapshot> watchBin(String binId) {

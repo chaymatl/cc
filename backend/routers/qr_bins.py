@@ -21,7 +21,7 @@ Flux QR sécurisé :
        ↓
   POST /qr/scan-bin { bin_code, qr_code, [weight_kg] }
        ↓
-  ┌── Citoyen (role=user) ─────────────────────────────────────────────┐
+  ┌── Citoyen (role=citoyen) ──────────────────────────────────────────┐
   │  1. Vérifie bin_code dans smart_bins         → 404 si inconnu      │
   │  2. Vérifie status == "active"               → 409 si hors service │
   │  3. Identifie citoyen via users.qr_code      → 404 si inconnu      │
@@ -279,7 +279,7 @@ async def scan_bin(data: BinScanRequest, db: Session = Depends(get_db)):
             action              = "open_bottom_compartment"
         )
 
-    # ── 4. Logique Citoyen ('user') ───────────────────────────────────────────
+    # ── 4. Logique Citoyen ('citoyen') ─────────────────────────────────────────
     if smart_bin.status != "active":
         status_msg = {
             "inactive":    "Poubelle desactivee",
@@ -308,12 +308,12 @@ async def scan_bin(data: BinScanRequest, db: Session = Depends(get_db)):
         )
 
     # ── 4. Calculer les points (type vient du bac, non falsifiable) ───────────
-    # Seul le role 'user' (citoyen) gagne des points.
+    # Seul le role 'citoyen' gagne des points.
     # Les admins, collecteurs, educateurs, etc. ne sont jamais credites.
-    if user.role != "user":
+    if user.role != "citoyen":
         raise HTTPException(
             status_code=403,
-            detail="Seuls les citoyens (role=user) peuvent gagner des points de tri.",
+            detail="Seuls les citoyens (role=citoyen) peuvent gagner des points de tri.",
         )
 
     waste_type = smart_bin.bin_type
@@ -655,7 +655,14 @@ async def arduino_collect(data: ArduinoCollectRequest, db: Session = Depends(get
     except Exception:
         pass  # Non bloquant
 
-    # ── 7. Repondre a l'Arduino ───────────────────────────────────────────────
+    # ── 7bis. Mettre à jour le dashboard admin Firebase en temps réel ──────────
+    # total_collections +1 → Flutter reçoit le push immédiatement
+    try:
+        update_admin_stats(db)
+    except Exception:
+        pass  # Non bloquant
+
+    # ── 8. Répondre à l'Arduino ───────────────────────────────────────────────
     return ArduinoCollectResponse(
         success          = True,
         action           = "open_collector_servo",
@@ -803,7 +810,7 @@ async def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
     """Classement des citoyens par score global (public)."""
     top = (
         db.query(db_models.User)
-        .filter(db_models.User.is_active == True, db_models.User.role == "user")
+        .filter(db_models.User.is_active == True, db_models.User.role == "citoyen")
         .order_by(desc(db_models.User.global_score))
         .limit(min(limit, 50))
         .all()

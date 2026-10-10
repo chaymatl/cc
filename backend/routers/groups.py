@@ -77,7 +77,7 @@ async def list_citizens(
     """Liste tous les citoyens (rôle user) — pour le picker de l'éducateur."""
     if current_user.role not in ("educator", "admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Réservé aux éducateurs")
-    query = db.query(db_models.User).filter(db_models.User.role == "user")
+    query = db.query(db_models.User).filter(db_models.User.role == "citoyen")
     if q:
         query = query.filter(
             db_models.User.full_name.ilike(f"%{q}%") |

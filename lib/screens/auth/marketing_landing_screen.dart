@@ -4,7 +4,7 @@ import 'mobile_marketing_landing_screen.dart';
 import 'web_marketing_landing_screen.dart';
 
 class MarketingLandingScreen extends StatelessWidget {
-  const MarketingLandingScreen({Key? key}) : super(key: key);
+  const MarketingLandingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

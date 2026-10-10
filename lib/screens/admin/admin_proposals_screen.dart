@@ -8,7 +8,7 @@ import '../../services/auth_service.dart';
 /// Affiche toutes les propositions soumises par les citoyens
 /// avec possibilité d'approuver, refuser ou supprimer.
 class AdminProposalsScreen extends StatefulWidget {
-  const AdminProposalsScreen({Key? key}) : super(key: key);
+  const AdminProposalsScreen({super.key});
 
   @override
   State<AdminProposalsScreen> createState() => _AdminProposalsScreenState();

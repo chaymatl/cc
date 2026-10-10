@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
@@ -19,15 +18,14 @@ class PinterestPostCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onMore;
 
-  const PinterestPostCard({
-    Key? key,
+  const PinterestPostCard({super.key,
     required this.post,
     this.onLike,
     this.onSave,
     this.onComment,
     this.onTap,
     this.onMore,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +242,7 @@ class PinterestPostCard extends StatelessWidget {
     }
 
     // Sur le web, les blob URLs et URLs r\u00e9seau utilisent SafeNetworkImage pour \u00e9viter les ProgressEvent erreurs
-    if (kIsWeb || url.startsWith('http') || url.startsWith('blob:')) {
+    if (url.startsWith('http') || url.startsWith('blob:')) {
       return SafeNetworkImage(
         url,
         fit: BoxFit.cover,
@@ -272,7 +270,7 @@ class PinterestPostCard extends StatelessWidget {
 
 /// Grid Skeleton Loader
 class GridSkeletonLoader extends StatelessWidget {
-  const GridSkeletonLoader({Key? key}) : super(key: key);
+  const GridSkeletonLoader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -314,8 +312,7 @@ class PremiumGlassCard extends StatelessWidget {
   final double? height;
   final VoidCallback? onTap;
 
-  const PremiumGlassCard({
-    Key? key,
+  const PremiumGlassCard({super.key,
     required this.child,
     this.padding,
     this.borderRadius = 24,
@@ -326,34 +323,10 @@ class PremiumGlassCard extends StatelessWidget {
     this.width,
     this.height,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // OPTIMIZATION: Return simple container on web, but avoid MouseRegion which causes tracker crashes
-    if (kIsWeb) {
-      Widget webContent = Container(
-        width: width,
-        height: height,
-        padding: padding ?? const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(
-            color: borderColor ?? Colors.white.withOpacity(0.5),
-            width: 1.0,
-          ),
-          boxShadow: boxShadow ?? AppTheme.tightShadow,
-        ),
-        child: child,
-      );
-
-      if (onTap != null) {
-        return GestureDetector(onTap: onTap, child: webContent);
-      }
-      return webContent;
-    }
-
     // MOBILE: Full Premium Effect
     Widget content = Container(
       width: width,
@@ -404,8 +377,7 @@ class PremiumButton extends StatelessWidget {
   final double borderRadius;
   final bool isGhost;
 
-  const PremiumButton({
-    Key? key,
+  const PremiumButton({super.key,
     required this.text,
     this.onPressed,
     this.isLoading = false,
@@ -414,11 +386,11 @@ class PremiumButton extends StatelessWidget {
     this.height = 56,
     this.borderRadius = 16,
     this.isGhost = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    Widget buttonContent = Center(
+    final Widget buttonContent = Center(
       child: isLoading
           ? const SizedBox(
               width: 24,
@@ -481,8 +453,8 @@ class PremiumButton extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: (gradientColors?.first ?? AppTheme.primaryGreen).withOpacity(0.3),
-              blurRadius: kIsWeb ? 10 : 20,
-              offset: const Offset(0, kIsWeb ? 4 : 8),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -503,8 +475,7 @@ class PremiumGlassTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
 
-  const PremiumGlassTextField({
-    Key? key,
+  const PremiumGlassTextField({super.key,
     required this.controller,
     required this.label,
     this.hint,
@@ -513,13 +484,13 @@ class PremiumGlassTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    const effectiveBlur = kIsWeb ? 0.0 : 5.0;
+    const effectiveBlur = 5.0;
 
-    Widget content = Container(
+    final Widget content = Container(
       decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
@@ -594,14 +565,13 @@ class PremiumStatCard extends StatelessWidget {
   final Color color;
   final String? subtitle;
 
-  const PremiumStatCard({
-    Key? key,
+  const PremiumStatCard({super.key,
     required this.label,
     required this.value,
     required this.icon,
     this.color = AppTheme.primaryGreen,
     this.subtitle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -663,12 +633,11 @@ class AnimatedParticle extends StatelessWidget {
   final Color color;
   final double opacity;
 
-  const AnimatedParticle({
-    Key? key,
+  const AnimatedParticle({super.key,
     this.size = 4,
     this.color = AppTheme.primaryGreen,
     this.opacity = 0.3,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -694,11 +663,10 @@ class ShimmerLoading extends StatefulWidget {
   final Widget child;
   final Duration duration;
 
-  const ShimmerLoading({
-    Key? key,
+  const ShimmerLoading({super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 1500),
-  }) : super(key: key);
+  });
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();

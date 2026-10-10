@@ -45,7 +45,7 @@ def get_user_stats(db: Session, period: Optional[str] = "all_time") -> UserStats
     return UserStatsResponse(
         total=repo.count_total_users(db),
         by_role=UsersByRole(
-            user=by_role_raw.get("user", 0),
+            citoyen=by_role_raw.get("citoyen", 0),
             educator=by_role_raw.get("educator", 0),
             admin=by_role_raw.get("admin", 0),
             collector=by_role_raw.get("collector", 0),
@@ -58,7 +58,7 @@ def get_user_stats(db: Session, period: Optional[str] = "all_time") -> UserStats
             TopScorer(
                 name=r.full_name or "Anonyme",
                 score=round(r.global_score or 0.0, 1),
-                role=r.role or "user",
+                role=r.role or "citoyen",
             )
             for r in top_raw
         ],
@@ -115,7 +115,7 @@ def get_user_stats_with_period(db: Session, period: Optional[str] = "all_time") 
     return UserStatsResponse(
         total=repo.count_total_users(db),
         by_role=UsersByRole(
-            user=by_role_raw.get("user", 0),
+            citoyen=by_role_raw.get("citoyen", 0),
             educator=by_role_raw.get("educator", 0),
             admin=by_role_raw.get("admin", 0),
             collector=by_role_raw.get("collector", 0),
@@ -128,7 +128,7 @@ def get_user_stats_with_period(db: Session, period: Optional[str] = "all_time") 
             TopScorer(
                 name=r.full_name or "Anonyme",
                 score=round(r.global_score or 0.0, 1),
-                role=r.role or "user",
+                role=r.role or "citoyen",
             )
             for r in top_raw
         ],
@@ -222,7 +222,7 @@ def get_dashboard_summary(db: Session) -> AdminDashboardResponse:
         # Utilisateurs
         total_users=repo.count_total_users(db),
         users_by_role=UsersByRole(
-            user=by_role_raw.get("user", 0),
+            citoyen=by_role_raw.get("citoyen", 0),
             educator=by_role_raw.get("educator", 0),
             admin=by_role_raw.get("admin", 0),
             collector=by_role_raw.get("collector", 0),

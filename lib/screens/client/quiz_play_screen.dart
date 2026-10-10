@@ -11,7 +11,7 @@ import '../../models/user_model.dart';
 /// Le citoyen répond question par question, puis Gemini corrige et donne une note /10
 class QuizPlayScreen extends StatefulWidget {
   final Map<String, dynamic> quiz;
-  const QuizPlayScreen({Key? key, required this.quiz}) : super(key: key);
+  const QuizPlayScreen({super.key, required this.quiz});
 
   @override
   State<QuizPlayScreen> createState() => _QuizPlayScreenState();
@@ -46,10 +46,22 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   }
 
   Future<void> _submitQuiz() async {
+    if (!AuthState.hasValidToken) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Session expirée, veuillez vous reconnecter'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
     setState(() => _isSubmitting = true);
 
     final quizId = widget.quiz['id'];
-    final res = await _authService.submitQuizAnswers(quizId, _answers);
+    Map<String, dynamic> res;
+    try {
+      res = await _authService.submitQuizAnswers(quizId, _answers);
+    } catch (_) {
+      res = {'success': false, 'message': 'Erreur réseau — réessayez'};
+    }
 
     if (mounted) {
       setState(() {
@@ -472,27 +484,26 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     final maxScore = (_result!['max_score'] as num?)?.toDouble() ?? 10;
     final totalCorrect = (_result!['total_correct'] as num?)?.toInt() ?? 0;
     final details = (_result!['details'] as List?) ?? [];
-    final feedback = _result!['general_feedback'] ?? '';
+    final feedback = _result!['general_feedback'] as String? ?? '';
     final percentage = (score / maxScore * 100).toInt();
-
     Color scoreColor;
-    String emoji;
+    IconData resultIcon;
     String label;
     if (percentage >= 80) {
       scoreColor = const Color(0xFF00E676); // Bright neon green
-      emoji = '🏆';
+      resultIcon = Icons.emoji_events_rounded;
       label = 'Incroyable !';
     } else if (percentage >= 60) {
       scoreColor = const Color(0xFFFF9100); // Bright orange
-      emoji = '👍';
+      resultIcon = Icons.thumb_up_alt_rounded;
       label = 'Bon travail !';
     } else if (percentage >= 40) {
       scoreColor = const Color(0xFFFF3D00); // Deep orange/red
-      emoji = '💪';
+      resultIcon = Icons.trending_up_rounded;
       label = 'Sur la bonne voie';
     } else {
       scoreColor = const Color(0xFFFF1744); // Bright red
-      emoji = '📚';
+      resultIcon = Icons.menu_book_rounded;
       label = 'Ne lâchez rien !';
     }
 
@@ -518,7 +529,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 100, 24, 40),
                   child: Column(
                     children: [
-                      // Animated glowing emoji
+                      // Animated glowing icon badge
                       Container(
                         width: 120, height: 120,
                         decoration: BoxDecoration(
@@ -527,7 +538,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                           border: Border.all(color: Colors.white.withOpacity(0.1), width: 2),
                           boxShadow: [BoxShadow(color: scoreColor.withOpacity(0.3), blurRadius: 40, spreadRadius: 10)],
                         ),
-                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 60))),
+                        child: Center(child: Icon(resultIcon, size: 56, color: scoreColor)),
                       ).animate().scale(delay: 200.ms, curve: Curves.elasticOut),
                       
                       const SizedBox(height: 32),
@@ -595,11 +606,11 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               if (feedback.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.all(32),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(32),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5),
                     ),
                     child: Column(
@@ -610,14 +621,21 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(color: Colors.purpleAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
-                              child: const Icon(Icons.auto_awesome, color: Colors.purpleAccent, size: 24),
+                              child: const Icon(Icons.auto_awesome, color: Colors.purpleAccent, size: 22),
                             ),
-                            const SizedBox(width: 16),
-                            Text('Explications de l\'IA', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                'Explications de l\'IA',
+                                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        Text(feedback, style: GoogleFonts.inter(fontSize: 16, color: Colors.white.withOpacity(0.8), height: 1.6)),
+                        const SizedBox(height: 16),
+                        Text(feedback, style: GoogleFonts.inter(fontSize: 15, color: Colors.white.withOpacity(0.85), height: 1.6)),
                       ],
                     ),
                   ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.1),

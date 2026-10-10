@@ -61,7 +61,7 @@ class _RewardsTabState extends State<RewardsTab> {
     final cached = AuthState.currentUser?.globalScore ?? 0;
     if (mounted) setState(() { _score = cached; _loaded = true; });
 
-    if (!AuthState.isLoggedIn) {
+    if (!AuthState.hasValidToken) {
       if (mounted) setState(() { _loading = false; });
       return;
     }

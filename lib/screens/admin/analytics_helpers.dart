@@ -48,9 +48,9 @@ Future<dynamic> analyticsGet(String path) async {
   return result?.data;
 }
 
-// ── Formatage "il y a X s/min" ───────────────────────────────────────────────
+// ── Formatage 'il y a X s/min' ───────────────────────────────────────────────
 String formatAge(int totalSeconds) {
-  if (totalSeconds <= 0) return 'À l\'instant';
+  if (totalSeconds <= 0) return 'È l\'instant';
   if (totalSeconds < 60) return 'il y a ${totalSeconds}s';
   final min = totalSeconds ~/ 60;
   final sec = totalSeconds % 60;
@@ -70,8 +70,7 @@ class SectionCard extends StatelessWidget {
   final DateTime? lastUpdated;   // moment où les données ont été chargées
   final int? cacheAge;           // âge cache backend en secondes
 
-  const SectionCard({
-    Key? key,
+  const SectionCard({super.key,
     required this.titre,
     required this.icone,
     required this.couleur,
@@ -81,7 +80,7 @@ class SectionCard extends StatelessWidget {
     required this.onActualiser,
     this.lastUpdated,
     this.cacheAge,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -214,15 +213,14 @@ class IndicateurPrincipal extends StatelessWidget {
   final Color couleur;
   final bool alerte;
 
-  const IndicateurPrincipal({
-    Key? key,
+  const IndicateurPrincipal({super.key,
     required this.valeur,
     required this.etiquette,
     required this.sousTitre,
     required this.icone,
     required this.couleur,
     this.alerte = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -278,14 +276,13 @@ class IndicateurCompact extends StatelessWidget {
   final Color couleur;
   final bool alerte;
 
-  const IndicateurCompact({
-    Key? key,
+  const IndicateurCompact({super.key,
     required this.valeur,
     required this.etiquette,
     required this.icone,
     required this.couleur,
     this.alerte = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -333,11 +330,10 @@ class FiltreDeroulant extends StatelessWidget {
   final ValueChanged<String> onChangement;
   final Color couleur;
 
-  const FiltreDeroulant({
-    Key? key, required this.etiquette, required this.valeur,
+  const FiltreDeroulant({super.key, required this.etiquette, required this.valeur,
     required this.options, required this.onChangement,
     this.couleur = AppTheme.primaryGreen,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -369,8 +365,8 @@ class FiltrePeriode extends StatelessWidget {
   final ValueChanged<int> onChangement;
   final Color couleur;
 
-  const FiltrePeriode({Key? key, required this.valeur,
-    required this.onChangement, required this.couleur}) : super(key: key);
+  const FiltrePeriode({super.key, required this.valeur,
+    required this.onChangement, required this.couleur});
 
   static const _options = [7, 30, 90, 365];
   static const _labels = ['7 jours', '30 jours', '3 mois', '1 an'];
@@ -411,8 +407,8 @@ class BarreProgression extends StatelessWidget {
   final double valeur, max;
   final Color couleur;
 
-  const BarreProgression({Key? key, required this.etiquette, required this.valeurTexte,
-    required this.valeur, required this.max, required this.couleur}) : super(key: key);
+  const BarreProgression({super.key, required this.etiquette, required this.valeurTexte,
+    required this.valeur, required this.max, required this.couleur});
 
   @override
   Widget build(BuildContext context) {
@@ -448,8 +444,8 @@ class GraphiqueAnneau extends StatelessWidget {
   final List<Color> couleurs;
   final List<String> etiquettes;
 
-  const GraphiqueAnneau({Key? key, required this.tranches,
-    required this.couleurs, required this.etiquettes}) : super(key: key);
+  const GraphiqueAnneau({super.key, required this.tranches,
+    required this.couleurs, required this.etiquettes});
 
   @override
   Widget build(BuildContext context) {
@@ -521,12 +517,11 @@ class GraphiqueLigne extends StatelessWidget {
   final Color couleur;
   final String labelY;
 
-  const GraphiqueLigne({
-    Key? key,
+  const GraphiqueLigne({super.key,
     required this.donnees,
     this.couleur = AppTheme.primaryGreen,
     this.labelY = 'scans',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -628,14 +623,13 @@ class FiltrePeriodeString extends StatelessWidget {
   final Color couleur;
 
   static const _options = ['today', 'yesterday', 'last_7_days', 'last_30_days', 'current_month', 'all_time'];
-  static const _labels  = ["Auj.", "Hier", "7 jours", "30 jours", "Ce mois", "Tout"];
+  static const _labels  = ['Auj.', 'Hier', '7 jours', '30 jours', 'Ce mois', 'Tout'];
 
-  const FiltrePeriodeString({
-    Key? key,
+  const FiltrePeriodeString({super.key,
     required this.valeur,
     required this.onChangement,
     this.couleur = AppTheme.primaryGreen,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -675,12 +669,11 @@ class BadgeStatut extends StatelessWidget {
   final Color couleur;
   final IconData? icone;
 
-  const BadgeStatut({
-    Key? key,
+  const BadgeStatut({super.key,
     required this.label,
     required this.couleur,
     this.icone,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -706,7 +699,7 @@ class BadgeStatut extends StatelessWidget {
 // ── Séparateur de section avec titre ─────────────────────────────────────────
 class SectionDivider extends StatelessWidget {
   final String label;
-  const SectionDivider({Key? key, required this.label}) : super(key: key);
+  const SectionDivider({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {

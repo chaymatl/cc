@@ -42,16 +42,32 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
         pass
 
 # ── Résolution du dossier backend ─────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
+# Racine du projet backend (trois niveaux : scripts/utils/ -> scripts/ -> backend/)
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BACKEND_DIR)
 
 # ── Chargement du .env ────────────────────────────────────────────────────────
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
-    print("[ENV] Variables .env chargées.")
+    _env_path = os.path.join(BACKEND_DIR, ".env")
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path)
+        print(f"[ENV] .env charge depuis : {_env_path}")
+    else:
+        print(f"[WARN] .env introuvable a : {_env_path}")
 except ImportError:
-    print("[ENV] python-dotenv absent — variables système utilisées.")
+    # Chargement manuel si python-dotenv absent
+    _env_path = os.path.join(BACKEND_DIR, ".env")
+    if os.path.exists(_env_path):
+        with open(_env_path, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+        print("[ENV] .env charge manuellement.")
+    else:
+        print("[ENV] python-dotenv absent — variables systeme utilisees.")
 
 # ── Imports projet ────────────────────────────────────────────────────────────
 from database import SessionLocal
@@ -129,8 +145,8 @@ def sync_utilisateurs(db) -> None:
       - id        : int  (identifiant PostgreSQL)
       - full_name : str  (nom complet)
       - email     : str  (adresse email)
-      - role      : str  ("user" | "admin" | "collector" | "intercommunality" | ...)
-      - score     : float  (→ UNIQUEMENT pour role="user" / citoyens)
+      - role      : str  ("citoyen" | "admin" | "collector" | "intercommunality" | ...)
+      - score     : float  (→ UNIQUEMENT pour role="citoyen" / citoyens)
     """
     users = db.query(User).filter(User.is_active == True).all()
     print(f"\n[UTILISATEURS] {len(users)} utilisateur(s) actif(s).")
@@ -138,7 +154,7 @@ def sync_utilisateurs(db) -> None:
 
     for u in users:
         qr   = u.qr_code   or ""
-        role = u.role      or "user"
+        role = u.role      or "citoyen"
         name = u.full_name or ""
         mail = u.email     or ""
 
@@ -154,7 +170,7 @@ def sync_utilisateurs(db) -> None:
             "role":      role,
         }
         # Le champ "score" n'existe QUE pour les citoyens
-        if role == "user":
+        if role == "citoyen" or role == "user":
             data["score"] = round(float(getattr(u, 'global_score', 0) or 0), 2)
 
         # Cle = qr_code (ex: TRIDECHET-aaa433a8-...)
@@ -182,7 +198,7 @@ def sync_scores(db) -> None:
       - last_bin_id   : str    (bin_code du dernier scan)
     """
     citoyens = db.query(User).filter(
-        User.role == "user",
+        User.role == "citoyen",
         User.is_active == True
     ).all()
     print(f"\n[SCORES] {len(citoyens)} citoyen(s) à synchroniser.")
@@ -426,7 +442,7 @@ def sync_leaderboard(db) -> None:
     from sqlalchemy import desc
     top = (
         db.query(User)
-        .filter(User.role == "user", User.is_active == True)
+        .filter(User.role == "citoyen", User.is_active == True)
         .order_by(desc(User.global_score))
         .limit(20)
         .all()

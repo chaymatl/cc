@@ -32,14 +32,64 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # ── Schéma DB géré par Alembic ────────────────────────────────────────────────
 # Les tables sont créées/migrées via : alembic upgrade head
 # NE PAS appeler Base.metadata.create_all() ici — cela contourne les migrations.
 import db_models  # noqa: F401 — importe tous les modèles pour que Base.metadata les connaisse
+
+
+# ── Lifespan (startup + shutdown) ─────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──────────────────────────────────────────────────────────────
+
+    # Vérification des migrations Alembic
+    try:
+        from alembic.config import Config
+        from alembic.runtime.migration import MigrationContext
+        from alembic.script import ScriptDirectory
+        from database import engine
+
+        alembic_cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alembic.ini")
+        alembic_cfg = Config(alembic_cfg_path)
+        script = ScriptDirectory.from_config(alembic_cfg)
+
+        with engine.connect() as conn:
+            context = MigrationContext.configure(conn)
+            current_rev = set(context.get_current_heads())
+            head_rev    = set(script.get_heads())
+
+        if current_rev == head_rev:
+            print(f"[STARTUP] [OK] Migrations Alembic à jour — revision : {', '.join(head_rev)}")
+        else:
+            print(f"[STARTUP] [WARN] ⚠️  Migrations en retard !")
+            print(f"  DB actuelle : {current_rev or 'aucune'}")
+            print(f"  Head requis : {head_rev}")
+            print(f"  → Exécuter : migrate.bat up  (ou alembic upgrade head)")
+    except Exception as e:
+        print(f"[STARTUP] [WARN] Vérification migrations impossible : {e}")
+
+    # Sync automatique des poubelles (arrière-plan)
+    try:
+        from services.bin_sync_service import bin_sync_loop
+        import asyncio as _asyncio
+        _asyncio.create_task(bin_sync_loop())
+        print("[STARTUP] [OK] BinSync : synchronisation automatique des poubelles activee (cycle 5 min)")
+    except Exception as e:
+        print(f"[STARTUP] [WARN] BinSync non demarre : {e}")
+
+    yield
+    # ── Shutdown ─────────────────────────────────────────────────────────────
+    # (aucune ressource explicite à fermer pour l'instant)
+
 
 # ── App factory ────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -48,7 +98,13 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
+
+# ── Rate limiting — protection brute-force ────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── Static files ───────────────────────────────────────────────────────────────
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -111,61 +167,8 @@ app.include_router(messaging.router)          # /messages/*
 # au lieu de 4 fois (évite 4x la RAM).
 
 
-# ── Startup : vérification des migrations Alembic ─────────────────────────────
-@app.on_event("startup")
-async def _check_migrations():
-    """
-    Vérifie au démarrage que la DB est à la dernière migration Alembic.
-    Évite les crashs silencieux causés par des tables/colonnes manquantes
-    quand quelqu'un déploie sans exécuter 'alembic upgrade head'.
-    """
-    try:
-        from alembic.config import Config
-        from alembic.runtime.migration import MigrationContext
-        from alembic.script import ScriptDirectory
-        from database import engine
-
-        alembic_cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alembic.ini")
-        alembic_cfg = Config(alembic_cfg_path)
-        script = ScriptDirectory.from_config(alembic_cfg)
-
-        with engine.connect() as conn:
-            context = MigrationContext.configure(conn)
-            current_rev = set(context.get_current_heads())
-            head_rev    = set(script.get_heads())
-
-        if current_rev == head_rev:
-            print(f"[STARTUP] [OK] Migrations Alembic à jour — revision : {', '.join(head_rev)}")
-        else:
-            print(f"[STARTUP] [WARN] ⚠️  Migrations en retard !")
-            print(f"  DB actuelle : {current_rev or 'aucune'}")
-            print(f"  Head requis : {head_rev}")
-            print(f"  → Exécuter : migrate.bat up  (ou alembic upgrade head)")
-    except Exception as e:
-        print(f"[STARTUP] [WARN] Vérification migrations impossible : {e}")
-
-
-# ── Startup : Sync automatique des poubelles (arriere-plan) ──────────────────
-@app.on_event("startup")
-async def _start_bin_sync():
-    """
-    Lance la boucle de synchronisation bidirectionnelle des poubelles.
-
-    La boucle tourne en arriere-plan via asyncio.create_task :
-      - Premier cycle 30 s apres le demarrage du serveur
-      - Puis toutes les 5 minutes automatiquement
-
-    Directions synchronisees :
-      Firebase -> PostgreSQL : poids IoT, etat (poubelle pleine/videe)
-      PostgreSQL -> Firebase : status, bin_type, capacite_kg
-    """
-    try:
-        from services.bin_sync_service import bin_sync_loop
-        import asyncio as _asyncio
-        _asyncio.create_task(bin_sync_loop())
-        print("[STARTUP] [OK] BinSync : synchronisation automatique des poubelles activee (cycle 5 min)")
-    except Exception as e:
-        print(f"[STARTUP] [WARN] BinSync non demarre : {e}")
+# NOTE : La logique startup (migrations Alembic + BinSync) est désormais dans
+# le bloc `lifespan` ci-dessus — pattern recommandé depuis FastAPI 0.93.
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

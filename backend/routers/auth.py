@@ -4,11 +4,13 @@ import random
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from sqlalchemy.orm import Session
 from typing import Union
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 
 import db_models as db_models
@@ -22,6 +24,7 @@ from core.deps import get_current_user
 from services.firebase_service import generate_custom_token, sync_user_to_firebase, update_admin_stats
 
 router = APIRouter(tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 IS_DEV = os.getenv("APP_ENV", "development").lower() != "production"
 
@@ -41,14 +44,16 @@ def _mail_conf():
     )
 
 
-def _generate_otp():
-    return str(random.randint(100000, 999999))
+def _generate_otp() -> str:
+    # secrets.randbelow est cryptographiquement sûr (contrairement à random.randint)
+    return str(secrets.randbelow(900000) + 100000)
 
 
 # ── Register ─────────────────────────────────────────────────────────────────
 
+@limiter.limit("5/minute")
 @router.post("/register", response_model=models.User)
-async def register(user: models.UserCreate, db: Session = Depends(get_db)):
+async def register(request: Request, user: models.UserCreate, db: Session = Depends(get_db)):
     if db.query(db_models.User).filter(db_models.User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     new_user = db_models.User(
@@ -72,7 +77,7 @@ async def register(user: models.UserCreate, db: Session = Depends(get_db)):
     try:
         sync_user_to_firebase(
             user_id  = new_user.id,
-            role     = new_user.role or "user",
+            role     = new_user.role or "citoyen",
             qr_code  = new_user.qr_code or "",
             full_name= new_user.full_name or "",
             email    = new_user.email or "",
@@ -112,29 +117,39 @@ async def send_otp(request: models.OTPSendRequest, db: Session = Depends(get_db)
     db.commit()
 
     if request.method == "email" and "@" in identifier:
+        # Toujours logger le code en dev pour faciliter les tests
+        if IS_DEV:
+            print(f"[DEV] OTP for {identifier}: {code}")
         try:
             html = f"""<html><body style="font-family:Arial;padding:40px;">
             <div style="max-width:480px;margin:auto;background:#fff;border-radius:20px;padding:40px;">
-            <h1 style="color:#1E293B;text-align:center;">EcoRewind 🌿</h1>
-            <p style="color:#64748B;text-align:center;">Votre code de vérification :</p>
+            <h1 style="color:#1E293B;text-align:center;">EcoRewind &#127807;</h1>
+            <p style="color:#64748B;text-align:center;">Votre code de v&#233;rification :</p>
             <div style="background:linear-gradient(135deg,#00BFA6,#00E5A0);border-radius:16px;padding:24px;text-align:center;margin:24px 0;">
             <span style="font-size:36px;font-weight:900;color:white;letter-spacing:12px;font-family:monospace;">{code}</span>
             </div>
             <p style="color:#94A3B8;text-align:center;">Expire dans <strong>5 minutes</strong>.</p>
             </div></body></html>"""
             await FastMail(_mail_conf()).send_message(
-                MessageSchema(subject="🔐 EcoRewind - Code de vérification",
+                MessageSchema(subject="EcoRewind - Code de verification",
                               recipients=[identifier], body=html, subtype=MessageType.html)
             )
-            return {"success": True, "message": "Code envoyé par email", "method": "email"}
+            print(f"[AUTH] OTP envoye a {identifier}")
+            return {"success": True, "message": "Code envoy\u00e9 par email", "method": "email"}
         except Exception as e:
+            print(f"[AUTH] ERREUR SMTP pour {identifier}: {e}")
+            # En mode dev on retourne quand meme success (le code est dans les logs)
             if IS_DEV:
-                print(f"[DEV] OTP for {identifier}: {code}")
-            return {"success": True, "message": "Code envoyé (mode dev)", "method": "email"}
+                return {"success": True, "message": "Code envoy\u00e9 (logs backend)", "method": "email", "dev_code": code}
+            # En production : propager l'erreur pour que l'app l'affiche
+            raise HTTPException(
+                status_code=503,
+                detail="Impossible d'envoyer l'email. V\u00e9rifiez votre adresse et r\u00e9essayez."
+            )
 
     if IS_DEV:
         print(f"[DEV] OTP for {identifier}: {code}")
-    return {"success": True, "message": "Code envoyé", "method": request.method}
+    return {"success": True, "message": "Code envoy\u00e9", "method": request.method}
 
 
 @router.post("/otp/verify")
@@ -185,13 +200,14 @@ async def verify_otp(request: models.OTPVerifyRequest, db: Session = Depends(get
         # ce qui protege contre l'ecrasement des points enregistres par l'Arduino
         authoritative_score = sync_user_to_firebase(
             user_id=user.id,
-            role=user.role or "user",
+            role=user.role or "citoyen",
             qr_code=user.qr_code or "",
             full_name=user.full_name or "",
             email=user.email or "",
             score=getattr(user, 'global_score', 0) or 0,
         )
         # Si Firebase avait un score superieur (Arduino), re-sync PostgreSQL
+        authoritative_score = authoritative_score or 0
         if authoritative_score > 0 and authoritative_score > (user.global_score or 0):
             user.global_score = authoritative_score
             db.add(user)
@@ -208,8 +224,9 @@ async def verify_otp(request: models.OTPVerifyRequest, db: Session = Depends(get
 
 # ── Token login ───────────────────────────────────────────────────────────────
 
+@limiter.limit("10/minute")
 @router.post("/token", response_model=Union[models.Token, models.MFAPendingResponse])
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(db_models.User).filter(db_models.User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -229,13 +246,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     # sync_user_to_firebase retourne le score autoritatif (max Firebase/PostgreSQL)
     authoritative_score = sync_user_to_firebase(
         user_id=user.id,
-        role=user.role or "user",
+        role=user.role or "citoyen",
         qr_code=user.qr_code or "",
         full_name=user.full_name or "",
         email=user.email or "",
         score=getattr(user, 'global_score', 0) or 0,
     )
     # Si Firebase avait un score superieur (Arduino), re-sync PostgreSQL
+    # 'or 0' protège contre None si sync_user_to_firebase échoue silencieusement
+    authoritative_score = authoritative_score or 0
     if authoritative_score > 0 and authoritative_score > (user.global_score or 0):
         user.global_score = authoritative_score
         db.add(user)
@@ -303,7 +322,7 @@ async def verify_mfa_login(body: models.MFAVerifyLoginRequest, db: Session = Dep
     # Synchronise les infos utilisateur dans Firebase pour identifier le QR code
     authoritative_score = sync_user_to_firebase(
         user_id=user.id,
-        role=user.role or "user",
+        role=user.role or "citoyen",
         qr_code=user.qr_code or "",
         full_name=user.full_name or "",
         email=user.email or "",
@@ -366,7 +385,7 @@ async def google_auth(google_data: models.GoogleAuth, db: Session = Depends(get_
         # Synchronise les infos utilisateur dans Firebase pour identifier le QR code
         authoritative_score = sync_user_to_firebase(
             user_id=user.id,
-            role=user.role or "user",
+            role=user.role or "citoyen",
             qr_code=user.qr_code or "",
             full_name=user.full_name or "",
             email=user.email or "",
@@ -412,7 +431,7 @@ async def facebook_auth(fb_data: models.FacebookAuth, db: Session = Depends(get_
             fallback_email = email or f"fb_{facebook_id}@noemail.ecorewind.local"
             user = db_models.User(email=fallback_email, full_name=full_name,
                                   hashed_password="", facebook_id=facebook_id,
-                                  is_active=True, role="user")
+                                  is_active=True, role="citoyen")
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -434,7 +453,7 @@ async def facebook_auth(fb_data: models.FacebookAuth, db: Session = Depends(get_
         # Synchronise les infos utilisateur dans Firebase pour identifier le QR code
         authoritative_score = sync_user_to_firebase(
             user_id=user.id,
-            role=user.role or "user",
+            role=user.role or "citoyen",
             qr_code=user.qr_code or "",
             full_name=user.full_name or "",
             email=user.email or "",
@@ -485,19 +504,26 @@ async def forgot_password(data: models.ForgotPassword, db: Session = Depends(get
         </div></body></html>"""
         await FastMail(_mail_conf()).send_message(
             MessageSchema(
-                subject="🔐 EcoRewind - Code de réinitialisation",
+                subject="EcoRewind - Code de r\u00e9initialisation",
                 recipients=[data.email],
                 body=html,
                 subtype=MessageType.html,
             )
         )
-        print(f"[AUTH] Code réinitialisation envoyé à {data.email}")
+        print(f"[AUTH] Code r\u00e9initialisation envoy\u00e9 \u00e0 {data.email}")
     except Exception as e:
-        print(f"[AUTH] Erreur envoi email à {data.email}: {e}")
+        print(f"[AUTH] ERREUR envoi email \u00e0 {data.email}: {e}")
         if IS_DEV:
             print(f"[DEV] Code reset pour {data.email}: {code}")
+            # En dev: continuer quand meme (code visible dans logs)
+        else:
+            # En production: signaler l'erreur
+            raise HTTPException(
+                status_code=503,
+                detail="Impossible d'envoyer l'email de r\u00e9initialisation. R\u00e9essayez plus tard."
+            )
 
-    return {"message": "Code de réinitialisation envoyé par email.", "success": True}
+    return {"message": "Code de r\u00e9initialisation envoy\u00e9 par email.", "success": True}
 
 
 
@@ -522,13 +548,44 @@ async def reset_password(data: models.ResetPassword, db: Session = Depends(get_d
     user = db.query(db_models.User).filter(db_models.User.reset_token == data.token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Token invalide")
-    if datetime.fromisoformat(user.token_expires) < datetime.utcnow():
+    # Vérifier que token_expires existe et n'est pas expiré
+    if not user.token_expires:
+        raise HTTPException(status_code=400, detail="Token invalide ou expiré")
+    try:
+        expires_at = datetime.fromisoformat(user.token_expires)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Token invalide")
+    if expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Token expiré")
     user.hashed_password = get_password_hash(data.new_password)
     user.reset_token = None
     user.token_expires = None
     db.commit()
-    return {"message": "Mot de passe mis à jour"}
+
+    # Auto-login : générer un token JWT + firebase pour connexion immédiate
+    access_token = create_access_token({"sub": user.email})
+    firebase_token = generate_custom_token(user.id)
+    sync_user_to_firebase(
+        user_id=user.id,
+        role=user.role or "citoyen",
+        qr_code=user.qr_code or "",
+        full_name=user.full_name or "",
+        email=user.email or "",
+        score=getattr(user, 'global_score', 0) or 0,
+    )
+    return {
+        "message": "Mot de passe mis à jour",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "firebase_token": firebase_token,
+        "role": user.role or "citoyen",
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name or "",
+        "avatar_url": user.avatar_url or "",
+        "qr_code": user.qr_code or "",
+    }
+
 
 
 @router.post("/users/me/change-password")

@@ -176,13 +176,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           AuthState.loginFromBackend(result);
         }
         setState(() { _currentStep = 2; _isLoading = false; });
-
-        // Navigate to home after 2 seconds
-        // ignore: use_build_context_synchronously
-        final nav = Navigator.of(context);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) nav.pushNamedAndRemoveUntil('/home', (route) => false);
-        });
       } else {
         setState(() { _errorMessage = result['message']; _isLoading = false; });
       }
@@ -787,13 +780,40 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         ).animate().scale(delay: 100.ms, duration: 600.ms, curve: Curves.elasticOut),
 
         const SizedBox(height: 32),
-        Text('Bienvenue !', style: GoogleFonts.spaceGrotesk(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 300.ms),
+        Text('Bienvenue !', style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 300.ms),
 
         const SizedBox(height: 12),
-        Text('Votre compte a été vérifié avec succès.\nRedirection en cours...', textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.5), fontSize: 15, height: 1.6)).animate().fadeIn(delay: 400.ms),
+        Text(
+          'Votre compte a été vérifié avec succès.\nPrêt à agir pour la planète ?',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 15, height: 1.6),
+        ).animate().fadeIn(delay: 400.ms),
 
         const SizedBox(height: 40),
-        const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryGreen)).animate().fadeIn(delay: 600.ms),
+        GestureDetector(
+          onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primaryGreen, AppTheme.accentTeal]),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: AppTheme.primaryGreen.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8)),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Commencer l'aventure",
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+              ],
+            ),
+          ),
+        ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.15, end: 0),
       ],
     );
   }

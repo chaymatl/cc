@@ -6,7 +6,7 @@ import '../../widgets/premium_widgets.dart';
 import '../../widgets/web_back_button.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({Key? key}) : super(key: key);
+  const ChangePasswordScreen({super.key});
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -201,7 +201,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
             else
               PremiumButton(
-                text: 'METTRE À JOUR',
+                text: 'METTRE È JOUR',
                 onPressed: _handleChangePassword,
               ),
           ],

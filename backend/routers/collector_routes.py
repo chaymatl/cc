@@ -461,6 +461,15 @@ async def complete_route(
     db.commit()
 
     db.refresh(route)
+
+    # Mettre à jour Firebase admin_stats en temps réel
+    # → total_collections +1, collections_week +1
+    try:
+        from services.firebase_service import update_admin_stats
+        update_admin_stats(db)
+    except Exception:
+        pass  # Non bloquant
+
     return {"message": "Tournée terminée avec succès", "route": _route_to_dict(route, db)}
 
 

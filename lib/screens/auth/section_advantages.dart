@@ -1,11 +1,10 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 
 class SectionAdvantages extends StatelessWidget {
-  const SectionAdvantages({Key? key}) : super(key: key);
+  const SectionAdvantages({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +41,6 @@ class SectionAdvantages extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Back button — masqué sur web
-              if (!kIsWeb)
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(

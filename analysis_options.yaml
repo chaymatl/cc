@@ -1,28 +1,43 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
+# Analysis options — EcoRewind
+# Règles de linting renforcées pour PFE ingénieur senior.
+# Référence : https://dart.dev/lints
 
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+  errors:
+    # Traiter ces warnings comme des erreurs bloquantes
+    invalid_annotation_target: ignore
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    # ── Qualité de code ──────────────────────────────────────────────
+    avoid_print: true                    # Utiliser debugPrint ou developer.log
+    always_declare_return_types: true    # Toujours typer les retours de fonctions
+    prefer_final_locals: true           # Variables locales immuables par défaut
+    avoid_dynamic_calls: true           # Pas d'appels sur `dynamic` non typé
+    prefer_const_constructors: true     # Widgets immuables = meilleures perfs
+    prefer_const_declarations: true     # Constantes déclarées const
+    avoid_redundant_argument_values: false  # BUG analyseur Dart — crash interne
+    unused_element: false                   # Faux positifs sur super.key dans widgets privés
+
+    # ── Null safety & robustesse ─────────────────────────────────────
+    avoid_null_checks_in_equality_operators: true
+    prefer_null_aware_operators: true
+    use_if_null_to_convert_nulls_to_bools: false
+
+    # ── Lisibilité ───────────────────────────────────────────────────
+    prefer_single_quotes: true           # Cohérence des guillemets
+    sort_child_properties_last: true     # child: toujours en dernier dans Flutter
+    sized_box_for_whitespace: true       # SizedBox plutôt que Container vide
+    use_super_parameters: true          # super.key au lieu de Key? key
+    prefer_relative_imports: true       # Imports relatifs dans le même package
+
+    # ── Performance Flutter ──────────────────────────────────────────
+    avoid_unnecessary_containers: true  # Pas de Container() inutile
+    use_full_hex_values_for_flutter_colors: true
+    prefer_const_literals_to_create_immutables: true

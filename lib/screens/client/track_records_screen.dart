@@ -23,7 +23,7 @@ Map<String, dynamic> _getWasteInfo(String? type) =>
     _wasteInfo[type?.toLowerCase()] ?? _wasteInfo['general']!;
 
 class TrackRecordsScreen extends StatefulWidget {
-  const TrackRecordsScreen({Key? key}) : super(key: key);
+  const TrackRecordsScreen({super.key});
 
   @override
   State<TrackRecordsScreen> createState() => _TrackRecordsScreenState();
@@ -92,26 +92,27 @@ class _TrackRecordsScreenState extends State<TrackRecordsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         leading: webLeading(IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.deepSlate),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.onSurface),
         )),
         title: Text(
           'Historique de Tri',
           style: GoogleFonts.outfit(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppTheme.deepSlate,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         actions: [
           // Bouton refresh
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.deepSlate),
+            icon: Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurface),
             onPressed: _loadHistory,
             tooltip: 'Actualiser',
           ),
@@ -186,7 +187,7 @@ class _TrackRecordsScreenState extends State<TrackRecordsScreen> {
             Text(
               'Aucun recyclage encore',
               style: GoogleFonts.outfit(
-                fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.deepSlate,
+                fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -384,7 +385,7 @@ class _TrackRecordsScreenState extends State<TrackRecordsScreen> {
                   Text(
                     info['label'] as String,
                     style: GoogleFonts.outfit(
-                      fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.deepSlate,
+                      fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -463,7 +464,7 @@ class _TrackRecordsScreenState extends State<TrackRecordsScreen> {
                 Text(
                   info['label'] as String,
                   style: GoogleFonts.outfit(
-                    fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.deepSlate,
+                    fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),

@@ -24,7 +24,7 @@ PERIOD_DAYS: Dict[str, Optional[int]] = {
 # ── Utilisateurs ──────────────────────────────────────────────────────────────
 
 class UsersByRole(BaseModel):
-    user:           int = 0
+    citoyen:        int = 0
     educator:       int = 0
     admin:          int = 0
     collector:      int = 0

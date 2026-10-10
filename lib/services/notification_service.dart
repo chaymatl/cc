@@ -50,22 +50,28 @@ class NotificationService {
     NotificationService().addNotification(title: title, body: body, type: type);
 
     // Show overlay
-    final overlay = Overlay.of(context);
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
     late OverlayEntry entry;
+    bool removed = false;
+
+    void dismiss() {
+      if (removed) return;
+      removed = true;
+      entry.remove();
+    }
 
     entry = OverlayEntry(
       builder: (context) => _NotificationToast(
         title: title, body: body, type: type,
-        onDismiss: () => entry.remove(),
+        onDismiss: dismiss,
       ),
     );
 
     overlay.insert(entry);
 
     // Auto-dismiss after 4 seconds
-    Future.delayed(const Duration(seconds: 4), () {
-      if (entry.mounted) entry.remove();
-    });
+    Future.delayed(const Duration(seconds: 4), dismiss);
   }
 }
 

@@ -6,12 +6,11 @@ import '../../theme/app_theme.dart';
 import '../../widgets/web_back_button.dart';
 import '../../services/auth_service.dart';
 import '../../services/firebase_score_service.dart';
-import '../../services/l10n_service.dart';
 import '../../services/theme_service.dart';
 import '../../models/user_model.dart';
 
 class PointsHistoryScreen extends StatefulWidget {
-  const PointsHistoryScreen({Key? key}) : super(key: key);
+  const PointsHistoryScreen({super.key});
 
   @override
   State<PointsHistoryScreen> createState() => _PointsHistoryScreenState();
@@ -107,9 +106,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = L10n.isArabic
-              ? 'تعذر تحميل سجل النقاط : $e'
-              : 'Impossible de charger l\'historique des points : $e';
+          _error = 'Impossible de charger l\'historique des points : $e';
           _loading = false;
         });
       }
@@ -118,7 +115,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = L10n.isArabic ? 'سجل النقاط' : 'Historique des points';
+    final title = 'Historique des points';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -147,7 +144,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
               color: _isDarkMode ? Colors.white : AppTheme.deepSlate,
             ),
             onPressed: _loadHistory,
-            tooltip: L10n.isArabic ? 'تحديث' : 'Actualiser',
+            tooltip: 'Actualiser',
           ),
         ],
       ),
@@ -189,7 +186,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
               onPressed: _loadHistory,
               icon: const Icon(Icons.refresh_rounded),
               label: Text(
-                L10n.isArabic ? 'إعادة المحاولة' : 'Réessayer',
+                'Réessayer',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
@@ -226,7 +223,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              L10n.isArabic ? 'لا يوجد سجل بعد' : 'Aucun point gagné',
+              'Aucun point gagné',
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -235,9 +232,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              L10n.isArabic
-                  ? 'قم بحل الاختبارات البيئية أو فرز النفايات للبدء في كسب النقاط !'
-                  : 'Répondez aux quiz ou triez vos déchets\npour commencer à cumuler des points !',
+              'Répondez aux quiz ou triez vos déchets\npour commencer à cumuler des points !',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 14,
@@ -293,7 +288,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
                     const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
                     const SizedBox(width: 8),
                     Text(
-                      L10n.isArabic ? 'مجموع النقاط' : 'Score Total',
+                      'Score Total',
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -312,7 +307,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
                   ),
                 ),
                 Text(
-                  L10n.isArabic ? 'نقاط بيئية تراكمية' : 'points éco-citoyens',
+                  'points éco-citoyens',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.white.withOpacity(0.8),
@@ -342,9 +337,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          L10n.isArabic
-                              ? 'يشمل نقاط المستشعر الذكي'
-                              : 'Inclut des points capteur IoT',
+                          'Inclut des points capteur IoT',
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -363,7 +356,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
 
           // ── Titre liste ──────────────────────────────────────────────────
           Text(
-            L10n.isArabic ? 'تفاصيل المعاملات' : 'Détail des gains',
+            'Détail des gains',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -410,15 +403,13 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
             : Icons.recycling_rounded;
 
     final String categoryLabel = isQuiz
-        ? (L10n.isArabic ? 'اختبار بيئي' : 'Quiz éco-responsable')
+        ? 'Quiz éco-responsable'
         : isArduino
-            ? (L10n.isArabic ? 'مستشعر إنترنت الأشياء' : 'Capteur IoT Arduino')
-            : (L10n.isArabic ? 'فرز النفايات' : 'Tri de déchets');
+            ? 'Capteur IoT Arduino'
+            : 'Tri de déchets';
 
     final String dateLabel = isArduino
-        ? (L10n.isArabic
-            ? 'عبر مستشعر IoT · غير محدد'
-            : 'Via capteur IoT · horodatage non dispo.')
+        ? 'Via capteur IoT · horodatage non dispo.'
         : (dateStr != null ? _formatDate(dateStr) : '—');
 
     return Container(
@@ -611,22 +602,16 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
       final now = DateTime.now();
       final diff = now.difference(dt);
       if (diff.inMinutes < 60) {
-        return L10n.isArabic
-            ? 'منذ ${diff.inMinutes} دقيقة'
-            : 'il y a ${diff.inMinutes} min';
+        return 'il y a ${diff.inMinutes} min';
       }
       if (diff.inHours < 24) {
-        return L10n.isArabic
-            ? 'منذ ${diff.inHours} ساعة'
-            : 'il y a ${diff.inHours}h';
+        return 'il y a ${diff.inHours}h';
       }
       if (diff.inDays == 1) {
-        return L10n.isArabic ? 'أمس' : 'hier';
+        return 'hier';
       }
       if (diff.inDays < 7) {
-        return L10n.isArabic
-            ? 'منذ ${diff.inDays} أيام'
-            : 'il y a ${diff.inDays}j';
+        return 'il y a ${diff.inDays}j';
       }
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
     } catch (_) {

@@ -1,0 +1,49 @@
+# ================================================================
+# Dockerfile — Flutter APK Builder (EcoRewind Mobile)
+# Produit : build/app/outputs/flutter-apk/app-release.apk
+# Usage   : docker build -f Dockerfile.flutter -t ecorewind-flutter .
+#           docker run --rm -v "$PWD/out:/out" ecorewind-flutter
+# ================================================================
+
+# ── Stage 1 : Build environment ─────────────────────────────────
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH="$FLUTTER_HOME/bin:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+
+# Dépendances système
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl wget unzip git xz-utils libglu1-mesa openjdk-17-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Flutter SDK (version stable)
+RUN git clone --branch stable --depth 1 https://github.com/flutter/flutter.git $FLUTTER_HOME
+
+# Android SDK command-line tools
+RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O /tmp/tools.zip && \
+    unzip -q /tmp/tools.zip -d /tmp/tools && \
+    mv /tmp/tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest && \
+    rm -rf /tmp/tools.zip /tmp/tools
+
+# Accepter licences Android + installer plateformes
+RUN yes | sdkmanager --licenses && \
+    sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+# Pré-cache Flutter
+RUN flutter config --no-analytics && flutter doctor --android-licenses < /dev/null || true
+
+# ── Stage 2 : Copie et build de l'app ──────────────────────────
+WORKDIR /app
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+COPY . .
+RUN flutter build apk --release --no-pub
+
+# ── Stage 3 : Image légère pour extraire l'APK ──────────────────
+FROM alpine:3.19 AS artifact
+COPY --from=builder /app/build/app/outputs/flutter-apk/app-release.apk /ecorewind.apk
+CMD ["cp", "/ecorewind.apk", "/out/ecorewind.apk"]

@@ -26,11 +26,17 @@ _VALID_PERIODS = {"today", "yesterday", "last_7_days", "last_30_days", "current_
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _months_range(months: int = 6):
+    """Retourne les N derniers mois calendaires (YYYY-MM), sans doublons."""
     now = datetime.utcnow()
-    return [
-        (now - timedelta(days=30 * i)).strftime("%Y-%m")
-        for i in range(months - 1, -1, -1)
-    ]
+    result = []
+    for i in range(months - 1, -1, -1):
+        m = now.month - i
+        y = now.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        result.append(f"{y:04d}-{m:02d}")
+    return result
 
 
 # ─── Overview KPIs ────────────────────────────────────────────────────────────
@@ -51,15 +57,11 @@ async def analytics_overview(
         user_q = user_q.filter(db_models.User.role == role)
 
     total_users = user_q.filter(db_models.User.is_active == True).count()
-    new_users = user_q.filter(
-        db_models.User.is_active == True,
-        db_models.User.id > 0,  # placeholder — filtered by created_at below
-    ).count()
 
-    # New users in period
+    # Nouveaux utilisateurs sur la période (filtre réel par date)
     new_users_period = db.query(func.count(db_models.User.id)).filter(
         db_models.User.is_active == True,
-        db_models.User.id >= 1,
+        db_models.User.created_at >= since,
     ).scalar() or 0
 
     # Score moyen
@@ -98,14 +100,24 @@ async def analytics_overview(
     centers_saturated = center_q.filter(db_models.CollectionPoint.status == "saturé").count()
     centers_maintenance = center_q.filter(db_models.CollectionPoint.status == "maintenance").count()
 
-    # ── Environnement ──
-    co2 = round(total_users * 1.5 + total_posts * 0.3, 1)
-    waste_kg = round(total_users * 2.1 + total_posts * 0.8, 1)
+    # ── Environnement — données réelles depuis les scans QR ──────────────
+    # Basé sur la table bin_scans (citoyens scannant les poubelles intelligentes)
+    # points_earned = somme de tous les points distribués
+    # 10 points ≈ 1 kg de déchets triés (barème de l'app)
+    # 1 kg déchets triés ≈ 0.6 kg CO2 évité
+    # 1 arbre absorbe ~22 kg CO2/an
+    total_scans = db.query(func.count(db_models.BinScan.id)).scalar() or 0
+    total_points_awarded = db.query(
+        func.sum(db_models.BinScan.points_earned)
+    ).scalar() or 0.0
+    waste_kg = round(float(total_points_awarded) / 10.0, 1)
+    co2 = round(waste_kg * 0.6, 1)
     trees = max(0, int(co2 / 22))
 
     return {
         "users": {
             "total": total_users,
+            "new_in_period": new_users_period,
             "avg_score": round(float(avg_score), 1),
             "top_scorers": [
                 {"name": s.full_name, "score": round(s.global_score, 1), "role": s.role}
@@ -129,6 +141,7 @@ async def analytics_overview(
             "availability_rate": round((centers_available / max(1, total_centers)) * 100, 1),
         },
         "environment": {
+            "total_scans": total_scans,
             "co2_saved_kg": co2,
             "waste_sorted_kg": waste_kg,
             "trees_equivalent": trees,
@@ -336,7 +349,7 @@ async def centers_by_city(
     )
 
 
-# ─── Centres par statut ───────────────────────────────────────────────────────
+# --- Centres par statut ---
 
 @router.get("/centers/by-status")
 async def centers_by_status(
@@ -344,33 +357,54 @@ async def centers_by_status(
     db: Session = Depends(get_db),
     _admin=Depends(get_admin_user),
 ):
-    q = db.query(
+    all_centers = db.query(
+        db_models.CollectionPoint.address,
+        db_models.CollectionPoint.name,
         db_models.CollectionPoint.status,
-        func.count(db_models.CollectionPoint.id).label("count"),
-    )
-    if city:
-        q = q.filter(
-            db_models.CollectionPoint.address.ilike(f"%{city}%") |
-            db_models.CollectionPoint.name.ilike(f"%{city}%")
-        )
-    rows = q.group_by(db_models.CollectionPoint.status).all()
-    # Normaliser les statuts et agréger (gère 'Disponible' vs 'disponible' etc.)
-    counts = {"disponible": 0, "satur\u00e9": 0, "maintenance": 0}
-    for r in rows:
-        s = (r.status or "").lower().strip()
+    ).all()
+
+    CITY_PATTERNS = {
+        "Tunis":       ["tunis"],
+        "Nabeul":      ["nabeul", "la jarre", "hammamet", "kelibia"],
+        "Sousse":      ["sousse", "hammam sousse"],
+        "Sfax":        ["sfax"],
+        "Bizerte":     ["bizerte"],
+        "Ariana":      ["ariana", "raoued", "ennasr"],
+        "Ben Arous":   ["ben arous", "rades", "ezzahra"],
+        "Manouba":     ["manouba", "oued ellil", "douar hicher"],
+        "Monastir":    ["monastir", "skanes"],
+    }
+
+    def _city_of(addr, name):
+        text = ((addr or "") + " " + (name or "")).lower()
+        for city_name, patterns in CITY_PATTERNS.items():
+            if any(p in text for p in patterns):
+                return city_name
+        return "Autre"
+
+    def _norm(s):
+        s = (s or "").lower().strip()
         if s in ("disponible", "available"):
-            counts["disponible"] += r.count
-        elif s in ("satur\u00e9", "sature", "saturated"):
-            counts["satur\u00e9"] += r.count
-        else:
-            counts["maintenance"] += r.count
-    # Retourner dans un ordre fixe (Disponible, Saturé, Maintenance)
-    # pour que les couleurs Flutter correspondent toujours
+            return "disponible"
+        if s in ("sature", "saturated") or s.startswith("satur"):
+            return "sature"
+        return "maintenance"
+
+    counts = {"disponible": 0, "sature": 0, "maintenance": 0}
+    city_filter = (city or "").strip().lower() if city else None
+
+    for c in all_centers:
+        if city_filter:
+            if _city_of(c.address or "", c.name or "").lower() != city_filter:
+                continue
+        counts[_norm(c.status or "")] += 1
+
     return [
-        {"status": "Disponible", "count": counts["disponible"]},
-        {"status": "Satur\u00e9",    "count": counts["satur\u00e9"]},
+        {"status": "Disponible",  "count": counts["disponible"]},
+        {"status": "Satur\u00e9", "count": counts["sature"]},
         {"status": "Maintenance", "count": counts["maintenance"]},
     ]
+
 
 
 # ─── Activité globale ─────────────────────────────────────────────────────────
@@ -527,3 +561,77 @@ async def analytics_collection_points(
     - taux de disponibilité
     """
     return svc.get_collection_point_stats(db)
+
+
+# ─── Anomalies / Détection de fraude ─────────────────────────────────────────
+
+@router.get(
+    "/anomalies",
+    summary="Détection d'anomalies comportementales (fraude, abus QR)",
+)
+async def analytics_anomalies(
+    max_scans_per_hour: int = Query(20, description="Seuil scans/heure pour suspecter"),
+    max_same_bin: int = Query(10, description="Seuil scans même bin/jour pour suspecter"),
+    db: Session = Depends(get_db),
+    _admin=Depends(get_admin_user),
+):
+    """
+    Détecte deux types d'anomalies :
+    1. Utilisateurs ayant scanné plus de max_scans_per_hour fois dans la dernière heure.
+    2. Utilisateurs scannant le même bac plus de max_same_bin fois aujourd'hui.
+
+    Retourne une liste d'anomalies avec type, user_id et count.
+    Une liste vide = aucune anomalie détectée.
+    """
+    from repositories import analytics_repository as repo
+
+    # -- Type 1 : taux de scan suspect (vitesse) ──────────────────────────────
+    high_rate = repo.detect_high_scan_rate_users(db, max_per_hour=max_scans_per_hour)
+    high_rate_anomalies = [
+        {
+            "type": "high_scan_rate",
+            "description": f"Scan rapide : {row.scan_count} scans/heure (seuil={max_scans_per_hour})",
+            "user_id": row.user_id,
+            "count": row.scan_count,
+            "severity": "high" if row.scan_count > max_scans_per_hour * 2 else "medium",
+        }
+        for row in high_rate
+    ]
+
+    # -- Type 2 : même bac scanné trop de fois (fraude points) ────────────────
+    repeated = repo.detect_repeated_bin_scans(db, max_same_bin=max_same_bin)
+    repeated_anomalies = [
+        {
+            "type": "repeated_bin_scan",
+            "description": f"Bac #{row.smart_bin_id} scanné {row.count}x aujourd'hui (seuil={max_same_bin})",
+            "user_id": row.user_id,
+            "count": row.count,
+            "severity": "high" if row.count > max_same_bin * 2 else "medium",
+        }
+        for row in repeated
+    ]
+
+    all_anomalies = high_rate_anomalies + repeated_anomalies
+
+    # Enrichir avec les noms d'utilisateurs
+    if all_anomalies:
+        user_ids = list({a["user_id"] for a in all_anomalies})
+        users = db.query(
+            db_models.User.id, db_models.User.full_name, db_models.User.email
+        ).filter(db_models.User.id.in_(user_ids)).all()
+        user_map = {u.id: {"name": u.full_name, "email": u.email} for u in users}
+        for a in all_anomalies:
+            info = user_map.get(a["user_id"], {})
+            a["user_name"]  = info.get("name", "Inconnu")
+            a["user_email"] = info.get("email", "")
+
+    return {
+        "total_anomalies": len(all_anomalies),
+        "has_anomalies": len(all_anomalies) > 0,
+        "anomalies": all_anomalies,
+        "thresholds": {
+            "max_scans_per_hour": max_scans_per_hour,
+            "max_same_bin_per_day": max_same_bin,
+        },
+        "checked_at": datetime.utcnow().isoformat(),
+    }

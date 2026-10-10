@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
@@ -806,11 +805,11 @@ class _EtatModeration extends State<_SectionModeration> {
             tranches: [
               MapEntry('Approuvés', published.toDouble()),
               if (pendAI > 0) MapEntry('En attente IA', pendAI.toDouble()),
-              if (pendRev > 0) MapEntry('È réviser', pendRev.toDouble()),
+              if (pendRev > 0) MapEntry('À réviser', pendRev.toDouble()),
               if (rejected > 0) MapEntry('Rejetés', rejected.toDouble()),
             ],
             couleurs: [Colors.green, Colors.orange.shade300, Colors.orange, Colors.red],
-            etiquettes: const ['Approuvés', 'En attente IA', 'È réviser', 'Rejetés'],
+            etiquettes: const ['Approuvés', 'En attente IA', 'À réviser', 'Rejetés'],
           ),
         ],
         const SizedBox(height: 20),
@@ -822,27 +821,12 @@ class _EtatModeration extends State<_SectionModeration> {
         const SizedBox(height: 8),
         _ligneInfo(Icons.add_location_rounded, 'Propositions de centres', '$pendProp',
           pendProp > 0 ? Colors.orange : Colors.green),
-        const SizedBox(height: 16),
-        const Divider(height: 1),
-        const SizedBox(height: 12),
-        Row(children: [
-          Icon(Icons.auto_awesome_rounded, size: 12, color: Colors.purple.shade300),
-          const SizedBox(width: 6),
-          Text(
-            'Auto-approbation IA : ${(autoRate * 100).toStringAsFixed(0)}%',
-            style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-          ),
-          const Spacer(),
-          Container(
-            width: 6, height: 6,
-            decoration: BoxDecoration(color: workerColor, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Modérateur IA : ${health.toUpperCase()}',
-            style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-          ),
-        ]),
+        const SizedBox(height: 8),
+        _ligneInfo(Icons.smart_toy_rounded, 'Taux approbation IA', '${autoRate.toStringAsFixed(0)}%',
+          autoRate > 80 ? Colors.green : autoRate > 50 ? Colors.orange : Colors.red),
+        const SizedBox(height: 8),
+        _ligneInfo(Icons.monitor_heart_rounded, 'État worker IA', health == 'ok' ? 'OK' : health == 'warning' ? 'Dégradé' : 'Erreur',
+          workerColor),
       ]),
     );
   }
@@ -860,155 +844,82 @@ class _EtatModeration extends State<_SectionModeration> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 6 — CENTRES DE TRI (GET /admin/analytics/centers/*)
+// SECTION 6 — CENTRES DE TRI (Firebase /admin_stats/)
 // ═══════════════════════════════════════════════════════════════════
 
-class _SectionCentres extends StatefulWidget {
+class _SectionCentres extends StatelessWidget {
   final _CoordinateurRefresh coordinateur;
   const _SectionCentres({super.key, required this.coordinateur});
-  @override State<_SectionCentres> createState() => _EtatCentres();
-}
-
-class _EtatCentres extends State<_SectionCentres> {
-  String _ville = 'Toutes';
-  bool _chargement = false;
-  List<Map> _parVille = [];
-  List<Map> _parStatut = [];
-  DateTime? _lastUpdated;
-  int _cacheAge = 0;
-
-  static const _villes = [
-    'Toutes', 'Tunis', 'Nabeul', 'Sousse', 'Sfax',
-    'Bizerte', 'Hammamet', 'Monastir', 'Ariana', 'Ben Arous'
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    widget.coordinateur.register(_chargerViaCoordinateur);
-    _charger();
-  }
-
-  @override
-  void dispose() {
-    widget.coordinateur.unregister(_chargerViaCoordinateur);
-    super.dispose();
-  }
-
-  void _chargerViaCoordinateur() { if (mounted) _charger(); }
-
-  Future<void> _charger() async {
-    if (!mounted) return;
-    setState(() => _chargement = true);
-    final ville = _ville == 'Toutes' ? '' : _ville;
-    final results = await Future.wait([
-      analyticsGetFull('/admin/analytics/centers/by-city'),
-      analyticsGetFull('/admin/analytics/centers/by-status?city=$ville'),
-    ]);
-    if (!mounted) return;
-    final toutesVilles = (results[0]?.data as List?)?.cast<Map>() ?? [];
-    setState(() {
-      _parVille  = _ville == 'Toutes' ? toutesVilles
-          : toutesVilles.where((c) => c['city'] == _ville).toList();
-      _parStatut = (results[1]?.data as List?)?.cast<Map>() ?? [];
-      _lastUpdated = results[0]?.fetchedAt;
-      _cacheAge = results[0]?.cacheAge ?? 0;
-      _chargement = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    int statCount(String label) =>
-        (_parStatut.firstWhere((r) => (r['status'] as String?) == label,
-          orElse: () => {'count': 0})['count'] as num?)?.toInt() ?? 0;
-    final dispo = statCount('Disponible');
-    final sat   = statCount('Saturé');
-    final maint = statCount('Maintenance');
-    final total = dispo + sat + maint;
-    final maxT  = _parVille.isEmpty ? 1.0
-        : _parVille.map((c) => (c['total'] as num).toDouble()).reduce(math.max);
+    return StreamBuilder<AdminStatsSnapshot>(
+      stream: FirebaseAdminStatsService().watchAdminStats(),
+      builder: (context, snapshot) {
+        final s = snapshot.data ?? AdminStatsSnapshot.empty();
+        final total = s.totalCenters;
+        final dispo = s.centersDisponible;
+        final sat   = s.centersSature;
+        final maint = s.centersMaintenance;
 
-    return SectionCard(
-      titre: 'Centres de Tri & Collecte',
-      icone: Icons.location_on_rounded,
-      couleur: const Color(0xFFF59E0B),
-      chargement: _chargement,
-      onActualiser: _charger,
-      lastUpdated: _lastUpdated,
-      cacheAge: _cacheAge,
-      filtres: [
-        FiltreDeroulant(etiquette: 'Ville', valeur: _ville, options: _villes,
+        return SectionCard(
+          titre: 'Centres de Tri & Collecte',
+          icone: Icons.location_on_rounded,
           couleur: const Color(0xFFF59E0B),
-          onChangement: (v) { setState(() => _ville = v); _charger(); }),
-      ],
-      contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        LayoutBuilder(builder: (_, c) {
-          final w = (c.maxWidth - 12) / 2;
-          return Column(children: [
-            Row(children: [
-              SizedBox(width: w, child: IndicateurPrincipal(valeur: '$total',
-                etiquette: 'Total centres',
-                sousTitre: _ville == 'Toutes' ? 'Toutes villes' : _ville,
-                icone: Icons.location_on_rounded, couleur: const Color(0xFFF59E0B))),
-              const SizedBox(width: 12),
-              SizedBox(width: w, child: IndicateurPrincipal(valeur: '$dispo',
-                etiquette: 'Disponible',
-                sousTitre: total > 0 ? '${(dispo / total * 100).toStringAsFixed(0)}% opérationnels' : '—',
-                icone: Icons.check_circle_outline_rounded, couleur: Colors.green)),
-            ]),
-            const SizedBox(height: 12),
-            Row(children: [
-              SizedBox(width: w, child: IndicateurPrincipal(valeur: '$sat',
-                etiquette: 'Saturés',
-                sousTitre: sat > 0 ? '⚠ï¸ Intervention requise' : '✅ Aucun saturé',
-                icone: Icons.warning_amber_rounded,
-                couleur: sat > 0 ? Colors.red : Colors.green,
-                alerte: sat > 0)),
-              const SizedBox(width: 12),
-              SizedBox(width: w, child: IndicateurPrincipal(valeur: '$maint',
-                etiquette: 'Maintenance',
-                sousTitre: maint > 0 ? '$maint hors service' : 'Aucun',
-                icone: Icons.build_circle_outlined,
-                couleur: maint > 0 ? Colors.orange : Colors.green,
-                alerte: maint > 0)),
-            ]),
-          ]);
-        }),
-        if (_parVille.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text('Centres par ville', style: GoogleFonts.inter(
-            fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-          const SizedBox(height: 10),
-          ..._parVille.take(8).map((c) {
-            final hasSat   = (c['saturated']  as int? ?? 0) > 0;
-            final hasMaint = (c['maintenance'] as int? ?? 0) > 0;
-            final barColor = hasSat ? Colors.red : hasMaint ? Colors.orange : const Color(0xFFF59E0B);
-            final detail = '${c['available']} dispo${hasSat ? ' · ${c['saturated']} sat' : ''}${hasMaint ? ' · ${c['maintenance']} maint' : ''}';
-            return BarreProgression(
-              etiquette: '${c['city']}',
-              valeurTexte: '${c['total']} ($detail)',
-              valeur: (c['total'] as num).toDouble(),
-              max: maxT, couleur: barColor,
-            );
-          }),
-        ],
-        if (_parStatut.isNotEmpty && total > 0) ...[
-          const SizedBox(height: 20),
-          Text('État des centres', style: GoogleFonts.inter(
-            fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-          const SizedBox(height: 12),
-          GraphiqueAnneau(
-            tranches: [
-              if (dispo  > 0) MapEntry('Disponible', dispo.toDouble()),
-              if (sat    > 0) MapEntry('Saturé', sat.toDouble()),
-              if (maint  > 0) MapEntry('Maintenance', maint.toDouble()),
+          chargement: !snapshot.hasData,
+          filtres: const [],
+          onActualiser: () {},
+          contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            LayoutBuilder(builder: (_, c) {
+              final w = (c.maxWidth - 12) / 2;
+              return Column(children: [
+                Row(children: [
+                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$total',
+                    etiquette: 'Total centres',
+                    sousTitre: 'Toutes villes',
+                    icone: Icons.location_on_rounded, couleur: const Color(0xFFF59E0B))),
+                  const SizedBox(width: 12),
+                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$dispo',
+                    etiquette: 'Disponible',
+                    sousTitre: total > 0 ? '${(dispo / total * 100).toStringAsFixed(0)}% opérationnels' : '',
+                    icone: Icons.check_circle_outline_rounded, couleur: Colors.green)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$sat',
+                    etiquette: 'Saturés',
+                    sousTitre: sat > 0 ? 'Intervention requise' : 'Aucun saturé',
+                    icone: Icons.warning_amber_rounded,
+                    couleur: sat > 0 ? Colors.red : Colors.green,
+                    alerte: sat > 0)),
+                  const SizedBox(width: 12),
+                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$maint',
+                    etiquette: 'Maintenance',
+                    sousTitre: maint > 0 ? '$maint hors service' : 'Aucun',
+                    icone: Icons.build_circle_outlined,
+                    couleur: maint > 0 ? Colors.orange : Colors.green,
+                    alerte: maint > 0)),
+                ]),
+              ]);
+            }),
+            if (total > 0) ...[
+              const SizedBox(height: 20),
+              Text('État des centres', style: GoogleFonts.inter(
+                fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
+              const SizedBox(height: 12),
+              GraphiqueAnneau(
+                tranches: [
+                  if (dispo > 0) MapEntry('Disponible', dispo.toDouble()),
+                  if (sat > 0) MapEntry('Saturé', sat.toDouble()),
+                  if (maint > 0) MapEntry('Maintenance', maint.toDouble()),
+                ],
+                couleurs: const [Colors.green, Colors.red, Colors.orange],
+                etiquettes: const ['Disponible', 'Saturé', 'Maintenance'],
+              ),
             ],
-            couleurs: const [Colors.green, Colors.red, Colors.orange],
-            etiquettes: const ['Disponible', 'Saturé', 'Maintenance'],
-          ),
-        ],
-      ]),
+          ]),
+        );
+      },
     );
   }
 }

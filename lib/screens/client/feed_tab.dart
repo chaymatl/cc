@@ -546,7 +546,10 @@ class _PinCardState extends State<_PinCard> {
                               ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Supprimer')),
                             ],
                           ));
-                          if (ok == true) { await widget.auth.deletePost(widget.post['id'].toString()); widget.onRefresh(); }
+                          if (ok == true) {
+                            await widget.auth.deletePost(widget.post['id'].toString());
+                            if (mounted) widget.onRefresh();
+                          }
                         },
                         child: Icon(Icons.more_horiz_rounded, size: 18, color: Colors.grey.shade400),
                       ),

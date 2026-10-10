@@ -13,7 +13,7 @@ import '../../services/messaging_service.dart';
 import '../messaging/messaging_screen.dart';
 
 class CollectorTab extends StatefulWidget {
-  const CollectorTab({Key? key}) : super(key: key);
+  const CollectorTab({super.key});
 
   @override
   State<CollectorTab> createState() => _CollectorTabState();
@@ -172,18 +172,15 @@ class _CollectorTabState extends State<CollectorTab>
     } catch (_) {}
     if (mounted) setState(() => _markingRead = false);
   }
-
-  String _t(String fr, String ar) => L10n.isArabic ? ar : fr;
-
   String _timeAgo(String? isoDate) {
     if (isoDate == null) return '';
     try {
       final dt = DateTime.parse(isoDate).toLocal();
       final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return _t('À l\'instant', 'الآن');
-      if (diff.inMinutes < 60) return _t('Il y a ${diff.inMinutes} min', 'منذ ${diff.inMinutes} دقيقة');
-      if (diff.inHours < 24) return _t('Il y a ${diff.inHours}h', 'منذ ${diff.inHours} ساعة');
-      return _t('Il y a ${diff.inDays}j', 'منذ ${diff.inDays} يوم');
+      if (diff.inMinutes < 1) return 'È l\'instant';
+      if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'Il y a ${diff.inHours}h';
+      return 'Il y a ${diff.inDays}j';
     } catch (_) {
       return '';
     }
@@ -226,7 +223,7 @@ class _CollectorTabState extends State<CollectorTab>
               child: const FaIcon(FontAwesomeIcons.truckFast, color: Colors.white, size: 14),
             ),
             const SizedBox(width: 10),
-            Text(_t('Logistique Temps Réel','اللوجستيك الفوري'),
+            Text('Logistique Temps Réel',
                 style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
             const Spacer(),
             if (_unreadCount > 0) _buildBadge(_unreadCount),
@@ -272,7 +269,7 @@ class _CollectorTabState extends State<CollectorTab>
                             color: _unreadCount > 0 ? Colors.red : Colors.grey, size: 16),
                       ),
                       const SizedBox(width: 10),
-                      Text(_t('NOTIFICATIONS CENTRES','إشعارات المراكز'),
+                      Text('NOTIFICATIONS CENTRES',
                           style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900,
                               letterSpacing: 1.5, color: AppTheme.textMuted)),
                       if (_unreadCount > 0) ...[
@@ -313,7 +310,7 @@ class _CollectorTabState extends State<CollectorTab>
                             : Row(mainAxisSize: MainAxisSize.min, children: [
                                 const Icon(Icons.done_all_rounded, size: 14, color: AppTheme.primaryGreen),
                                 const SizedBox(width: 6),
-                                Text(_t('Tout marquer comme lu','تحديد الكل كمقروء'),
+                                Text('Tout marquer comme lu',
                                     style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
                                         color: AppTheme.primaryGreen)),
                               ]),
@@ -336,8 +333,8 @@ class _CollectorTabState extends State<CollectorTab>
                         icon: Icon(_showAllAlerts ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: AppTheme.primaryGreen),
                         label: Text(
                           _showAllAlerts 
-                            ? _t('Voir moins', 'عرض أقل') 
-                            : '${_t('Voir tout', 'عرض الكل')} (${_alerts.length})',
+                            ? 'Voir moins' 
+                            : '${'Voir tout'} (${_alerts.length})',
                           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                         ),
                       ),
@@ -358,7 +355,7 @@ class _CollectorTabState extends State<CollectorTab>
                   child: const Icon(Icons.route_rounded, color: AppTheme.primaryGreen, size: 16),
                 ),
                 const SizedBox(width: 10),
-                Text(_t('ORIENTATION DES FLUX (TONNAGE)','توجيه التدفق (بالطن)'),
+                Text('ORIENTATION DES FLUX (TONNAGE)',
                     style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900,
                         letterSpacing: 1.5, color: AppTheme.textMuted)),
               ]),
@@ -396,15 +393,12 @@ class _CollectorTabState extends State<CollectorTab>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _t('Manifeste de Transport', 'بيان النقل'),
+                                  'Manifeste de Transport',
                                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _t(
-                                    'Centres de tri saturés à collecter en priorité :',
-                                    'مراكز الفرز الممتلئة المطلوب جمعها كأولوية:'
-                                  ),
+                                  'Centres de tri saturés à collecter en priorité :',
                                   style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12),
                                 ),
                                 const SizedBox(height: 16),
@@ -413,7 +407,7 @@ class _CollectorTabState extends State<CollectorTab>
                                     padding: const EdgeInsets.symmetric(vertical: 20),
                                     child: Center(
                                       child: Text(
-                                        _t('Aucun centre saturé à collecter.', 'لا توجد مراكز ممتلئة للجمع.'),
+                                        'Aucun centre saturé à collecter.',
                                         style: GoogleFonts.inter(fontStyle: FontStyle.italic, color: AppTheme.textMuted),
                                       ),
                                     ),
@@ -441,7 +435,7 @@ class _CollectorTabState extends State<CollectorTab>
                                       child: TextButton(
                                         onPressed: () => Navigator.pop(context),
                                         child: Text(
-                                          _t('Fermer', 'إغلاق'),
+                                          'Fermer',
                                           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppTheme.textMuted),
                                         ),
                                       ),
@@ -453,16 +447,13 @@ class _CollectorTabState extends State<CollectorTab>
                                           Navigator.pop(context);
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text(_t(
-                                                'Manifeste exporté avec succès (Simulation)',
-                                                'تم تصدير البيان بنجاح (محاكاة)'
-                                              )),
+                                              content: Text('Manifeste exporté avec succès (Simulation)'),
                                               behavior: SnackBarBehavior.floating,
                                             ),
                                           );
                                         },
                                         icon: const Icon(Icons.share_rounded),
-                                        label: Text(_t('Exporter', 'تصدير')),
+                                        label: Text('Exporter'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppTheme.primaryGreen,
                                           foregroundColor: Colors.white,
@@ -480,7 +471,7 @@ class _CollectorTabState extends State<CollectorTab>
                     );
                   },
                   icon: const Icon(Icons.file_present_rounded),
-                  label: Text(_t('GÉNÉRER LE MANIFESTE DE TRANSPORT','إنشاء بيان النقل')),
+                  label: Text('GÉNÉRER LE MANIFESTE DE TRANSPORT'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.deepSlate,
                     padding: const EdgeInsets.symmetric(vertical: 20),
@@ -534,8 +525,8 @@ class _CollectorTabState extends State<CollectorTab>
                 RichText(text: TextSpan(
                   style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22, height: 1.15),
                   children: [
-                    TextSpan(text: L10n.isArabic ? 'اللوجستيك ' : 'Logistique '),
-                    TextSpan(text: L10n.isArabic ? 'الفوري' : 'Temps Réel',
+                    TextSpan(text: 'Logistique '),
+                    TextSpan(text: 'Temps Réel',
                       style: TextStyle(
                         foreground: Paint()..shader = const LinearGradient(
                           colors: [Color(0xFF16DB93), Color(0xFF00B4D8)],
@@ -545,13 +536,13 @@ class _CollectorTabState extends State<CollectorTab>
                 )),
                 const SizedBox(height: 12),
                 Row(children: [
-                   _pill(FontAwesomeIcons.truckFast, _t('Tour Actif','الجولة نشطة'), AppTheme.primaryGreen.withOpacity(0.2), AppTheme.primaryGreen),
+                   _pill(FontAwesomeIcons.truckFast, 'Tour Actif', AppTheme.primaryGreen.withOpacity(0.2), AppTheme.primaryGreen),
                    const SizedBox(width: 8),
                    if (sature > 0 || maintenance > 0)
-                     _pill(Icons.warning_amber_rounded, '${sature + maintenance} ${_t('alerte(s)','تنبيه')}',
+                     _pill(Icons.warning_amber_rounded, '${sature + maintenance} ${'alerte(s)'}',
                          Colors.red.withOpacity(0.2), Colors.red)
                    else
-                     _pill(Icons.check_circle_outline, _t('Flux normal','تدفق طبيعي'), Colors.green.withOpacity(0.2), Colors.green),
+                     _pill(Icons.check_circle_outline, 'Flux normal', Colors.green.withOpacity(0.2), Colors.green),
                 ]),
               ],
             ),
@@ -636,17 +627,17 @@ class _CollectorTabState extends State<CollectorTab>
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(
-            L10n.isArabic ? '$count مركز تحتاج تدخلاً' : '$count Centre(s) Requièrent une Intervention',
+            '$count Centre(s) Requièrent une Intervention',
             style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
           )),
         ]),
         if (sature.isNotEmpty) ...[
           const SizedBox(height: 10),
-          _urgentRow(Icons.error_rounded, _t('Saturés:','ممتلئة:'), sature.map((c) => c['name'] ?? '').join(', ')),
+          _urgentRow(Icons.error_rounded, 'Saturés:', sature.map((c) => c['name'] ?? '').join(', ')),
         ],
         if (maintenance.isNotEmpty) ...[
           const SizedBox(height: 6),
-          _urgentRow(Icons.build_rounded, _t('Maintenance:','صيانة:'), maintenance.map((c) => c['name'] ?? '').join(', ')),
+          _urgentRow(Icons.build_rounded, 'Maintenance:', maintenance.map((c) => c['name'] ?? '').join(', ')),
         ],
       ]),
     ).animate().fadeIn().shake(hz: 1, curve: Curves.easeInOut);
@@ -663,11 +654,11 @@ class _CollectorTabState extends State<CollectorTab>
   Widget _buildFluxStats(int sature, int maintenance, int total) {
     final disponible = total - sature - maintenance;
     return Row(children: [
-      _fluxStat('$disponible', _t('Disponibles','متاحة'), AppTheme.primaryGreen),
+      _fluxStat('$disponible', 'Disponibles', AppTheme.primaryGreen),
       const SizedBox(width: 10),
-      _fluxStat('$sature', _t('Saturés','ممتلئة'), Colors.red),
+      _fluxStat('$sature', 'Saturés', Colors.red),
       const SizedBox(width: 10),
-      _fluxStat('$maintenance', _t('Maintenance','صيانة'), Colors.orange),
+      _fluxStat('$maintenance', 'Maintenance', Colors.orange),
     ].map((w) => Expanded(child: w)).toList());
   }
 
@@ -743,8 +734,8 @@ class _CollectorTabState extends State<CollectorTab>
     child: Column(children: [
       Icon(Icons.notifications_none_rounded, size: 40, color: AppTheme.primaryGreen.withOpacity(0.4)),
       const SizedBox(height: 12),
-      Text(_t('Aucune alerte','لا توجد تنبيهات'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.deepSlate)),
-      Text(_t('Tous les centres fonctionnent normalement','جميع المراكز تعمل بشكل طبيعي'), style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
+      Text('Aucune alerte', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.deepSlate)),
+      Text('Tous les centres fonctionnent normalement', style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
     ]),
   );
 
@@ -840,7 +831,7 @@ class _CollectorTabState extends State<CollectorTab>
                     color: _missionPrimary, size: 16),
               ),
               const SizedBox(width: 10),
-              Text(_t('MES MISSIONS', 'مهامي'),
+              Text('MES MISSIONS',
                   style: GoogleFonts.inter(
                       fontSize: 11, fontWeight: FontWeight.w900,
                       letterSpacing: 1.5, color: AppTheme.textMuted)),
@@ -889,14 +880,13 @@ class _CollectorTabState extends State<CollectorTab>
             child: Column(children: [
               Icon(Icons.inbox_rounded, size: 40, color: Colors.grey.shade400),
               const SizedBox(height: 12),
-              Text(_t('Aucune mission assignée', 'لا توجد مهام مخصصة'),
+              Text('Aucune mission assignée',
                   style: GoogleFonts.outfit(
                       color: Colors.grey.shade500,
                       fontWeight: FontWeight.w600, fontSize: 14)),
               const SizedBox(height: 4),
               Text(
-                _t('L\'intercommunalité vous assignera des missions ici',
-                    'ستُعيَّن لك المهام من قِبل الوكالة البيئية هنا'),
+                'L\'intercommunalité vous assignera des missions ici',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                     color: Colors.grey.shade400, fontSize: 12),
@@ -914,7 +904,7 @@ class _CollectorTabState extends State<CollectorTab>
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 8),
               child: Text(
-                _t('Missions terminées / annulées', 'المهام المنجزة / الملغاة'),
+                'Missions terminées / annulées',
                 style: GoogleFonts.inter(
                     fontSize: 11, fontWeight: FontWeight.w700,
                     color: Colors.grey.shade500, letterSpacing: 0.5),
@@ -928,7 +918,7 @@ class _CollectorTabState extends State<CollectorTab>
             child: TextButton.icon(
               onPressed: () => _loadMissions(),
               icon: const Icon(Icons.refresh_rounded, size: 16, color: _missionPrimary),
-              label: Text(_t('Actualiser', 'تحديث'),
+              label: Text('Actualiser',
                   style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w600, color: _missionPrimary, fontSize: 13)),
             ),
@@ -943,7 +933,7 @@ class _CollectorTabState extends State<CollectorTab>
     final priority = m['priority'] as String? ?? 'normale';
     final label = m['target_label'] as String?
         ?? m['zone_name'] as String?
-        ?? _t('Mission sans titre', 'مهمة بدون عنوان');
+        ?? 'Mission sans titre';
     final points = m['collection_points_data'] as List<dynamic>? ?? [];
     final assigner = m['assigner_name'] as String? ?? '';
     final msg = m['mission_message'] as String? ?? '';
@@ -961,10 +951,10 @@ class _CollectorTabState extends State<CollectorTab>
 
     String statusLabel() {
       switch (status) {
-        case 'pending': return _t('En attente', 'في الانتظار');
-        case 'in_progress': return _t('En cours', 'جارٍ');
-        case 'done': return _t('Terminée', 'منجزة');
-        case 'cancelled': return _t('Annulée', 'ملغاة');
+        case 'pending': return 'En attente';
+        case 'in_progress': return 'En cours';
+        case 'done': return 'Terminée';
+        case 'cancelled': return 'Annulée';
         default: return status;
       }
     }
@@ -1060,7 +1050,7 @@ class _CollectorTabState extends State<CollectorTab>
                   const Icon(Icons.person_outline_rounded,
                       size: 13, color: AppTheme.textMuted),
                   const SizedBox(width: 5),
-                  Text(_t('Assigné par ', 'أُسند من قِبل ') + assigner,
+                  Text('Assigné par ' + assigner,
                       style: GoogleFonts.inter(
                           fontSize: 11, color: AppTheme.textMuted)),
                 ]),
@@ -1086,7 +1076,7 @@ class _CollectorTabState extends State<CollectorTab>
               // Liste des centres de tri
               if (points.isNotEmpty) ...[
                 Text(
-                  '${points.length} ${_t('centre(s) de tri', 'مركز (مراكز) فرز')}',
+                  '${points.length} ${'centre(s) de tri'}',
                   style: GoogleFonts.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1132,7 +1122,7 @@ class _CollectorTabState extends State<CollectorTab>
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      '+ ${points.length - 3} ${_t('autres', 'آخرين')}',
+                      '+ ${points.length - 3} ${'autres'}',
                       style: GoogleFonts.inter(
                           fontSize: 11, color: AppTheme.textMuted),
                     ),
@@ -1154,7 +1144,7 @@ class _CollectorTabState extends State<CollectorTab>
                     icon: const Icon(Icons.map_rounded, size: 18,
                         color: Colors.white),
                     label: Text(
-                      _t('Ouvrir la carte des centres', 'فتح خريطة المراكز'),
+                      'Ouvrir la carte des centres',
                       style: GoogleFonts.outfit(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
@@ -1181,8 +1171,7 @@ class _CollectorTabState extends State<CollectorTab>
                   ),
                   child: Center(
                     child: Text(
-                      _t('Aucun centre de tri sur cette mission',
-                          'لا توجد مراكز فرز في هذه المهمة'),
+                      'Aucun centre de tri sur cette mission',
                       style: GoogleFonts.inter(
                           fontSize: 11, color: Colors.grey.shade500),
                     ),

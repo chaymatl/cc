@@ -326,12 +326,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ),
                 Expanded(
                   child: comments.isEmpty
-                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade300),
-                          const SizedBox(height: 12),
-                          Text('Aucun commentaire', style: GoogleFonts.inter(color: AppTheme.textMuted)),
-                          Text('Soyez le premier à commenter !', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12)),
-                        ]))
+                      ? Center(
+                          child: SingleChildScrollView(
+                            child: Column(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              Text('Aucun commentaire', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+                              Text('Soyez le premier à commenter !', style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12)),
+                            ]),
+                          ),
+                        )
+
                       : ListView.builder(
                           padding: const EdgeInsets.all(24),
                           itemCount: topLevel.length,
@@ -377,7 +382,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     child: Row(children: [
                       Expanded(child: TextField(
                         controller: commentController,
-                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         cursorColor: const Color(0xFF00BFA6),
                         decoration: InputDecoration(
                           hintText: replyingTo != null

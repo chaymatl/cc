@@ -16,6 +16,7 @@ import '../../screens/client/notifications_screen.dart';
 import '../../screens/client/bin_scanner_screen.dart';
 import '../../features/scan/scan_history_screen.dart';
 import '../../services/l10n_service.dart';
+import '../../widgets/safe_network_image.dart';
 
 class HomeDashboardTab extends StatefulWidget {
   final Function(int) onNavigate;
@@ -57,7 +58,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
 
   /// Synchronise le compteur de notifications non lues depuis le backend
   Future<void> _syncUnreadNotifications() async {
-    if (!AuthState.isLoggedIn) return;
+    if (!AuthState.hasValidToken) return;
     try {
       final count = await _authService.fetchUnreadCount();
       // Injecter les entrées manquantes dans NotificationService pour aligner le badge
@@ -98,7 +99,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   /// Après cela, Firebase RTDB (via MainNavigationShell) prend le relais
   /// en temps réel pour toutes les mises à jour de score.
   Future<void> _refreshUserScoreOnce() async {
-    if (!AuthState.isLoggedIn) return;
+    if (!AuthState.hasValidToken) return;
     try {
       final userData = await _authService.fetchUserProfile();
       if (userData != null && mounted) {
@@ -147,9 +148,12 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   }
 
   String _getLevelBadge(double score) {
-    if (score >= 5000) return 'Légende Éco';
-    if (score >= 2000) return 'Champion Vert';
-    return 'Éco-Citoyen';
+    if (score >= 10000) return '🌟 Légende Éco';
+    if (score >= 5000)  return '🏆 Champion Vert';
+    if (score >= 2000)  return '🌿 Expert Vert';
+    if (score >= 800)   return '♻️ Éco-Citoyen';
+    if (score >= 200)   return '🌱 Engagé';
+    return '🌾 Débutant';
   }
 
   @override
@@ -293,8 +297,11 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                 ),
                 child: ClipOval(
                   child: (user?.avatarUrl != null && user!.avatarUrl.isNotEmpty)
-                      ? Image.network(user.avatarUrl, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _avatarFallback(user.name))
+                      ? SafeNetworkImage(
+                          user.avatarUrl,
+                          fit: BoxFit.cover,
+                          placeholder: _avatarFallback(user.name),
+                        )
                       : _avatarFallback(user?.name ?? 'E'),
                 ),
               ),
@@ -381,7 +388,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.spaceGrotesk(
+                            style: GoogleFonts.outfit(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
@@ -519,13 +526,35 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
   }
 
+  // 7 conseils qui tournent chaque jour
+  static const _tips = [
+    'Rincez vos contenants en plastique avant de les jeter pour un meilleur recyclage.',
+    'Préférez un sac réutilisable à chaque course — économisez 300 sacs plastique par an.',
+    'Le verre est recyclable à l\'infini sans perte de qualité. Pensez à le trier.',
+    'Compostez vos épluchures : 30 % des déchets ménagers peuvent devenir de l\'engrais.',
+    'Éteignez les appareils en veille — ils consomment jusqu\'à 10 % de votre facture d\'électricité.',
+    'Une douche de 5 min consomme 3× moins d\'eau qu\'un bain. Chaque goutte compte.',
+    'Achetez en vrac quand c\'est possible pour réduire les emballages à la source.',
+  ];
+
   Widget _buildTipOfTheDay() {
+    final tipIndex = DateTime.now().day % _tips.length;
+    final tipText = _tips[tipIndex];
+    final isDark = ThemeService.isDarkMode;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50.withOpacity(0.4),
+        color: isDark
+            ? Colors.amber.shade900.withOpacity(0.15)
+            : Colors.amber.shade50.withOpacity(0.4),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.amber.shade200.withOpacity(0.5), width: 1.5),
+        border: Border.all(
+          color: isDark
+              ? Colors.amber.shade700.withOpacity(0.25)
+              : Colors.amber.shade200.withOpacity(0.5),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.amber.shade500.withOpacity(0.03),
@@ -554,19 +583,19 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Conseil du jour',
+                      L10n.tr('home_tip_label'),
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: const Color(0xFF92400E),
+                        color: isDark ? Colors.amber.shade300 : const Color(0xFF92400E),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      L10n.tr('home_tip_text'),
+                      tipText,
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFFB45309),
+                        color: isDark ? Colors.amber.shade200 : const Color(0xFFB45309),
                         height: 1.4,
                       ),
                     ),
@@ -588,7 +617,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
         children: [
           Text(
             L10n.tr('home_quick_services'),
-            style: GoogleFonts.spaceGrotesk(
+            style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: Theme.of(context).colorScheme.onSurface,
@@ -878,7 +907,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
             children: [
               Text(
                 L10n.tr('home_education_section'),
-                style: GoogleFonts.spaceGrotesk(
+                style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -1024,7 +1053,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -1176,7 +1205,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
             children: [
               Text(
                 L10n.tr('home_news_section'),
-                style: GoogleFonts.spaceGrotesk(
+                style: GoogleFonts.outfit(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,

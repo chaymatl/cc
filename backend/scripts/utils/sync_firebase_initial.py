@@ -80,7 +80,7 @@ def _etat_depuis_status(status: str, capacity_kg: float | None) -> str:
 def sync_utilisateurs(db) -> tuple[int, int]:
     """
     Lit tous les utilisateurs de PostgreSQL et les pousse dans /utilisateurs.
-    Le champ "score" est inclus UNIQUEMENT pour les citoyens (role="user").
+    Le champ "score" est inclus UNIQUEMENT pour les citoyens (role="citoyen").
     Retourne (nb_ok, nb_erreur).
     """
     users = db.query(User).all()
@@ -89,7 +89,7 @@ def sync_utilisateurs(db) -> tuple[int, int]:
     err = 0
     for user in users:
         qr   = user.qr_code  or ""
-        role = user.role     or "user"
+        role = user.role     or "citoyen"
         name = user.full_name or ""
         mail = user.email    or ""
         score = getattr(user, 'global_score', 0) or 0

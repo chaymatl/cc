@@ -65,6 +65,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: false,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
@@ -389,9 +390,7 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── KPI Formation (Education stats) ────────────────────────────
-          const _EducationKpiBanner(),
-          const SizedBox(height: 20),
+          // Témoignages citoyens (données synchronisées)
           Text('TÉMOIGNAGES CITOYENS',
             style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 12, color: AppTheme.textMuted)),
           const SizedBox(height: 24),
@@ -1413,9 +1412,7 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── KPI Modération ─────────────────────────────────────────
-            const _ModerationKpiBanner(),
-            const SizedBox(height: 16),
+            // Stats bar en haut (données synchronisées)
             // Stats bar (liste des catégories)
             if (_stats.isNotEmpty) ...[
               _buildStatsBar(),

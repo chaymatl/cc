@@ -63,7 +63,7 @@ class LiveScoreWidget extends StatelessWidget {
             final arduinoScore = arduinoSnap.data ?? 0.0;
             // Score affiché = maximum entre les deux sources
             final score = [apiData.total, arduinoScore, fallbackScore]
-                .reduce((a, b) => a > b ? a : b);
+                .reduce((a, b) => a > b ? a : b).toDouble();
 
             // Détecter si le dernier événement vient de l'Arduino
             final isArduinoEvent =
@@ -72,7 +72,7 @@ class LiveScoreWidget extends StatelessWidget {
             final lastBinType =
                 isArduinoEvent ? 'general' : apiData.lastBinType;
             final lastPoints = isArduinoEvent
-                ? (arduinoScore - apiData.total).clamp(0, double.infinity)
+                ? (arduinoScore - apiData.total).clamp(0, double.infinity).toDouble()
                 : apiData.lastPoints;
             final isArduinoSource = isArduinoEvent && arduinoScore > apiData.total;
 

@@ -1,6 +1,6 @@
 // lib/widgets/meetings_section.dart
 // ─────────────────────────────────────────────────────────────────────────────
-// Widget "Mes Séances" intégré dans l'onglet Formation du citoyen.
+// Widget 'Mes Séances' intégré dans l'onglet Formation du citoyen.
 // Affiche les séances à venir avec leur lien Google Meet.
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import '../services/meetings_service.dart';
 import '../theme/app_theme.dart';
 
 class MeetingsSection extends StatefulWidget {
-  const MeetingsSection({Key? key}) : super(key: key);
+  const MeetingsSection({super.key});
 
   @override
   State<MeetingsSection> createState() => _MeetingsSectionState();
@@ -291,7 +291,7 @@ class _EmptyState extends StatelessWidget {
         Text('Aucune séance à venir',
           style: GoogleFonts.outfit(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppTheme.deepSlate, fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        Text("Votre éducateur planifiera prochainement\nune séance Google Meet avec vous.",
+        Text('Votre éducateur planifiera prochainement\nune séance Google Meet avec vous.',
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : AppTheme.textMuted, fontSize: 13, height: 1.5)),
       ]),

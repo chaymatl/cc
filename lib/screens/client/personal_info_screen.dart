@@ -7,7 +7,7 @@ import '../../widgets/premium_widgets.dart';
 import '../../widgets/web_back_button.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
-  const PersonalInfoScreen({Key? key}) : super(key: key);
+  const PersonalInfoScreen({super.key});
 
   @override
   State<PersonalInfoScreen> createState() => _PersonalInfoScreenState();
@@ -43,10 +43,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     }
 
     setState(() => _isSaving = true);
-    final res = await _authService.updateProfile(fullName: newName);
-    setState(() => _isSaving = false);
-
-    if (!mounted) return;
+    try {
+      final res = await _authService.updateProfile(fullName: newName);
+      if (!mounted) return;
+      setState(() => _isSaving = false);
 
     if (res['success'] == true) {
       // Mettre à jour le cache local AuthState
@@ -81,6 +81,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res['message'] ?? 'Erreur lors de la mise à jour'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur réseau : $e'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

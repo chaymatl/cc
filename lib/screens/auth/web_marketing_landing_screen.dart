@@ -20,7 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class WebMarketingLandingScreen extends StatefulWidget {
-  const WebMarketingLandingScreen({Key? key}) : super(key: key);
+  const WebMarketingLandingScreen({super.key});
 
   @override
   State<WebMarketingLandingScreen> createState() => _WebMarketingLandingScreenState();
@@ -1383,7 +1383,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
           ),
           const SizedBox(height: 16),
           Text(
-            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 10 éco-points offerts. 🎁',
+            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 10 éco-points offerts. ðŸŽ',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: Colors.white.withOpacity(0.85),
@@ -1501,7 +1501,7 @@ class _WavePainter extends CustomPainter {
 
 class _ContinuousKenBurns extends StatefulWidget {
   final List<String> imageUrls;
-  const _ContinuousKenBurns({Key? key, required this.imageUrls}) : super(key: key);
+  const _ContinuousKenBurns({super.key, required this.imageUrls});
 
   @override
   State<_ContinuousKenBurns> createState() => _ContinuousKenBurnsState();
