@@ -784,66 +784,72 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
     return RefreshIndicator(
       onRefresh: _loadInstructions,
-      child: Column(
-        children: [
-          Container(
-            color: Colors.grey.shade50,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _f1FilterWasteType.isEmpty ? null : _f1FilterWasteType,
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
-                        decoration: InputDecoration(
-                          hintText: 'Déchet...',
-                          hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
-                          prefixIcon: const Icon(Icons.recycling_rounded, size: 20, color: Color(0xFF6C3EB8)),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.grey.shade50,
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _f1FilterWasteType.isEmpty ? null : _f1FilterWasteType,
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w600),
+                          decoration: InputDecoration(
+                            hintText: 'Déchet...',
+                            hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                            prefixIcon: const Icon(Icons.recycling_rounded, size: 20, color: Color(0xFF6C3EB8)),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surface,
+                          ),
+                          selectedItemBuilder: (BuildContext context) {
+                            return [
+                              const Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
+                              ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(overflow: TextOverflow.ellipsis))),
+                            ];
+                          },
+                          items: [
+                            const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets', style: TextStyle())),
+                            ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle()))),
+                          ],
+                          onChanged: (v) => setState(() => _f1FilterWasteType = v ?? ''),
                         ),
-                        selectedItemBuilder: (BuildContext context) {
-                          return [
-                            const Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
-                            ..._wasteTypesList.map((w) => Text(w, style: const TextStyle(overflow: TextOverflow.ellipsis))),
-                          ];
-                        },
-                        items: [
-                          const DropdownMenuItem<String>(value: '', child: Text('Tous les déchets', style: TextStyle())),
-                          ..._wasteTypesList.map((w) => DropdownMenuItem<String>(value: w, child: Text(w, style: const TextStyle()))),
-                        ],
-                        onChanged: (v) => setState(() => _f1FilterWasteType = v ?? ''),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _filterTerritoryAutocomplete(
-                        currentValue: _f1FilterTerritory,
-                        onChanged: (v) => setState(() => _f1FilterTerritory = v),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _filterTerritoryAutocomplete(
+                          currentValue: _f1FilterTerritory,
+                          onChanged: (v) => setState(() => _f1FilterTerritory = v),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          Expanded(
-            child: filtered.isEmpty
-                ? _emptyState(icon: Icons.rule_folder_rounded, title: 'Aucune consigne', sub: 'Modifiez vos filtres ou créez-en une.')
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 100),
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, i) => _instructionCard(filtered[i]),
+          filtered.isEmpty
+              ? SliverFillRemaining(
+                  child: _emptyState(icon: Icons.rule_folder_rounded, title: 'Aucune consigne', sub: 'Modifiez vos filtres ou créez-en une.'),
+                )
+              : SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (ctx, i) => Padding(
+                      padding: EdgeInsets.fromLTRB(12, i == 0 ? 6 : 0, 12, i == filtered.length - 1 ? 100 : 0),
+                      child: _instructionCard(filtered[i]),
+                    ),
+                    childCount: filtered.length,
                   ),
-          ),
+                ),
         ],
       ),
     );
