@@ -312,7 +312,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           }
 
           return Container(
-            height: MediaQuery.of(context).size.height * 0.75,
+            height: MediaQuery.of(modalContext).size.height * 0.75 -
+                MediaQuery.of(modalContext).viewInsets.bottom * 0.3,
             decoration: BoxDecoration(color: Theme.of(modalContext).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
             child: Column(
               children: [
@@ -431,6 +432,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   });
                                 }
                                 commentController.clear();
+                              } else {
+                                if (modalContext.mounted) {
+                                  ScaffoldMessenger.of(modalContext).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result['message'] ?? 'Erreur lors de l\'envoi'),
+                                      backgroundColor: Colors.red.shade600,
+                                      duration: const Duration(seconds: 4),
+                                    ),
+                                  );
+                                }
                               }
                             }
                           },

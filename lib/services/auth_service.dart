@@ -1057,7 +1057,7 @@ class AuthService {
   /// Ajoute un commentaire (ou une réponse) a une publication
   Future<Map<String, dynamic>> addComment(String postId, String userName, String? userAvatarUrl, String content, {int? parentId}) async {
     try {
-      final token = await _getToken();
+      var token = await _getToken();
 
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
@@ -1068,21 +1068,31 @@ class AuthService {
       };
       if (parentId != null) body['parent_id'] = parentId;
 
-      final response = await _http.post(
+      Future<http.Response> doPost(String t) => _http.post(
         Uri.parse('$baseUrl/posts/$postId/comments'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $t',
         },
         body: json.encode(body),
       ).timeout(_kTimeout);
 
-      if (response.statusCode == 200) {
-        // Invalider le cache du feed pour que le prochain chargement soit frais
+      var response = await doPost(token);
+
+      // Auto-refresh si 401
+      if (response.statusCode == 401) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          token = await _getToken();
+          if (token != null) response = await doPost(token);
+        }
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         await CacheService.invalidate(CacheService.kFeedPosts);
         return {'success': true, 'data': json.decode(utf8.decode(response.bodyBytes))};
       }
-      return {'success': false, 'message': 'Erreur serveur lors de l\'ajout du commentaire'};
+      return {'success': false, 'message': 'Erreur ${response.statusCode}: ${response.body}'};
     } catch (e) {
       return {'success': false, 'message': 'Erreur réseau : $e'};
     }
