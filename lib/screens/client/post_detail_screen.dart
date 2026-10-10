@@ -311,10 +311,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             );
           }
 
-          return Container(
-            height: MediaQuery.of(modalContext).size.height * 0.75 -
-                MediaQuery.of(modalContext).viewInsets.bottom * 0.3,
-            decoration: BoxDecoration(color: Theme.of(modalContext).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+            ),
+            child: Container(
+              height: MediaQuery.of(modalContext).size.height * 0.75,
+              decoration: BoxDecoration(color: Theme.of(modalContext).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
             child: Column(
               children: [
                 Container(width: 40, height: 4, margin: const EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: Theme.of(modalContext).brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
@@ -379,7 +382,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 // Input
                 if (AuthState.isLoggedIn)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(modalContext).viewInsets.bottom + (MediaQuery.of(modalContext).viewInsets.bottom > 0 ? 12 : MediaQuery.of(modalContext).padding.bottom + 16)),
+                    padding: EdgeInsets.fromLTRB(
+                      24, 8, 24,
+                      MediaQuery.of(modalContext).padding.bottom + 12,
+                    ),
                     child: Row(children: [
                       Expanded(child: TextField(
                         controller: commentController,
@@ -452,7 +458,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
               ],
             ),
-          );
+          ),
+        );
         },
       ),
     ).whenComplete(() => refreshTimer?.cancel());
