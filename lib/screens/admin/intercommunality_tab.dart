@@ -568,7 +568,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       body: NestedScrollView(
         headerSliverBuilder: (ctx, _) => [
           SliverToBoxAdapter(child: _buildHeader()),
-          SliverToBoxAdapter(child: _buildDashboardCards()),
           SliverPersistentHeader(
             pinned: true,
             delegate: _TabHeaderDelegate(
