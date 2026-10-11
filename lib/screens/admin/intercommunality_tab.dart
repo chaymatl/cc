@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,8 +43,10 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   String _f2Search      = '';
   String _f2StatusFilter = 'all'; // 'all', 'disponible', 'sature', 'maintenance'
   String _f2WasteTypeFilter = 'all'; // 'all', 'plastique', 'verre', etc.
-  bool   _f2ShowMap     = true;   // afficher la carte par défaut
+  bool   _f2ShowMap     = true;
   final MapController _f2MapCtrl = MapController();
+  Timer?   _pointsAutoSyncTimer;
+  DateTime? _lastPointsSync;
 
   // ── F3 : Acteurs ─────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _actors         = [];
@@ -103,10 +106,15 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     _loadPilotage();
     _loadDashboard();
     _loadUnreadMessages();
+    // ── Auto-sync des points toutes les 30 secondes ──────────────────────
+    _pointsAutoSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _loadPointsSilent();
+    });
   }
 
   @override
   void dispose() {
+    _pointsAutoSyncTimer?.cancel();
     _tabCtrl.dispose();
     L10n.removeListener(_onLocaleChange);
     super.dispose();
@@ -119,6 +127,14 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Future<void> _loadUnreadMessages() async {
     final count = await MessagingService.getUnreadCount();
     if (mounted) setState(() => _unreadMessages = count);
+  }
+
+  /// Retourne "il y a Xs" / "il y a Xmin" depuis une date donnée
+  String _syncAgoLabel(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 60) return 'il y a ${diff.inSeconds}s';
+    if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+    return 'il y a ${diff.inHours}h';
   }
 
   // ── Auth helpers ──────────────────────────────────────────────────────────
@@ -163,10 +179,33 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
-        setState(() => _points = data.cast<Map<String, dynamic>>());
+        setState(() {
+          _points = data.cast<Map<String, dynamic>>();
+          _lastPointsSync = DateTime.now();
+        });
       }
     } catch (_) {}
     if (mounted) setState(() => _loadingPoints = false);
+  }
+
+  /// Recharge silencieux (sans spinner) — utilisé par le timer auto-sync
+  Future<void> _loadPointsSilent() async {
+    if (!mounted) return;
+    try {
+      final jwt = await _jwt();
+      if (jwt == null) return;
+      final res = await http.get(
+        Uri.parse('${AuthService.baseUrl}/intercommunality/collection-points'),
+        headers: _headers(jwt),
+      );
+      if (res.statusCode == 200 && mounted) {
+        final data = json.decode(res.body) as List;
+        setState(() {
+          _points = data.cast<Map<String, dynamic>>();
+          _lastPointsSync = DateTime.now();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadActors() async {
@@ -924,6 +963,21 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               ),
             ],
           ),
+          // ── Indicateur de dernière synchronisation ────────────────────
+          if (_lastPointsSync != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Container(width: 6, height: 6,
+                  decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
+                const SizedBox(width: 5),
+                Text(
+                  'Sync auto · mis à jour ${_syncAgoLabel(_lastPointsSync!)}',
+                  style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
