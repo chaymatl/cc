@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-10-11T04:00:00+02:00" agent="Antigravity" version="21.6.5" type="device">
+  <diagram id="badges-sequence" name="Diagramme de Séquence - Badges EcoRewind">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- TITRE -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="title" value="Diagramme de Séquence — Système de Badges EcoRewind" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#1A6B3C;" vertex="1" parent="1">
+          <mxGeometry x="80" y="20" width="980" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ACTEURS — Boîtes en haut -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- Citoyen -->
+        <mxCell id="actor_citoyen_box" value="🌱 Citoyen" style="shape=mxgraph.uml.actor;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="80" width="120" height="60" as="geometry" />
+        </mxCell>
+        <!-- App Flutter -->
+        <mxCell id="actor_app_box" value="📱 Application Flutter" style="shape=mxgraph.uml.actor;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="80" width="150" height="60" as="geometry" />
+        </mxCell>
+        <!-- Backend FastAPI -->
+        <mxCell id="actor_backend_box" value="⚙️ Backend FastAPI" style="shape=mxgraph.uml.actor;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="580" y="80" width="150" height="60" as="geometry" />
+        </mxCell>
+        <!-- Base de données -->
+        <mxCell id="actor_db_box" value="🗄️ Base de données (PostgreSQL)" style="shape=mxgraph.uml.actor;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="830" y="80" width="180" height="60" as="geometry" />
+        </mxCell>
+        <!-- FCM -->
+        <mxCell id="actor_fcm_box" value="🔔 Firebase FCM" style="shape=mxgraph.uml.actor;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="80" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- LIFELINES (lignes de vie verticales) -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="life_citoyen" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry x="160" y="140" width="10" height="10" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="140" as="sourcePoint" />
+            <mxPoint x="160" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="life_app" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="140" as="sourcePoint" />
+            <mxPoint x="405" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="life_backend" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#d6b656;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="140" as="sourcePoint" />
+            <mxPoint x="655" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="life_db" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#b85450;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="920" y="140" as="sourcePoint" />
+            <mxPoint x="920" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="life_fcm" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#9673a6;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1125" y="140" as="sourcePoint" />
+            <mxPoint x="1125" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 1 : SCAN QR CODE -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc1_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="170" width="1150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc1_title" value="BLOC 1 — Scan d'une Poubelle QR (gain de points)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="90" y="175" width="500" height="20" as="geometry" />
+        </mxCell>
+        <!-- msg 1.1 -->
+        <mxCell id="m1_1" value="Scanner QR Code" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#6c8ebf;fontStyle=0;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="205" as="sourcePoint" />
+            <mxPoint x="405" y="205" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 1.2 -->
+        <mxCell id="m1_2" value="POST /qr-bins/{bin_id}/scan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#82b366;fontStyle=0;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="225" as="sourcePoint" />
+            <mxPoint x="655" y="225" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 1.3 -->
+        <mxCell id="m1_3" value="UPDATE users SET points += N" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#d6b656;fontStyle=0;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="245" as="sourcePoint" />
+            <mxPoint x="920" y="245" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- retour 1 -->
+        <mxCell id="r1_1" value="200 OK {points_gagnes, total_points}" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="265" as="sourcePoint" />
+            <mxPoint x="160" y="265" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 2 : VÉRIFICATION NIVEAU -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc2_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="295" width="1150" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc2_title" value="BLOC 2 — Vérification Automatique de Palier" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="90" y="300" width="500" height="20" as="geometry" />
+        </mxCell>
+        <!-- msg 2.1 -->
+        <mxCell id="m2_1" value="check_and_unlock_rewards(user_id, new_points)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#d6b656;fontStyle=2;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="325" as="sourcePoint" />
+            <mxPoint x="920" y="325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 2.2 -->
+        <mxCell id="m2_2" value="SELECT level FROM user_rewards (déjà débloqués)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="355" as="sourcePoint" />
+            <mxPoint x="920" y="355" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- retour 2.2 -->
+        <mxCell id="r2_2" value="Liste récompenses déjà débloquées" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="920" y="375" as="sourcePoint" />
+            <mxPoint x="655" y="375" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- note alt -->
+        <mxCell id="alt_note" value="[alt] Si nouveau palier atteint (ex: 2000pts → Champion Vert)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="580" y="390" width="410" height="30" as="geometry" />
+        </mxCell>
+        <!-- msg 2.3 -->
+        <mxCell id="m2_3" value="INSERT INTO user_rewards (user_id, reward_key, label, icon...)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="430" as="sourcePoint" />
+            <mxPoint x="920" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- retour 2.3 -->
+        <mxCell id="r2_3" value="Badge créé (unlocked_at, notified=false)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="920" y="450" as="sourcePoint" />
+            <mxPoint x="655" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- retour fin bloc 2 -->
+        <mxCell id="r2_end" value="Liste nouveaux badges débloqués" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d6b656;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="920" y="475" as="sourcePoint" />
+            <mxPoint x="655" y="475" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 3 : NOTIFICATION PUSH -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc3_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="510" width="1150" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc3_title" value="BLOC 3 — Notification Push (Firebase FCM)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="90" y="515" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="m3_1" value="Envoyer notification push badge débloqué" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#9673a6;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="540" as="sourcePoint" />
+            <mxPoint x="1125" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3_2" value="UPDATE user_rewards SET notified=true" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="565" as="sourcePoint" />
+            <mxPoint x="920" y="565" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3_3" value="Notification: '🏆 Vous avez débloqué Badge Champion Vert!'" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#9673a6;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1125" y="585" as="sourcePoint" />
+            <mxPoint x="160" y="585" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3_4" value="Afficher popup badge débloqué 🎉" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="610" as="sourcePoint" />
+            <mxPoint x="160" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 4 : CONSULTER SES BADGES -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc4_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="660" width="1150" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc4_title" value="BLOC 4 — Consulter Mes Badges / Mon Niveau" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="90" y="665" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="m4_1" value="Ouvrir écran Récompenses" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="695" as="sourcePoint" />
+            <mxPoint x="405" y="695" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4_2" value="GET /users/me/level" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="715" as="sourcePoint" />
+            <mxPoint x="655" y="715" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4_3" value="GET /users/me/rewards" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="735" as="sourcePoint" />
+            <mxPoint x="655" y="735" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4_4" value="SELECT * FROM user_rewards WHERE user_id=?" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="755" as="sourcePoint" />
+            <mxPoint x="920" y="755" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r4_1" value="{palier, badges, progression, avantages}" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="785" as="sourcePoint" />
+            <mxPoint x="160" y="785" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 5 : 6 PALIERS -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc5_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="830" width="1150" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc5_title" value="BLOC 5 — Les 6 Paliers et Badges EcoRewind" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="90" y="835" width="500" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Tableau des paliers -->
+        <mxCell id="tbl_header" value="Rang" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="860" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_h2" value="Palier" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="860" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_h3" value="Points min." style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="860" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_h4" value="Badge débloqué" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="860" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_h5" value="Récompenses exclusives" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="860" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 1 -->
+        <mxCell id="r1a" value="1" style="text;html=1;strokeColor=#b85450;fillColor=#ffffff;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="885" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r1b" value="🌱 Éco-Citoyen" style="text;html=1;strokeColor=#b85450;fillColor=#ffffff;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="885" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r1c" value="0 pts" style="text;html=1;strokeColor=#b85450;fillColor=#ffffff;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="885" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r1d" value="Badge Éco-Citoyen 🌱" style="text;html=1;strokeColor=#b85450;fillColor=#ffffff;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="885" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r1e" value="Accès app, scan QR, quiz" style="text;html=1;strokeColor=#b85450;fillColor=#ffffff;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="885" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 2 -->
+        <mxCell id="r2a" value="2" style="text;html=1;strokeColor=#b85450;fillColor=#fff9e6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="910" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r2b" value="🏆 Champion Vert" style="text;html=1;strokeColor=#b85450;fillColor=#fff9e6;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="910" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r2c" value="2 000 pts" style="text;html=1;strokeColor=#b85450;fillColor=#fff9e6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="910" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r2d" value="Badge Champion Vert 🏆" style="text;html=1;strokeColor=#b85450;fillColor=#fff9e6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="910" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r2e" value="Cadre avatar Champion 🖼️, Points quiz x1.25, Mise en avant" style="text;html=1;strokeColor=#b85450;fillColor=#fff9e6;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="910" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 3 -->
+        <mxCell id="r3a" value="3" style="text;html=1;strokeColor=#b85450;fillColor=#e8f5e9;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="935" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r3b" value="🌍 Gardien de la Terre" style="text;html=1;strokeColor=#b85450;fillColor=#e8f5e9;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="935" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r3c" value="5 000 pts" style="text;html=1;strokeColor=#b85450;fillColor=#e8f5e9;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="935" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r3d" value="Badge Gardien 🌍" style="text;html=1;strokeColor=#b85450;fillColor=#e8f5e9;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="935" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r3e" value="Réduction -10% 🎟️, Certificat PDF 📜, Rapport CO₂" style="text;html=1;strokeColor=#b85450;fillColor=#e8f5e9;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="935" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 4 -->
+        <mxCell id="r4a" value="4" style="text;html=1;strokeColor=#b85450;fillColor=#f3e5f5;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="960" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r4b" value="♻️ Héros du Recyclage" style="text;html=1;strokeColor=#b85450;fillColor=#f3e5f5;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="960" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r4c" value="10 000 pts" style="text;html=1;strokeColor=#b85450;fillColor=#f3e5f5;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="960" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r4d" value="Badge Héros ♻️" style="text;html=1;strokeColor=#b85450;fillColor=#f3e5f5;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="960" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r4e" value="Cadre Héros 💜, Réduction -20% 🎟️, VIP événements, Scan x1.5" style="text;html=1;strokeColor=#b85450;fillColor=#f3e5f5;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="960" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 5 -->
+        <mxCell id="r5a" value="5" style="text;html=1;strokeColor=#b85450;fillColor=#fce4d6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="985" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r5b" value="⭐ Ambassadeur Éco" style="text;html=1;strokeColor=#b85450;fillColor=#fce4d6;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="985" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r5c" value="20 000 pts" style="text;html=1;strokeColor=#b85450;fillColor=#fce4d6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="985" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r5d" value="Badge Ambassadeur ⭐" style="text;html=1;strokeColor=#b85450;fillColor=#fce4d6;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="985" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r5e" value="Certificat 🏅, Réduction -30%, Goodies offerts, Scan x2, Boost x2" style="text;html=1;strokeColor=#b85450;fillColor=#fce4d6;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="985" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Ligne 6 -->
+        <mxCell id="r6a" value="6" style="text;html=1;strokeColor=#b85450;fillColor=#fff9c4;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1010" width="60" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r6b" value="👑 Légende Verte" style="text;html=1;strokeColor=#b85450;fillColor=#fff9c4;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="150" y="1010" width="170" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r6c" value="50 000 pts" style="text;html=1;strokeColor=#b85450;fillColor=#fff9c4;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="1010" width="100" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r6d" value="Badge Légende 👑" style="text;html=1;strokeColor=#b85450;fillColor=#fff9c4;align=center;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1010" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="r6e" value="Cadre Légendaire ✨, Certificat 🏆, Réduction -50%, NFT, Scan x3, Hall of Fame" style="text;html=1;strokeColor=#b85450;fillColor=#fff9c4;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="1010" width="580" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Contrainte unicité -->
+        <mxCell id="note_unique" value="⚠️ Contrainte DB : UNIQUE (user_id, reward_key) — un badge ne peut être débloqué qu'une seule fois par utilisateur" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1040" width="1130" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- BLOC 6 : PARTICIPATION QUIZ -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="bloc6_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1080" width="1150" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc6_title" value="BLOC 6 — Gain de Points via Quiz" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1085" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="m6_1" value="Soumettre réponse quiz" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="1110" as="sourcePoint" />
+            <mxPoint x="405" y="1110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6_2" value="POST /quiz/{id}/submit" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="1130" as="sourcePoint" />
+            <mxPoint x="655" y="1130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6_3" value="[Si Champion Vert+] Points x1.25 → UPDATE + check_level()" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#d6b656;fontStyle=2;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="1150" as="sourcePoint" />
+            <mxPoint x="920" y="1150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r6_1" value="200 OK {points_quiz, bonus_applique, total_points}" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="655" y="1175" as="sourcePoint" />
+            <mxPoint x="160" y="1175" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- LÉGENDE -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="legend_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1220" width="1150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" value="Légende :" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1225" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" value="→ Message synchrone (appel)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1250" width="250" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" value="- - → Réponse / Retour (dashed)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1250" width="250" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" value="[alt] Condition : branchement logique" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1250" width="280" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" value="[Si X+] = uniquement si palier X ou supérieur atteint" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="1250" width="320" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

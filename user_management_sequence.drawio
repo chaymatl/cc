@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-10-11T02:29:03+02:00" agent="Antigravity" version="20.3.5" type="device">
+  <diagram id="user-management" name="User Management Sequence">
+    <mxGraphModel dx="1479" dy="637" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Lifelines -->
+        <mxCell id="superadmin" value="Super Admin" style="shape=umlLifeline;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="120" y="20" width="80" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="admin" value="Admin" style="shape=umlLifeline;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="80" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="backend" value="User Service" style="shape=umlLifeline;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="480" y="20" width="100" height="600" as="geometry" />
+        </mxCell>
+        <!-- Messages -->
+        <mxCell id="msg1" value="Create Admin" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="superadmin" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="msg2" value="Create User" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="admin" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="msg3" value="Update Role" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="admin" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="msg4" value="Delete User" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="admin" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="msg5" value="Revoke Admin" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="superadmin" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="resp1" value="OK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1" source="backend" target="superadmin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="resp2" value="OK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;" edge="1" parent="1" source="backend" target="admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
