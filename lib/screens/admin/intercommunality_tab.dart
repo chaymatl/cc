@@ -871,15 +871,15 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
     return Container(
       color: const Color(0xFFF1F5F9),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.bar_chart_rounded, size: 16, color: Color(0xFF6C3EB8)),
+              const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF6C3EB8)),
               const SizedBox(width: 6),
-              Text('Suivi de l\'état des points',
+              Text('État des points de collecte',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13, color: const Color(0xFF1E293B))),
               const Spacer(),
               GestureDetector(
@@ -891,52 +891,19 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           const SizedBox(height: 10),
           Row(
             children: [
-              _statusCard('Disponibles', disponible, total, const Color(0xFF16A34A), Icons.check_circle_rounded),
+              _statusCard('Disponibles', disponible, const Color(0xFF16A34A), Icons.check_circle_rounded),
               const SizedBox(width: 8),
-              _statusCard('Saturés', sature, total, const Color(0xFFDC2626), Icons.error_rounded),
+              _statusCard('Saturés', sature, const Color(0xFFDC2626), Icons.error_rounded),
               const SizedBox(width: 8),
-              _statusCard('Maintenance', maintenance, total, const Color(0xFFF59E0B), Icons.build_rounded),
+              _statusCard('Maintenance', maintenance, const Color(0xFFF59E0B), Icons.build_rounded),
             ],
           ),
-          const SizedBox(height: 14),
-          if (total > 0) ...[
-            Text('Taux de remplissage moyen',
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
-            const SizedBox(height: 6),
-            Builder(builder: (_) {
-              final avg = _points.fold<double>(0, (sum, p) {
-                final v = double.tryParse((p['load_level'] ?? '0').toString()) ?? 0;
-                return sum + v;
-              }) / (total > 0 ? total : 1);
-              final pct = (avg * 100).toStringAsFixed(0);
-              final color = avg >= 0.9 ? const Color(0xFFDC2626)
-                  : avg >= 0.7 ? const Color(0xFFF59E0B)
-                  : const Color(0xFF16A34A);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: avg,
-                      minHeight: 10,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('$pct% de remplissage global',
-                      style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
-                ],
-              );
-            }),
-          ],
         ],
       ),
     );
   }
 
-  Widget _statusCard(String label, int count, int total, Color color, IconData icon) {
+  Widget _statusCard(String label, int count, Color color, IconData icon) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -957,16 +924,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             ),
             const SizedBox(height: 4),
             Text(label, style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: total > 0 ? count / total : 0,
-                minHeight: 4,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            ),
           ],
         ),
       ),
@@ -1065,46 +1022,30 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                                         ),
                                       ),
                                     const SizedBox(height: 8),
-                                    // ── Barre de remplissage ──
+                                    // ── Badge État ──
                                     Builder(builder: (_) {
-                                      final load = double.tryParse((p['load_level'] ?? '0').toString()) ?? 0;
-                                      final pct = (load * 100).toStringAsFixed(0);
                                       final status = (p['status'] ?? 'disponible').toString().toLowerCase();
                                       final barColor = status == 'saturé' || status == 'sature'
                                           ? const Color(0xFFDC2626)
                                           : status == 'maintenance'
                                               ? const Color(0xFFF59E0B)
-                                              : load >= 0.8
-                                                  ? const Color(0xFFF59E0B)
-                                                  : const Color(0xFF16A34A);
+                                              : const Color(0xFF16A34A);
                                       final statusLabel = status == 'saturé' || status == 'sature'
                                           ? '🔴 Saturé'
                                           : status == 'maintenance'
-                                              ? '🟡 Maintenance'
+                                              ? '🟡 En maintenance'
                                               : '🟢 Disponible';
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(statusLabel,
-                                                  style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: barColor)),
-                                              const Spacer(),
-                                              Text('$pct%',
-                                                  style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: barColor)),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 3),
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(4),
-                                            child: LinearProgressIndicator(
-                                              value: load.clamp(0.0, 1.0),
-                                              minHeight: 6,
-                                              backgroundColor: Colors.grey.shade200,
-                                              valueColor: AlwaysStoppedAnimation<Color>(barColor),
-                                            ),
-                                          ),
-                                        ],
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: barColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: barColor.withOpacity(0.3)),
+                                        ),
+                                        child: Text(
+                                          statusLabel,
+                                          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: barColor),
+                                        ),
                                       );
                                     }),
                                   ],
