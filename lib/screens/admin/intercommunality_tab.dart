@@ -41,6 +41,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   bool   _loadingPoints = false;
   String _f2Search      = '';
   String _f2StatusFilter = 'all'; // 'all', 'disponible', 'sature', 'maintenance'
+  String _f2WasteTypeFilter = 'all'; // 'all', 'plastique', 'verre', etc.
   bool   _f2ShowMap     = true;   // afficher la carte par défaut
   final MapController _f2MapCtrl = MapController();
 
@@ -1015,10 +1016,27 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         matchesStatus = status == 'maintenance';
       }
 
-      return matchesSearch && matchesStatus;
+      // Filtre par type de déchet (plastique, verre, papier, etc.)
+      bool matchesWasteType = true;
+      if (_f2WasteTypeFilter != 'all') {
+        final typesRaw = (p['types'] ?? p['waste_type'] ?? '').toString().toLowerCase();
+        matchesWasteType = typesRaw.contains(_f2WasteTypeFilter.toLowerCase());
+      }
+
+      return matchesSearch && matchesStatus && matchesWasteType;
     }).toList();
 
     const primaryColor = Color(0xFF1A6B3C);
+
+    const wasteFilterChips = [
+      {'key': 'all', 'label': 'Tous déchets', 'icon': Icons.all_inclusive_rounded},
+      {'key': 'plastique', 'label': 'Plastique', 'icon': Icons.local_drink_rounded},
+      {'key': 'verre', 'label': 'Verre', 'icon': Icons.wine_bar_rounded},
+      {'key': 'papier', 'label': 'Papier', 'icon': Icons.newspaper_rounded},
+      {'key': 'batteries', 'label': 'Piles / Batteries', 'icon': Icons.battery_charging_full_rounded},
+      {'key': 'electronique', 'label': 'Électronique', 'icon': Icons.devices_other_rounded},
+      {'key': 'compost', 'label': 'Compost', 'icon': Icons.eco_rounded},
+    ];
 
     return RefreshIndicator(
       onRefresh: _loadPoints,
@@ -1028,7 +1046,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           _buildPointsStatusDashboard(),
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
             child: TextField(
               style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13),
               decoration: InputDecoration(
@@ -1043,6 +1061,54 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               onChanged: (v) => setState(() => _f2Search = v),
             ),
           ),
+          // ── Barre de filtre par type de déchet ────────────────────────
+          Container(
+            color: Colors.white,
+            height: 38,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: wasteFilterChips.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemBuilder: (ctx, i) {
+                final item = wasteFilterChips[i];
+                final key = item['key'] as String;
+                final label = item['label'] as String;
+                final icon = item['icon'] as IconData;
+                final isSelected = _f2WasteTypeFilter == key;
+
+                return ChoiceChip(
+                  avatar: Icon(
+                    icon,
+                    size: 13,
+                    color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                  label: Text(label),
+                  selected: isSelected,
+                  selectedColor: const Color(0xFF1A6B3C),
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  labelStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : const Color(0xFF334155),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: isSelected ? const Color(0xFF1A6B3C) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  onSelected: (val) {
+                    setState(() => _f2WasteTypeFilter = val ? key : 'all');
+                  },
+                );
+              },
+            ),
+          ),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
           Expanded(
             child: _f2ShowMap
                 ? _buildF2PointsMap(filtered)
