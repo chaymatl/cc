@@ -1523,14 +1523,12 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       selectedItemBuilder: (BuildContext context) {
                         return const [
                           Text('Tous', style: TextStyle(overflow: TextOverflow.ellipsis)),
-                          Text('Gestionnaires', style: TextStyle(overflow: TextOverflow.ellipsis)),
                           Text('Collecteurs', style: TextStyle(overflow: TextOverflow.ellipsis)),
                           Text('Éducateurs', style: TextStyle(overflow: TextOverflow.ellipsis)),
                         ];
                       },
                       items: const [
                         DropdownMenuItem<String>(value: '', child: Text('Tous les rôles', style: TextStyle())),
-                        DropdownMenuItem<String>(value: 'pointManager', child: Text('Gestionnaires', style: TextStyle())),
                         DropdownMenuItem<String>(value: 'collector', child: Text('Collecteurs', style: TextStyle())),
                         DropdownMenuItem<String>(value: 'educator', child: Text('Éducateurs', style: TextStyle())),
                       ],
@@ -2888,7 +2886,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'pointManager': return 'Gestionnaire';
       case 'collector':    return 'Collecteur';
       case 'educator':     return 'Éducateur';
       default:             return role;

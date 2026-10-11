@@ -317,7 +317,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final userRole = AuthState.currentUser?.role;
     final canReply = isIntercommunality &&
         (userRole == UserRole.collector ||
-         userRole == UserRole.pointManager ||
          userRole == UserRole.educator);
 
     return Container(

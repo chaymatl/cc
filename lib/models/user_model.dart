@@ -1,4 +1,4 @@
-enum UserRole { citoyen, admin, superadmin, educator, intercommunality, pointManager, collector }
+enum UserRole { citoyen, admin, superadmin, educator, intercommunality, collector }
 
 class User {
   final String id;
@@ -45,7 +45,6 @@ class User {
       case 'admin': return UserRole.admin;
       case 'educator': return UserRole.educator;
       case 'intercommunality': return UserRole.intercommunality;
-      case 'pointManager': return UserRole.pointManager;
       case 'collector': return UserRole.collector;
       case 'citoyen':
       case 'user':
@@ -60,7 +59,6 @@ class User {
       case UserRole.admin: return 'Administrateur';
       case UserRole.educator: return 'Educateur';
       case UserRole.intercommunality: return 'Intercommunalite';
-      case UserRole.pointManager: return 'Gestionnaire';
       case UserRole.collector: return 'Collecteur';
       default: return 'Citoyen';
     }

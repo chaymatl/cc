@@ -17,7 +17,6 @@ import 'community_screen.dart';
 
 import '../admin/collector_tab.dart';
 import '../admin/intercommunality_tab.dart';
-import '../admin/point_manager_tab.dart';
 import '../admin/educator_tab.dart';
 import '../messaging/messaging_screen.dart';
 import '../../theme/app_theme.dart';
@@ -157,7 +156,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     } else if (role == UserRole.citoyen) {
       profileIndex = 6; // [Feed, Multimedia, Rewards, Map, Community, Messages, Profil]
     } else if (role == UserRole.intercommunality ||
-               role == UserRole.pointManager ||
                role == UserRole.collector) {
       profileIndex = 3; // [EspaceMetier, Messages, Carte, Profil]
     } else {
@@ -218,15 +216,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ProfileTab(key: _profileKey),
         ];
 
-      // ── Rôle Gestionnaire : Signalements + Messages + Carte + Profil ──
-      case UserRole.pointManager:
-        return [
-          const PointManagerTab(key: ValueKey('pointmanager')),
-          const MessagingScreen(key: ValueKey('messaging')),
-          const MapTab(key: ValueKey('map')),
-          ProfileTab(key: _profileKey),
-        ];
-
       // ── Rôle Citoyen : 6 onglets avec Communauté + Messages ──
       case UserRole.citoyen:
         return [
@@ -258,7 +247,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       case UserRole.educator:     return L10n.tr('tab_educator');
       case UserRole.collector:    return L10n.tr('tab_collector');
       case UserRole.intercommunality: return L10n.tr('tab_intercommunality');
-      case UserRole.pointManager: return L10n.tr('tab_pointManager');
       default:                    return L10n.tr('tab_multimedia');
     }
   }
@@ -272,8 +260,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         return const Icon(Icons.recycling_rounded, size: 22);
       case UserRole.intercommunality:
         return const Icon(Icons.account_balance_rounded, size: 22);
-      case UserRole.pointManager:
-        return const Icon(Icons.location_on_rounded, size: 22);
       default:
         return const FaIcon(FontAwesomeIcons.graduationCap, size: 20);
     }
@@ -299,9 +285,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       ];
     }
 
-    // ── Intercommunalité / Gestionnaire / Collecteur : 4 onglets avec Messages ──
+    // ── Intercommunalité / Collecteur : 4 onglets avec Messages ──
     if (role == UserRole.intercommunality ||
-        role == UserRole.pointManager ||
         role == UserRole.collector) {
       return [
         NavigationDestination(icon: _proTabIcon(role), label: _proTabLabel(role)),

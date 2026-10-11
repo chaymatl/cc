@@ -130,7 +130,7 @@ app.add_middleware(
 )
 
 # ── Include routers ────────────────────────────────────────────────────────────
-from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz, educator_videos, qr_bins, meetings, groups, analytics, admin_dashboard, intercommunality, point_manager, collector_routes, messaging  # noqa: E402
+from routers import auth, users, posts, notifications, collection_points, community, moderation, quiz, educator_videos, qr_bins, meetings, groups, analytics, admin_dashboard, intercommunality, collector_routes, messaging  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -147,9 +147,8 @@ app.include_router(groups.router)
 app.include_router(analytics.router)
 app.include_router(admin_dashboard.router)  # GET /admin/dashboard
 
-# ── Routers des 3 acteurs métier ───────────────────────────────────────────────
+# ── Routers des acteurs métier ────────────────────────────────────────────────
 app.include_router(intercommunality.router)   # /intercommunality/*
-app.include_router(point_manager.router)      # /point-manager/* + /citizen/report*
 app.include_router(collector_routes.router)   # /collector/*
 app.include_router(messaging.router)          # /messages/*
 

@@ -28,7 +28,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     ('citoyen', 'Citoyen', Icons.person_rounded),
     ('educator', 'Educateur', Icons.school_rounded),
     ('collector', 'Collecteur', Icons.recycling_rounded),
-    ('pointManager', 'Gestionnaire', Icons.store_rounded),
     ('intercommunality', 'Intercom.', Icons.account_balance_rounded),
     ('admin', 'Admin', Icons.admin_panel_settings_rounded),
   ];
@@ -471,12 +470,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
   }
 
   String _getRoleLabel(String role) {
-    const map = {'superadmin': 'Super Admin', 'admin': 'Administrateur', 'educator': 'Educateur', 'pointManager': 'Gestionnaire', 'collector': 'Collecteur', 'intercommunality': 'Intercommunalite', 'citoyen': 'Citoyen'};
+    const map = {'superadmin': 'Super Admin', 'admin': 'Administrateur', 'educator': 'Educateur', 'collector': 'Collecteur', 'intercommunality': 'Intercommunalite', 'citoyen': 'Citoyen'};
     return map[role] ?? role;
   }
 
   Color _getRoleColor(String role) {
-    const map = {'superadmin': Colors.deepPurple, 'admin': Colors.red, 'educator': Colors.orange, 'pointManager': Colors.purple, 'collector': Colors.brown, 'intercommunality': Colors.blue, 'citoyen': Colors.green};
+    const map = {'superadmin': Colors.deepPurple, 'admin': Colors.red, 'educator': Colors.orange, 'collector': Colors.brown, 'intercommunality': Colors.blue, 'citoyen': Colors.green};
     return map[role] ?? Colors.grey;
   }
 

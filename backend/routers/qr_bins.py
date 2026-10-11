@@ -163,8 +163,8 @@ async def scan_bin(data: BinScanRequest, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Compte desactive")
 
-    # ── 3. Logique Collecteur / Gestionnaire ──────────────────────────────────
-    if user.role in ["admin", "collector", "pointManager", "gestionnaire"]:
+    # ── 3. Logique Collecteur ──────────────────────────────────────────────────
+    if user.role in ["admin", "collector"]:
         """
         Flux collecteur :
           a) Lire le poids actuel depuis Firebase (avant vidage)
@@ -756,7 +756,7 @@ async def get_collector_history(
     Historique des collectes (vidages) effectuées par le collecteur connecté.
 
     Accessible uniquement aux utilisateurs avec role :
-      collector | admin | pointManager | gestionnaire
+      collector | admin
 
     Retourne pour chaque collecte :
       - id               : identifiant de l'opération
@@ -766,10 +766,10 @@ async def get_collector_history(
       - notified         : True si l'intercommunalité a été notifiée
       - collected_at     : date et heure de la collecte
     """
-    if current_user.role not in ["collector", "admin", "pointManager", "gestionnaire"]:
+    if current_user.role not in ["collector", "admin"]:
         raise HTTPException(
             status_code=403,
-            detail="Accès réservé aux collecteurs et gestionnaires.",
+            detail="Accès réservé aux collecteurs.",
         )
 
     logs = (

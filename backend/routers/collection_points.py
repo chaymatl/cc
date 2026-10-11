@@ -46,7 +46,7 @@ def _bump_version():
 # ── Création automatique d'alertes centre ──────────────────────────────────────
 def _create_center_alert(db: Session, point: db_models.CollectionPoint, new_status: str):
     """
-    Crée une notification pour tous les admin, pointManager et collector
+    Crée une notification pour tous les admin et collector
     lorsqu'un centre passe en état 'saturé' ou 'maintenance'.
     """
     status_labels = {
@@ -60,7 +60,7 @@ def _create_center_alert(db: Session, point: db_models.CollectionPoint, new_stat
     title, body = status_labels[new_status.lower()]
 
     # Récupérer tous les utilisateurs concernés
-    target_roles = ("admin", "pointManager", "collector")
+    target_roles = ("admin", "collector")
     users = db.query(db_models.User).filter(
         db_models.User.role.in_(target_roles),
         db_models.User.is_active == True,
@@ -178,7 +178,7 @@ async def get_center_alerts(
     Retourne les alertes centres de tri (notifications de type 'center_alert')
     pour l'utilisateur courant (admin, pointManager ou collector).
     """
-    if current_user.role not in ("admin", "pointManager", "collector"):
+    if current_user.role not in ("admin", "collector"):
         raise HTTPException(status_code=403, detail="Accès réservé aux gestionnaires et collecteurs")
 
     alerts = (
@@ -212,7 +212,7 @@ async def get_center_alerts_unread_count(
     current_user: db_models.User = Depends(get_current_user)
 ):
     """Retourne le nombre d'alertes centres non lues."""
-    if current_user.role not in ("admin", "pointManager", "collector"):
+    if current_user.role not in ("admin", "collector"):
         raise HTTPException(status_code=403, detail="Accès réservé")
 
     count = (
@@ -233,7 +233,7 @@ async def mark_center_alerts_read(
     current_user: db_models.User = Depends(get_current_user)
 ):
     """Marque toutes les alertes centres comme lues."""
-    if current_user.role not in ("admin", "pointManager", "collector"):
+    if current_user.role not in ("admin", "collector"):
         raise HTTPException(status_code=403, detail="Accès réservé")
 
     db.query(db_models.Notification).filter(
@@ -248,7 +248,7 @@ async def mark_center_alerts_read(
 @router.post("/admin/collection-points")
 async def create_point(point: models.CollectionPointCreate, db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin", "pointManager"):
+    if current_user.role not in ("admin",):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     data = point.dict()
     if not data.get("address"):
@@ -269,7 +269,7 @@ async def create_point(point: models.CollectionPointCreate, db: Session = Depend
 async def update_point(point_id: int, update: models.CollectionPointUpdate,
                        db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin", "pointManager"):
+    if current_user.role not in ("admin",):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     db_point = db.query(db_models.CollectionPoint).filter(
         db_models.CollectionPoint.id == point_id).first()
@@ -326,7 +326,7 @@ async def backfill_addresses(db: Session = Depends(get_db),
 @router.delete("/admin/collection-points/{point_id}")
 async def delete_point(point_id: int, db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin", "pointManager"):
+    if current_user.role not in ("admin",):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     db_point = db.query(db_models.CollectionPoint).filter(
         db_models.CollectionPoint.id == point_id).first()

@@ -2375,7 +2375,6 @@ String _roleLabel(String role) {
     case 'superadmin': return 'Super Admin';
     case 'intercommunality': return 'Intercommunalité';
     case 'collector':  return 'Collecteur';
-    case 'pointManager': return 'Gestionnaire';
     case 'educator':   return 'Éducateur';
     case 'citoyen':
     case 'user':       return 'Citoyen';
