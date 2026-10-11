@@ -88,8 +88,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     String? errorMsg;
     final isSuperAdmin = AuthState.currentUser?.role == UserRole.superadmin;
     final availableRoles = isSuperAdmin
-        ? ['citoyen', 'admin', 'superadmin', 'educator', 'pointManager', 'collector', 'intercommunality']
-        : ['citoyen', 'educator', 'pointManager', 'collector', 'intercommunality'];
+        ? ['citoyen', 'admin', 'superadmin', 'educator', 'collector', 'intercommunality']
+        : ['citoyen', 'educator', 'collector', 'intercommunality'];
     if (isEditing && !availableRoles.contains(selectedRole)) availableRoles.add(selectedRole);
 
     showModalBottomSheet(
@@ -480,7 +480,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
   }
 
   IconData _getRoleIcon(String role) {
-    const map = {'superadmin': Icons.security_rounded, 'admin': Icons.admin_panel_settings_rounded, 'educator': Icons.school_rounded, 'pointManager': Icons.store_rounded, 'collector': Icons.recycling_rounded, 'intercommunality': Icons.account_balance_rounded, 'citoyen': Icons.person_rounded};
+    const map = {'superadmin': Icons.security_rounded, 'admin': Icons.admin_panel_settings_rounded, 'educator': Icons.school_rounded, 'collector': Icons.recycling_rounded, 'intercommunality': Icons.account_balance_rounded, 'citoyen': Icons.person_rounded};
     return map[role] ?? Icons.person_outline_rounded;
   }
 }

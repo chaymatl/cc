@@ -2357,8 +2357,6 @@ IconData _roleIcon(String role) {
       return Icons.account_balance_rounded;
     case 'collector':
       return Icons.recycling_rounded;
-    case 'pointManager':
-      return Icons.location_on_rounded;
     case 'educator':
       return Icons.school_rounded;
     case 'citoyen':

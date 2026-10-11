@@ -1629,7 +1629,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     Color roleColor;
     IconData roleIcon;
     switch (role) {
-      case 'pointManager': roleColor = const Color(0xFF2980B9); roleIcon = Icons.manage_accounts_rounded; break;
       case 'collector':    roleColor = const Color(0xFF27AE60); roleIcon = Icons.local_shipping_rounded;  break;
       case 'educator':     roleColor = const Color(0xFFE67E22); roleIcon = Icons.school_rounded;           break;
       default:             roleColor = AppTheme.textMuted;      roleIcon = Icons.person_rounded;
@@ -2431,7 +2430,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   }
 
   Future<void> _showNotifyActorsDialog() async {
-    final selectedRoles = <String>{'pointManager', 'collector', 'educator'};
+    final selectedRoles = <String>{'collector', 'educator'};
     final titleCtrl = TextEditingController();
     final msgCtrl = TextEditingController();
 
@@ -2449,7 +2448,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
-                  children: ['pointManager', 'collector', 'educator'].map((role) {
+                  children: ['collector', 'educator'].map((role) {
                     final isSelected = selectedRoles.contains(role);
                     return FilterChip(
                       label: Text(_roleLabel(role), style: GoogleFonts.outfit(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),

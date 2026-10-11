@@ -69,7 +69,6 @@ class L10n {
     'tab_educator': {'fr': 'Éducateur'},
     'tab_collector': {'fr': 'Collecte'},
     'tab_intercommunality': {'fr': 'Gestion'},
-    'tab_pointManager': {'fr': 'Points'},
     
     // Profile Menu
     'menu_sec_security': {'fr': 'SÉCURITÉ ET DONNÉES'},
