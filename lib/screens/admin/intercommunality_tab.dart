@@ -39,7 +39,10 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   // ── F2 : Points de collecte ───────────────────────────────────────────────
   List<Map<String, dynamic>> _points          = [];
   bool   _loadingPoints = false;
-  String _f2Search    = '';
+  String _f2Search      = '';
+  String _f2StatusFilter = 'all'; // 'all', 'disponible', 'sature', 'maintenance'
+  bool   _f2ShowMap     = true;   // afficher la carte par défaut
+  final MapController _f2MapCtrl = MapController();
 
   // ── F3 : Acteurs ─────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _actors         = [];
@@ -871,7 +874,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
     return Container(
       color: const Color(0xFFF1F5F9),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -882,6 +885,38 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               Text('État des points de collecte',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13, color: const Color(0xFF1E293B))),
               const Spacer(),
+              // Toggle Carte / Liste
+              GestureDetector(
+                onTap: () => setState(() => _f2ShowMap = !_f2ShowMap),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _f2ShowMap ? const Color(0xFF6C3EB8) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF6C3EB8)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _f2ShowMap ? Icons.map_rounded : Icons.list_alt_rounded,
+                        size: 14,
+                        color: _f2ShowMap ? Colors.white : const Color(0xFF6C3EB8),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _f2ShowMap ? 'Carte' : 'Liste',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _f2ShowMap ? Colors.white : const Color(0xFF6C3EB8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: _loadPoints,
                 child: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF64748B)),
@@ -891,11 +926,13 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           const SizedBox(height: 10),
           Row(
             children: [
-              _statusCard('Disponibles', disponible, const Color(0xFF16A34A), Icons.check_circle_rounded),
-              const SizedBox(width: 8),
-              _statusCard('Saturés', sature, const Color(0xFFDC2626), Icons.error_rounded),
-              const SizedBox(width: 8),
-              _statusCard('Maintenance', maintenance, const Color(0xFFF59E0B), Icons.build_rounded),
+              _statusFilterCard('Tous', total, 'all', const Color(0xFF475569), Icons.grid_view_rounded),
+              const SizedBox(width: 6),
+              _statusFilterCard('Disponibles', disponible, 'disponible', const Color(0xFF16A34A), Icons.check_circle_rounded),
+              const SizedBox(width: 6),
+              _statusFilterCard('Saturés', sature, 'sature', const Color(0xFFDC2626), Icons.error_rounded),
+              const SizedBox(width: 6),
+              _statusFilterCard('Maintenance', maintenance, 'maintenance', const Color(0xFFF59E0B), Icons.build_rounded),
             ],
           ),
         ],
@@ -903,28 +940,55 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  Widget _statusCard(String label, int count, Color color, IconData icon) {
+  Widget _statusFilterCard(String label, int count, String key, Color color, IconData icon) {
+    final isSelected = _f2StatusFilter == key;
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.25)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 16),
-                const Spacer(),
-                Text('$count', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: color)),
-              ],
+      child: GestureDetector(
+        onTap: () => setState(() => _f2StatusFilter = key),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color : color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? color : color.withOpacity(0.25),
+              width: isSelected ? 2 : 1,
             ),
-            const SizedBox(height: 4),
-            Text(label, style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
-          ],
+            boxShadow: isSelected
+                ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: isSelected ? Colors.white : color, size: 14),
+                  const Spacer(),
+                  Text(
+                    '$count',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      color: isSelected ? Colors.white : color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  color: isSelected ? Colors.white : color,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -939,7 +1003,19 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       final query = _f2Search.toLowerCase();
       final name = (p['name'] ?? '').toString().toLowerCase();
       final addr = (p['address'] ?? '').toString().toLowerCase();
-      return name.contains(query) || addr.contains(query);
+      final matchesSearch = name.contains(query) || addr.contains(query);
+
+      final status = (p['status'] ?? 'disponible').toString().toLowerCase();
+      bool matchesStatus = true;
+      if (_f2StatusFilter == 'disponible') {
+        matchesStatus = status == 'disponible';
+      } else if (_f2StatusFilter == 'sature') {
+        matchesStatus = status == 'saturé' || status == 'sature';
+      } else if (_f2StatusFilter == 'maintenance') {
+        matchesStatus = status == 'maintenance';
+      }
+
+      return matchesSearch && matchesStatus;
     }).toList();
 
     const primaryColor = Color(0xFF1A6B3C);
@@ -952,15 +1028,15 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           _buildPointsStatusDashboard(),
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
-              style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+              style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Rechercher un point de collecte…',
-                prefixIcon: const Icon(Icons.search, size: 20),
+                prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
               ),
@@ -968,133 +1044,317 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             ),
           ),
           Expanded(
-            child: filtered.isEmpty
-                ? _emptyState(icon: Icons.location_off_rounded, title: 'Aucun point trouvé', sub: 'Essayez un autre mot clé.', color: primaryColor)
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, i) {
-                      final p = filtered[i];
-                      final isVerified = p['is_verified'] == true;
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
-                                child: const Icon(Icons.location_on, color: primaryColor, size: 22),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(p['name'] ?? 'Point de collecte', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14)),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.pin_drop_outlined, size: 12, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            p['address'] ?? 'Sans adresse',
-                                            style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    if (p['waste_type'] != null)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
-                                        child: Text(
-                                          p['waste_type'],
-                                          style: GoogleFonts.inter(fontSize: 10, color: Colors.grey.shade700, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    const SizedBox(height: 8),
-                                    // ── Badge État ──
-                                    Builder(builder: (_) {
-                                      final status = (p['status'] ?? 'disponible').toString().toLowerCase();
-                                      final barColor = status == 'saturé' || status == 'sature'
-                                          ? const Color(0xFFDC2626)
-                                          : status == 'maintenance'
-                                              ? const Color(0xFFF59E0B)
-                                              : const Color(0xFF16A34A);
-                                      final statusLabel = status == 'saturé' || status == 'sature'
-                                          ? '🔴 Saturé'
-                                          : status == 'maintenance'
-                                              ? '🟡 En maintenance'
-                                              : '🟢 Disponible';
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: barColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: barColor.withOpacity(0.3)),
-                                        ),
-                                        child: Text(
-                                          statusLabel,
-                                          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: barColor),
-                                        ),
-                                      );
-                                    }),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+            child: _f2ShowMap
+                ? _buildF2PointsMap(filtered)
+                : (filtered.isEmpty
+                    ? _emptyState(
+                        icon: Icons.location_off_rounded,
+                        title: 'Aucun point trouvé',
+                        sub: 'Essayez un autre filtre ou mot clé.',
+                        color: primaryColor,
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, i) {
+                          final p = filtered[i];
+                          final isVerified = p['is_verified'] == true;
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 1,
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: isVerified ? Colors.green.shade50 : Colors.amber.shade50,
+                                      color: primaryColor.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: isVerified ? Colors.green.shade200 : Colors.amber.shade200),
                                     ),
-                                    child: Text(
-                                      isVerified ? 'Vérifié' : 'Non vérifié',
-                                      style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: isVerified ? Colors.green.shade700 : Colors.amber.shade800),
+                                    child: const Icon(Icons.location_on, color: primaryColor, size: 22),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          p['name'] ?? 'Point de collecte',
+                                          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.pin_drop_outlined, size: 12, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                p['address'] ?? 'Sans adresse',
+                                                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        if (p['waste_type'] != null)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              p['waste_type'],
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
+                                                color: Colors.grey.shade700,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        const SizedBox(height: 8),
+                                        // ── Badge État ──
+                                        Builder(builder: (_) {
+                                          final status = (p['status'] ?? 'disponible').toString().toLowerCase();
+                                          final barColor = status == 'saturé' || status == 'sature'
+                                              ? const Color(0xFFDC2626)
+                                              : status == 'maintenance'
+                                                  ? const Color(0xFFF59E0B)
+                                                  : const Color(0xFF16A34A);
+                                          final statusLabel = status == 'saturé' || status == 'sature'
+                                              ? '🔴 Saturé'
+                                              : status == 'maintenance'
+                                                  ? '🟡 En maintenance'
+                                                  : '🟢 Disponible';
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: barColor.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: barColor.withOpacity(0.3)),
+                                            ),
+                                            child: Text(
+                                              statusLabel,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: barColor,
+                                              ),
+                                            ),
+                                          );
+                                        }),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  OutlinedButton(
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      side: BorderSide(color: isVerified ? Colors.amber.shade600 : Colors.green.shade600),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () => _verifyPoint(p['id'], !isVerified),
-                                    child: Text(
-                                      isVerified ? 'Révoquer' : 'Vérifier',
-                                      style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: isVerified ? Colors.amber.shade800 : Colors.green.shade700),
-                                    ),
+                                  const SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isVerified ? Colors.green.shade50 : Colors.amber.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isVerified ? Colors.green.shade200 : Colors.amber.shade200,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          isVerified ? 'Vérifié' : 'Non vérifié',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: isVerified ? Colors.green.shade700 : Colors.amber.shade800,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          side: BorderSide(
+                                            color: isVerified ? Colors.amber.shade600 : Colors.green.shade600,
+                                          ),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        onPressed: () => _verifyPoint(p['id'], !isVerified),
+                                        child: Text(
+                                          isVerified ? 'Révoquer' : 'Vérifier',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: isVerified ? Colors.amber.shade800 : Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                            ),
+                          );
+                        },
+                      )),
           ),
         ],
       ),
     );
   }
+
+  // ── Carte interactive des points filtrés par état ────────────────────────
+  Widget _buildF2PointsMap(List<Map<String, dynamic>> points) {
+    final validPoints = points.where((p) => p['lat'] != null && p['lng'] != null).toList();
+
+    LatLng initialCenter = const LatLng(36.8065, 10.1815);
+    if (validPoints.isNotEmpty) {
+      final firstLat = (validPoints.first['lat'] as num).toDouble();
+      final firstLng = (validPoints.first['lng'] as num).toDouble();
+      initialCenter = LatLng(firstLat, firstLng);
+    }
+
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _f2MapCtrl,
+          options: MapOptions(
+            initialCenter: initialCenter,
+            initialZoom: 10.0,
+            minZoom: 5,
+            maxZoom: 18,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.eco_rewind',
+              tileProvider: CancellableNetworkTileProvider(),
+              errorTileCallback: (tile, error, stackTrace) {},
+            ),
+            MarkerLayer(
+              markers: validPoints.map((p) {
+                final lat = (p['lat'] as num).toDouble();
+                final lng = (p['lng'] as num).toDouble();
+                final name = (p['name'] ?? 'Point').toString();
+                final status = (p['status'] ?? 'disponible').toString().toLowerCase();
+
+                final Color markerColor;
+                final IconData markerIcon;
+                if (status == 'saturé' || status == 'sature') {
+                  markerColor = const Color(0xFFDC2626);
+                  markerIcon = Icons.error_rounded;
+                } else if (status == 'maintenance') {
+                  markerColor = const Color(0xFFF59E0B);
+                  markerIcon = Icons.build_rounded;
+                } else {
+                  markerColor = const Color(0xFF16A34A);
+                  markerIcon = Icons.check_circle_rounded;
+                }
+
+                return Marker(
+                  point: LatLng(lat, lng),
+                  width: 85,
+                  height: 60,
+                  alignment: Alignment.bottomCenter,
+                  child: GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$name — État: ${p['status'] ?? 'disponible'}'),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.75),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            name.length > 10 ? '${name.substring(0, 10)}…' : name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: markerColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+                            ],
+                          ),
+                          child: Icon(markerIcon, color: Colors.white, size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        // Légende flottante en bas de carte
+        Positioned(
+          bottom: 16,
+          left: 16,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.92),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _mapLegendDot(const Color(0xFF16A34A), 'Disponible'),
+                _mapLegendDot(const Color(0xFFDC2626), 'Saturé'),
+                _mapLegendDot(const Color(0xFFF59E0B), 'Maintenance'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _mapLegendDot(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF334155)),
+        ),
+      ],
+    );
+  }
+
 
   // ── F3 : UI Acteurs ──────────────────────────────────────────────────────
   Widget _buildF3Acteurs() {
