@@ -1,4 +1,4 @@
-// lib/screens/messaging/messaging_screen.dart
+﻿// lib/screens/messaging/messaging_screen.dart
 // Écran de messagerie inter-rôles — EcoRewind
 // Design premium dark avec bulles de chat, groupes, broadcasts
 
@@ -261,19 +261,6 @@ class _MessagingScreenState extends State<MessagingScreen>
           ),
         ),
       );
-    } else if (type == 'broadcast') {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => _ChatScreen(
-            partnerId: conv['partner_id'] as int,
-            partnerName: conv['partner_name'] as String,
-            partnerRole: conv['partner_role'] as String,
-            partnerAvatar: conv['partner_avatar'] as String?,
-            isBroadcast: true,
-          ),
-        ),
-      );
     }
     _load();
   }
@@ -311,12 +298,6 @@ class _ConversationTile extends StatelessWidget {
       iconColor = Color(int.parse(
           (conversation['group_color'] as String? ?? '#00C896')
               .replaceFirst('#', '0xFF')));
-    } else if (type == 'broadcast') {
-      title = '${conversation['partner_name']} (broadcast)';
-      final label = conversation['collector_group_label'] as String?;
-      subtitle = label != null ? '$label · $lastMsg' : lastMsg;
-      typeIcon = Icons.campaign_rounded;
-      iconColor = Colors.orange;
     } else {
       title = conversation['partner_name'] as String? ?? '?';
       subtitle = ismine ? '✓ $lastMsg' : lastMsg;
@@ -440,14 +421,12 @@ class _ChatScreen extends StatefulWidget {
   final String partnerName;
   final String partnerRole;
   final String? partnerAvatar;
-  final bool isBroadcast;
 
   const _ChatScreen({
     required this.partnerId,
     required this.partnerName,
     required this.partnerRole,
     this.partnerAvatar,
-    this.isBroadcast = false,
   });
 
   @override
@@ -1364,14 +1343,11 @@ class _NewMessageSheetState extends State<_NewMessageSheet>
   Map<String, dynamic>? _selectedRecipient;
   Map<String, dynamic>? _selectedGroup;
   final TextEditingController _contentCtrl = TextEditingController();
-  String _groupLabel = '';
-  final List<Map<String, dynamic>> _selectedCollectors = [];
   bool _sending = false;
 
   int get _tabCount {
     int n = 1; // toujours l'onglet Individuel
     if (_hasGroups) n++;
-    if (_hasCollectors) n++;
     return n;
   }
 
@@ -1385,9 +1361,6 @@ class _NewMessageSheetState extends State<_NewMessageSheet>
   }
 
   bool get _hasGroups => widget.groups.isNotEmpty;
-
-  bool get _hasCollectors => widget.recipients
-      .any((r) => r['role'] == 'collector');
 
   @override
   void dispose() {
@@ -1436,26 +1409,11 @@ class _NewMessageSheetState extends State<_NewMessageSheet>
     if (mounted) Navigator.pop(context);
   }
 
-  Future<void> _sendBroadcast() async {
-    if (_selectedCollectors.isEmpty || _contentCtrl.text.trim().isEmpty) return;
-    setState(() => _sending = true);
-    await MessagingService.broadcastToCollectors(
-      receiverIds:
-          _selectedCollectors.map((c) => c['id'] as int).toList(),
-      content: _contentCtrl.text.trim(),
-      collectorGroupLabel: _groupLabel.isNotEmpty ? _groupLabel : null,
-    );
-    setState(() => _sending = false);
-    widget.onMessageSent();
-    if (mounted) Navigator.pop(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final tabs = [
       const Tab(text: 'Individuel'),
       if (_hasGroups) const Tab(text: 'Groupe'),
-      if (_hasCollectors) const Tab(text: 'Broadcast'),
     ];
 
     // Si la liste est vide, on affiche un état explicatif
@@ -1548,30 +1506,6 @@ class _NewMessageSheetState extends State<_NewMessageSheet>
                     contentCtrl: _contentCtrl,
                     sending: _sending,
                     onSend: _sendGroup,
-                  ),
-                if (_hasCollectors)
-                  _BroadcastTab(
-                    collectors: widget.recipients
-                        .where((r) => r['role'] == 'collector')
-                        .toList(),
-                    selected: _selectedCollectors,
-                    onToggle: (c) {
-                      setState(() {
-                        if (_selectedCollectors
-                            .any((x) => x['id'] == c['id'])) {
-                          _selectedCollectors.removeWhere(
-                              (x) => x['id'] == c['id']);
-                        } else {
-                          _selectedCollectors.add(c);
-                        }
-                      });
-                    },
-                    groupLabel: _groupLabel,
-                    onLabelChange: (v) =>
-                        setState(() => _groupLabel = v),
-                    contentCtrl: _contentCtrl,
-                    sending: _sending,
-                    onSend: _sendBroadcast,
                   ),
               ],
             ),
@@ -2107,162 +2041,6 @@ class _GroupTabState extends State<_GroupTab> {
           ),
           const SizedBox(height: 16),
           _MessageInput(ctrl: widget.contentCtrl, sending: widget.sending, onSend: widget.onSend),
-        ],
-      ],
-    );
-  }
-}
-
-// ── Tab Broadcast ─────────────────────────────────────────────────────────────
-
-class _BroadcastTab extends StatefulWidget {
-  final List<Map<String, dynamic>> collectors;
-  final List<Map<String, dynamic>> selected;
-  final void Function(Map<String, dynamic>) onToggle;
-  final String groupLabel;
-  final void Function(String) onLabelChange;
-  final TextEditingController contentCtrl;
-  final bool sending;
-  final VoidCallback onSend;
-
-  const _BroadcastTab({
-    required this.collectors,
-    required this.selected,
-    required this.onToggle,
-    required this.groupLabel,
-    required this.onLabelChange,
-    required this.contentCtrl,
-    required this.sending,
-    required this.onSend,
-  });
-
-  @override
-  State<_BroadcastTab> createState() => _BroadcastTabState();
-}
-
-class _BroadcastTabState extends State<_BroadcastTab> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    // Filter collectors based on query
-    final filtered = widget.collectors.where((c) {
-      final name = (c['full_name'] as String? ?? '').toLowerCase();
-      final email = (c['email'] as String? ?? '').toLowerCase();
-      final q = _query.toLowerCase();
-      return name.contains(q) || email.contains(q);
-    }).toList();
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Libellé optionnel
-        TextField(
-          onChanged: widget.onLabelChange,
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-          decoration: InputDecoration(
-            hintText: 'Libellé du groupe (ex: Zone Nord)',
-            hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 13),
-            filled: true,
-            fillColor: const Color(0xFF111827),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1E2D3D)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1E2D3D)),
-            ),
-            contentPadding: const EdgeInsets.all(14),
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // Search Bar for collectors
-        TextField(
-          onChanged: (val) {
-            setState(() {
-              _query = val;
-            });
-          },
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search_rounded, color: Colors.white30, size: 18),
-            hintText: 'Rechercher un collecteur...',
-            hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 13),
-            filled: true,
-            fillColor: const Color(0xFF111827),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1E2D3D)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1E2D3D)),
-            ),
-            contentPadding: const EdgeInsets.all(12),
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        Text('Sélectionner les collecteurs (${widget.selected.length}/${widget.collectors.length})',
-            style: GoogleFonts.outfit(
-                color: Colors.white60, fontSize: 12,
-                fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        ...filtered.map((c) {
-          final isSelected =
-              widget.selected.any((x) => x['id'] == c['id']);
-          return GestureDetector(
-            onTap: () => widget.onToggle(c),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.orange.withOpacity(0.12)
-                    : const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: isSelected
-                        ? Colors.orange
-                        : Colors.white10),
-              ),
-              child: Row(children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.orange.withOpacity(0.2),
-                  child: const Icon(Icons.recycling_rounded,
-                      color: Colors.orange, size: 16),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    c['full_name'] as String,
-                    style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13),
-                  ),
-                ),
-                if (isSelected)
-                  const Icon(Icons.check_box_rounded,
-                      color: Colors.orange, size: 20)
-                else
-                  const Icon(Icons.check_box_outline_blank_rounded,
-                      color: Colors.white24, size: 20),
-              ]),
-            ),
-          );
-        }),
-        if (widget.selected.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _MessageInput(
-            ctrl: widget.contentCtrl,
-            sending: widget.sending,
-            onSend: widget.onSend,
-            hint: 'Message à tous les collecteurs…',
-          ),
         ],
       ],
     );

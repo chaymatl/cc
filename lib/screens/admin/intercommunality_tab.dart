@@ -1351,7 +1351,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
               userAgentPackageName: 'com.example.eco_rewind',
               tileProvider: CancellableNetworkTileProvider(),
               errorTileCallback: (tile, error, stackTrace) {},
@@ -2950,7 +2950,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
 
   Future<void> _checkConnectivity() async {
     try {
-      final s = await Socket.connect('tile.openstreetmap.org', 80,
+      final s = await Socket.connect('server.arcgisonline.com', 443,
           timeout: const Duration(seconds: 3));
       s.destroy();
       if (mounted) setState(() { _mapOnline = true; _checkingConnectivity = false; });
@@ -3139,7 +3139,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
               userAgentPackageName: 'com.example.eco_rewind',
               tileProvider: CancellableNetworkTileProvider(),
               errorTileCallback: (tile, error, stackTrace) {},

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -14,6 +14,7 @@ import '../models/user_model.dart';
 import '../core/cache_service.dart';
 import 'fcm_service.dart';
 import 'notification_service.dart';
+import '../core/firebase/firebase_admin_stats_service.dart';
 
 
 /// Service d'authentification
@@ -555,6 +556,11 @@ class AuthService {
         // Envoyer le token en attente s'il y en a un (sauvegardé en session fallback)
         await FcmService.sendPendingFcmToken();
         await FcmService.onUserLoggedIn();
+        // Démarrer l'écoute RTDB pour les notifications de messages (fallback Huawei)
+        final uid = AuthState.currentUser?.id;
+        if (uid != null && uid.isNotEmpty) {
+          await FcmService.startRtdbMessageListener(uid);
+        }
         debugPrint('[FCM] Token FCM enregistré avec succès après login');
       } catch (e) {
         debugPrint('[FCM] Erreur envoi token après login: $e');
@@ -774,7 +780,7 @@ class AuthService {
         Uri.parse('$baseUrl/notifications/$notifId/read'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -789,7 +795,7 @@ class AuthService {
         Uri.parse('$baseUrl/notifications/$notifId/unread'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -804,7 +810,7 @@ class AuthService {
         Uri.parse('$baseUrl/notifications/read-all'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -974,7 +980,7 @@ class AuthService {
         },
         body: json.encode({'description': description}),
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1132,7 +1138,7 @@ class AuthService {
         Uri.parse('$baseUrl/comments/$commentId'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1415,7 +1421,7 @@ class AuthService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1450,6 +1456,8 @@ class AuthService {
     }
 
     await clearTokens();
+    // Nettoyage des streams Firebase RTDB (evite MissingPluginException)
+    try { FirebaseAdminStatsService().dispose(); } catch (_) {}
     // Déconnexion Google
     try {
       await _googleSignIn.signOut();
@@ -1537,7 +1545,7 @@ class AuthService {
         Uri.parse('$baseUrl/testimonials/$id'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1615,7 +1623,7 @@ class AuthService {
         Uri.parse('$baseUrl/center-proposals/$id'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1634,7 +1642,7 @@ class AuthService {
         },
         body: json.encode({'status': status}),
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1690,7 +1698,7 @@ class AuthService {
         Uri.parse('$baseUrl/admin/moderation/$postId/approve'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -1708,7 +1716,7 @@ class AuthService {
         uri,
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }

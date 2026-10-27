@@ -55,18 +55,26 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/ecorewind}
+      # Profil standalone : utilise le postgres du compose
+      # Profil défaut     : utilise le postgres local via host.docker.internal
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:5432/ecorewind}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/firebase_credentials.json
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     volumes:
       - ./uploads:/app/uploads
+      - ./firebase_credentials.json:/app/firebase_credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false       # pas obligatoire en profil défaut (postgres absent)
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      start_period: 20s
+      start_period: 25s
       retries: 3
     labels:
       org.opencontainers.image.title: "EcoRewind API"
@@ -74,7 +82,7 @@ services:
       org.opencontainers.image.source: "https://github.com/chaymatl/cc"
       org.opencontainers.image.version: "1.0.0"
 
-  # ── AI Worker (OPTIONNEL — profil ai) ───────────────────────
+  # ── AI Worker (OPTIONNEL — profil ai / full) ─────────────────
   ai_worker:
     profiles:
       - ai
@@ -88,6 +96,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ecorewind
+      GOOGLE_APPLICATION_CREDENTIALS: /app/firebase_credentials.json
       AI_WORKER_POLL_INTERVAL: 5
       AI_WORKER_BATCH_SIZE: 10
       AI_WORKER_LOG_LEVEL: INFO
@@ -98,6 +107,7 @@ services:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
+      - ./firebase_credentials.json:/app/firebase_credentials.json:ro
       - ai_models:/app/models
     deploy:
       resources:

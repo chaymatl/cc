@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -128,6 +129,8 @@ class FcmService {
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
+  StreamSubscription<DatabaseEvent>? _rtdbMsgSub; // Fallback RTDB (Huawei/EMUI)
+  String? _rtdbListenPath; // nœud écouté actuellement
 
   /// Annule tous les listeners FCM — appeler au logout pour éviter les fuites.
   static void cancelListeners() {
@@ -135,10 +138,68 @@ class FcmService {
     svc._tokenRefreshSub?.cancel();
     svc._foregroundSub?.cancel();
     svc._openedAppSub?.cancel();
+    svc._rtdbMsgSub?.cancel();
     svc._tokenRefreshSub = null;
     svc._foregroundSub = null;
     svc._openedAppSub = null;
+    svc._rtdbMsgSub = null;
+    svc._rtdbListenPath = null;
     debugPrint('[FCM] Listeners annulés (logout)');
+  }
+
+  // ── Listener RTDB : notifications de messages (fallback Huawei/EMUI) ──────
+  /// Démarre l'écoute du nœud /notifications/{userId}/new_message dans RTDB.
+  /// Déclenche une notification locale à chaque nouveau message.
+  /// Compatible Huawei EMUI sans Google Play Services.
+  static Future<void> startRtdbMessageListener(String userId) async {
+    final svc = FcmService();
+    final path = '/notifications/$userId/new_message';
+    if (svc._rtdbListenPath == path) return; // déjà en écoute
+    svc._rtdbMsgSub?.cancel();
+    svc._rtdbListenPath = path;
+    try {
+      final ref = FirebaseDatabase.instance.ref(path);
+      svc._rtdbMsgSub = ref.onValue.listen((DatabaseEvent event) async {
+        final data = event.snapshot.value;
+        if (data == null) return;
+        final map = Map<String, dynamic>.from(data as Map);
+        final senderName = map['sender_name'] as String? ?? 'Nouveau message';
+        final preview = map['preview'] as String? ?? '';
+        final type = map['type'] as String? ?? 'message';
+        final senderId = int.tryParse(map['sender_id']?.toString() ?? '0') ?? 0;
+        final groupId = map['group_id'];
+        final groupName = map['group_name'] as String?;
+        final ts = map['ts'] as String? ?? '';
+
+        // Éviter les doublons (comparer timestamp)
+        final prefs = await SharedPreferences.getInstance();
+        final lastTs = prefs.getString('rtdb_last_msg_ts_$userId') ?? '';
+        if (ts == lastTs || ts.isEmpty) return;
+        await prefs.setString('rtdb_last_msg_ts_$userId', ts);
+
+        // Afficher la notification locale
+        final notifId = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
+        final payload = jsonEncode({
+          'type': type,
+          'sender_id': senderId.toString(),
+          'sender_name': senderName,
+          'partner_id': senderId.toString(),
+          if (groupId != null) 'group_id': groupId.toString(),
+          if (groupName != null) 'group_name': groupName,
+        });
+        await _flutterLocalNotificationsPlugin.show(
+          notifId,
+          senderName,
+          preview.isNotEmpty ? preview : 'Nouveau message',
+          FcmService()._buildMessageNotifDetails(title: senderName, body: preview, senderName: senderName),
+          payload: payload,
+        );
+        debugPrint('[RTDB-MSG] Notification affichée: $senderName → $preview');
+      });
+      debugPrint('[RTDB-MSG] Écoute démarrée sur $path');
+    } catch (e) {
+      debugPrint('[RTDB-MSG] Erreur écoute: $e');
+    }
   }
 
   // ── Initialiser FCM — appeler une seule fois depuis main.dart ────────────

@@ -10,6 +10,7 @@ import db_models as db_models
 import models as models
 from database import get_db
 from core.deps import get_current_user
+from services.firebase_service import update_admin_stats
 
 router = APIRouter(tags=["collection_points"])
 
@@ -248,7 +249,7 @@ async def mark_center_alerts_read(
 @router.post("/admin/collection-points")
 async def create_point(point: models.CollectionPointCreate, db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin",):
+    if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     data = point.dict()
     if not data.get("address"):
@@ -258,6 +259,11 @@ async def create_point(point: models.CollectionPointCreate, db: Session = Depend
     db.commit()
     db.refresh(db_point)
     _bump_version()
+    # Synchroniser Firebase RTDB (total_centers)
+    try:
+        update_admin_stats(db)
+    except Exception:
+        pass
     # Alerter si le centre est créé directement en statut critique
     new_status = data.get("status", "disponible")
     if new_status in ("saturé", "sature", "maintenance"):
@@ -269,7 +275,7 @@ async def create_point(point: models.CollectionPointCreate, db: Session = Depend
 async def update_point(point_id: int, update: models.CollectionPointUpdate,
                        db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin",):
+    if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     db_point = db.query(db_models.CollectionPoint).filter(
         db_models.CollectionPoint.id == point_id).first()
@@ -292,6 +298,12 @@ async def update_point(point_id: int, update: models.CollectionPointUpdate,
     db.commit()
     db.refresh(db_point)
     _bump_version()
+
+    # ── Synchroniser Firebase RTDB (centers_disponible / saturé / maintenance) ──
+    try:
+        update_admin_stats(db)
+    except Exception:
+        pass
 
     # ── Déclencher les alertes si le statut change vers un état critique ──────
     new_status = update_data.get("status", old_status)
@@ -326,7 +338,7 @@ async def backfill_addresses(db: Session = Depends(get_db),
 @router.delete("/admin/collection-points/{point_id}")
 async def delete_point(point_id: int, db: Session = Depends(get_db),
                        current_user: db_models.User = Depends(get_current_user)):
-    if current_user.role not in ("admin",):
+    if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     db_point = db.query(db_models.CollectionPoint).filter(
         db_models.CollectionPoint.id == point_id).first()
@@ -335,4 +347,9 @@ async def delete_point(point_id: int, db: Session = Depends(get_db),
     db.delete(db_point)
     db.commit()
     _bump_version()
+    # Synchroniser Firebase RTDB (total_centers)
+    try:
+        update_admin_stats(db)
+    except Exception:
+        pass
     return {"message": "Point de collecte supprimé"}

@@ -148,8 +148,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           // ── Action buttons ──
           if (AuthState.isLoggedIn && AuthState.currentUser?.role == UserRole.citoyen) ...[
             _buildAddTestimonialButton(),
-            const SizedBox(height: 12),
-            _buildSubmitProposalButton(),
             const SizedBox(height: 28),
           ],
 
@@ -240,47 +238,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ),
       ),
     ).animate().fadeIn().slideY(begin: 0.1, end: 0);
-  }
-
-  // ── Submit Proposal Button ──
-
-  Widget _buildSubmitProposalButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: _showAddProposalDialog,
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.add_location_alt_rounded, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(L10n.tr('Proposer un centre de tri'), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                    const SizedBox(height: 2),
-                    Text(L10n.tr('Suggérez un nouvel emplacement'), style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
   }
 
   // ── Add Testimonial Dialog ──
@@ -393,123 +350,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
 );
   }
 
-  // ── Add Proposal Dialog ──
-
-  void _showAddProposalDialog() {
-    final nameCtrl = TextEditingController();
-    final addressCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final List<String> selectedTypes = [];
-    final wasteOptions = ['Plastique', 'Verre', 'Papier', 'Métal', 'Organique', 'Électronique', 'Textile'];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final kb = MediaQuery.of(ctx).viewInsets.bottom;
-          final bottomInset = MediaQuery.of(ctx).padding.bottom;
-          final effectiveBottom = (kb > 0 ? kb : bottomInset) + 20.0;
-          return Container(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, effectiveBottom),
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.85),
-            decoration: BoxDecoration(
-              color: Theme.of(ctx).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 20),
-                Text('Proposer un centre de tri', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
-                const SizedBox(height: 8),
-                Text('Votre proposition sera examinée par l\'administration', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted)),
-                const SizedBox(height: 24),
-                _buildField('Nom du centre', nameCtrl, 'Ex: Point Vert Lac 2'),
-                const SizedBox(height: 16),
-                _buildField('Adresse', addressCtrl, 'Ex: Avenue Habib Bourguiba, Tunis'),
-                const SizedBox(height: 16),
-                Text('Types de déchets', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: wasteOptions.map((type) {
-                    final isSelected = selectedTypes.contains(type);
-                    return GestureDetector(
-                      onTap: () => setModalState(() {
-                        isSelected ? selectedTypes.remove(type) : selectedTypes.add(type);
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.primaryGreen.withOpacity(0.1) : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppTheme.primaryGreen : Colors.grey.shade200, width: isSelected ? 2 : 1),
-                        ),
-                        child: Text(type, style: GoogleFonts.inter(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? AppTheme.primaryGreen : AppTheme.textMuted)),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                _buildField('Description (optionnel)', descCtrl, 'Détails supplémentaires...', maxLines: 3),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (nameCtrl.text.trim().isEmpty || addressCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Nom et adresse obligatoires')));
-                        return;
-                      }
-                      Navigator.pop(ctx);
-                      final result = await _authService.createCenterProposal(
-                        name: nameCtrl.text.trim(),
-                        address: addressCtrl.text.trim(),
-                        wasteTypes: selectedTypes.join(','),
-                        description: descCtrl.text.trim(),
-                      );
-                      if (result['success'] == true && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('📍 Proposition envoyée ! Elle sera examinée par l\'admin.'),
-                          backgroundColor: const Color(0xFF6366F1),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ));
-                      } else if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(result['message'] ?? 'Erreur'),
-                          backgroundColor: Colors.red.shade400,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: Text('Envoyer la proposition', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
 
   Widget _buildField(String label, TextEditingController ctrl, String hint, {int maxLines = 1}) {
     return Column(
@@ -542,7 +382,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Supprimer votre avis ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: const Text('Cette action est irréversible.'),
+        content: const Text('Cette action est irr├®versible.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Supprimer', style: TextStyle(color: Colors.red.shade400))),
@@ -569,7 +409,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 20),
             Text('Aucun avis encore', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
             const SizedBox(height: 6),
-            Text('Soyez le premier à partager\nvotre expérience !', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted), textAlign: TextAlign.center),
+            Text('Soyez le premier ├á partager\nvotre exp├®rience !', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -655,7 +495,7 @@ class _TestimonialCard extends StatelessWidget {
   String _formatDate(String isoDate) {
     try {
       final dt = DateTime.parse(isoDate);
-      final months = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+      final months = ['jan', 'f├®v', 'mar', 'avr', 'mai', 'jun', 'jul', 'ao├╗', 'sep', 'oct', 'nov', 'd├®c'];
       return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
     } catch (_) {
       return '';

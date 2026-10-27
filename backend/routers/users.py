@@ -86,17 +86,80 @@ async def update_user(user_id: int, user_update: models.UserUpdate,
 @router.delete("/admin/users/{user_id}")
 async def delete_user(user_id: int, db: Session = Depends(get_db),
                       admin: db_models.User = Depends(get_admin_user)):
+    from database import engine
     db_user = db.query(db_models.User).filter(db_models.User.id == user_id).first()
     if not db_user:
-        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        raise HTTPException(status_code=404, detail="Utilisateur non trouve")
+    if admin.id == user_id:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas supprimer votre propre compte")
     if admin.role != "superadmin" and db_user.role in ["admin", "superadmin"]:
         raise HTTPException(
             status_code=403,
             detail="Seul le super-administrateur peut supprimer un administrateur ou super-administrateur"
         )
-    db.delete(db_user)
-    db.commit()
-    return {"message": "Utilisateur supprimé"}
+
+    # Connexion psycopg2 raw via l'engine pour eviter les conflits SQLAlchemy
+    raw_conn = engine.raw_connection()
+    try:
+        cur = raw_conn.cursor()
+        uid = user_id
+
+        def try_exec(sql):
+            """Execute avec SAVEPOINT — ignore les erreurs (table absente, etc.)."""
+            cur.execute("SAVEPOINT sp")
+            try:
+                cur.execute(sql, (uid,))
+                cur.execute("RELEASE SAVEPOINT sp")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT sp")
+
+        # 1. FK nullable → SET NULL
+        try_exec("UPDATE notifications SET replied_by = NULL WHERE replied_by = %s")
+
+        # 2. Tables enfants avec user_id
+        for tbl in [
+            "user_rewards", "bin_scans", "quiz_submissions",
+            "center_proposals", "collector_zone_assignments",
+            "group_members", "meeting_participants",
+            "message_group_recipients", "collector_logs",
+            "likes", "saved_posts", "comments",
+        ]:
+            try_exec(f"DELETE FROM {tbl} WHERE user_id = %s")
+
+        # 3. Tables avec colonnes FK differentes
+        try_exec("DELETE FROM notifications WHERE user_id = %s")
+        try_exec("DELETE FROM citizen_reports WHERE user_id = %s")
+        try_exec("DELETE FROM citizen_reports WHERE assigned_to = %s")
+        try_exec("DELETE FROM messages WHERE sender_id = %s")
+        try_exec("DELETE FROM messages WHERE receiver_id = %s")
+        try_exec("DELETE FROM posts WHERE user_id = %s")
+        try_exec("DELETE FROM testimonials WHERE user_id = %s")
+
+        # 4. Tables educateur / acteur / collecteur
+        for tbl, col in [
+            ("educator_groups", "educator_id"),
+            ("group_sessions", "educator_id"),
+            ("meetings", "educator_id"),
+            ("education_contents", "educator_id"),
+            ("collector_zones", "created_by"),
+            ("actor_groups", "created_by"),
+            ("custom_actor_groups", "created_by"),
+            ("missions", "assigned_to"),
+            ("missions", "created_by"),
+        ]:
+            try_exec(f"DELETE FROM {tbl} WHERE {col} = %s")
+
+        # 5. Supprimer l'utilisateur
+        cur.execute("DELETE FROM users WHERE id = %s", (uid,))
+        raw_conn.commit()
+        cur.close()
+    except Exception as e:
+        raw_conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Erreur suppression: {str(e)}")
+    finally:
+        raw_conn.close()
+
+    return {"message": "Utilisateur supprime avec succes"}
 
 
 # ── Current user profile ──────────────────────────────────────────────────────

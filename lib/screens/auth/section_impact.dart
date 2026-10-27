@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -200,21 +200,6 @@ class _SectionImpactState extends State<SectionImpact>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button — masqué sur web
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.12)),
-                        ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 18),
-                      ),
-                    ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.15),
                   const SizedBox(height: 32),
 
                   // Live badge

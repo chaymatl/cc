@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -36,6 +40,13 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   int _trees = 0;
   bool _statsLoaded = false;
 
+  // -- Carte mini ----------------------------------------------
+  final MapController _miniMapController = MapController();
+  List<Map<String, dynamic>> _mapPoints = [];
+  bool _mapPointsLoaded = false;
+  String _selectedWasteFilter = 'Tous';
+  LatLng? _userLocation;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +65,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     // On fait juste un fetch initial pour avoir la valeur SQL Ã  jour au 1er montage.
     _refreshUserScoreOnce();
     _syncUnreadNotifications();
+    _loadMapPoints();
   }
 
   /// Synchronise le compteur de notifications non lues depuis le backend
@@ -117,6 +129,95 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     } catch (_) {}
   }
 
+  // -- Chargement des points de tri pour la mini-carte ---------
+  Future<void> _loadMapPoints() async {
+    try {
+      final points = await _authService.fetchCollectionPoints();
+      if (mounted) {
+        setState(() {
+          _mapPoints = points.map<Map<String, dynamic>>((p) => {
+            'id': p['id'],
+            'name': p['name'] ?? '',
+            'lat': double.tryParse(p['lat']?.toString() ?? '') ?? 0.0,
+            'lng': double.tryParse(p['lng']?.toString() ?? '') ?? 0.0,
+            'status': p['status'] ?? 'disponible',
+            'address': p['address'] ?? '',
+            'hours': p['hours'] ?? '',
+            'types': p['types'] ?? [],
+          }).where((p) => p['lat'] != 0.0 && p['lng'] != 0.0).toList();
+          _mapPointsLoaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _mapPointsLoaded = true);
+    }
+  }
+
+  Future<void> _goToNearestPoint() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).timeout(const Duration(seconds: 8));
+      if (!mounted) return;
+      final userLoc = LatLng(pos.latitude, pos.longitude);
+      setState(() => _userLocation = userLoc);
+      // Trouver le point le plus proche
+      Map<String, dynamic>? nearest;
+      double minDist = double.infinity;
+      final dist = const Distance();
+      for (final p in _filteredPoints) {
+        final d = dist(userLoc, LatLng(p['lat'] as double, p['lng'] as double));
+        if (d < minDist) { minDist = d; nearest = p; }
+      }
+      if (nearest != null) {
+        _miniMapController.move(
+          LatLng(nearest['lat'] as double, nearest['lng'] as double), 15);
+        if (mounted) _showPointSheet(nearest);
+      }
+    } catch (_) {
+      if (mounted) widget.onNavigate(3); // fallback ? MapTab
+    }
+  }
+
+  List<Map<String, dynamic>> get _filteredPoints {
+    if (_selectedWasteFilter == 'Tous') return _mapPoints;
+    return _mapPoints.where((p) {
+      final types = p['types'];
+      if (types is List) {
+        return types.any((t) =>
+          t.toString().toLowerCase() == _selectedWasteFilter.toLowerCase());
+      }
+      return false;
+    }).toList();
+  }
+
+  List<String> get _wasteTypes {
+    final Set<String> types = {'Tous'};
+    for (final p in _mapPoints) {
+      final t = p['types'];
+      if (t is List) for (final s in t) types.add(s.toString());
+    }
+    return types.toList();
+  }
+
+  void _showPointSheet(Map<String, dynamic> point) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PointBottomSheet(
+        point: point,
+        onOpenFullMap: () {
+          Navigator.pop(context);
+          widget.onNavigate(3);
+        },
+      ),
+    );
+  }
   Future<void> _fetchStats() async {
     try {
       final res = await http
@@ -177,6 +278,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
           _buildSliverAppBar(user),
           SliverToBoxAdapter(child: _buildWelcomeHero(user)),
           SliverToBoxAdapter(child: _buildTipOfTheDay()),
+          SliverToBoxAdapter(child: _buildMapSection()),
           SliverToBoxAdapter(child: _buildQuickActionsGrid()),
           SliverToBoxAdapter(child: _buildVlogSpotlight()),
           SliverToBoxAdapter(child: _buildGlobalImpact()),
@@ -1268,6 +1370,240 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     );
   }
 
+
+  // -- Section carte dans le home ------------------------------
+  Widget _buildMapSection() {
+    final isDark = ThemeService.isDarkMode;
+    final filtered = _filteredPoints;
+    final types = _wasteTypes;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre + bouton voir tout
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Points de tri proches',
+                style: GoogleFonts.outfit(
+                  fontSize: 20, fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              TextButton(
+                onPressed: () => widget.onNavigate(3),
+                child: Text('Voir tout ?',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.primaryGreen, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Filtres par type de déchet
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: types.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final t = types[i];
+                final selected = t == _selectedWasteFilter;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedWasteFilter = t),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: selected ? AppTheme.primaryGreen : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selected ? AppTheme.primaryGreen : Colors.grey.shade300,
+                        width: 1.5,
+                      ),
+                      boxShadow: selected ? [BoxShadow(
+                        color: AppTheme.primaryGreen.withOpacity(0.3),
+                        blurRadius: 8, offset: const Offset(0, 3),
+                      )] : [],
+                    ),
+                    child: Text(t,
+                      style: GoogleFonts.outfit(
+                        fontSize: 13, fontWeight: FontWeight.w600,
+                        color: selected ? Colors.white : AppTheme.textMuted,
+                      )),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Mini carte
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 240,
+                  child: FlutterMap(
+                    mapController: _miniMapController,
+                    options: const MapOptions(
+                      initialCenter: LatLng(36.8065, 10.1815),
+                      initialZoom: 10,
+                      minZoom: 5,
+                      maxZoom: 18,
+                      interactionOptions: InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                        userAgentPackageName: 'com.ecorewind.app',
+                        tileProvider: CancellableNetworkTileProvider(),
+                        errorTileCallback: (tile, error, st) {},
+                        fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                      ),
+                      MarkerLayer(
+                        markers: filtered.map((p) {
+                          final status = (p['status'] as String).toLowerCase();
+                          final color = status.contains('sat')
+                            ? Colors.red
+                            : status.contains('maint')
+                              ? Colors.orange
+                              : AppTheme.primaryGreen;
+                          return Marker(
+                            point: LatLng(p['lat'] as double, p['lng'] as double),
+                            width: 44, height: 44,
+                            child: GestureDetector(
+                              onTap: () => _showPointSheet(p),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [BoxShadow(
+                                    color: color.withOpacity(0.4),
+                                    blurRadius: 8, spreadRadius: 2,
+                                  )],
+                                ),
+                                child: const Icon(Icons.recycling_rounded, color: Colors.white, size: 22),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      if (_userLocation != null)
+                        MarkerLayer(markers: [
+                          Marker(
+                            point: _userLocation!,
+                            width: 20, height: 20,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                            ),
+                          ),
+                        ]),
+                    ],
+                  ),
+                ),
+                // Overlay chargement
+                if (!_mapPointsLoaded)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black26,
+                      child: const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
+                    ),
+                  ),
+                // Bouton "Point le plus proche"
+                Positioned(
+                  bottom: 12, left: 12, right: 12,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Compteur points
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+                        ),
+                        child: Text(
+                          '${filtered.length} points',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.deepNavy),
+                        ),
+                      ),
+                      // Bouton Point le plus proche
+                      GestureDetector(
+                        onTap: _goToNearestPoint,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.primaryGreen, AppTheme.accentTeal],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [BoxShadow(
+                              color: AppTheme.primaryGreen.withOpacity(0.4),
+                              blurRadius: 10, offset: const Offset(0, 3),
+                            )],
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.near_me_rounded, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text('Point le plus proche',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Bouton localisation
+                Positioned(
+                  top: 12, right: 12,
+                  child: GestureDetector(
+                    onTap: () async {
+                      try {
+                        final permission = await Geolocator.checkPermission();
+                        if (permission == LocationPermission.denied) {
+                          await Geolocator.requestPermission();
+                        }
+                        final pos = await Geolocator.getCurrentPosition(
+                          desiredAccuracy: LocationAccuracy.medium,
+                        ).timeout(const Duration(seconds: 8));
+                        if (mounted) {
+                          setState(() => _userLocation = LatLng(pos.latitude, pos.longitude));
+                          _miniMapController.move(_userLocation!, 14);
+                        }
+                      } catch (_) {}
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8)],
+                      ),
+                      child: const Icon(Icons.my_location_rounded, color: AppTheme.primaryGreen, size: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildMiniPostCard(Post post) {
     return Container(
       width: 225,
@@ -1318,6 +1654,131 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
                   style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted, height: 1.3),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -- Bottom sheet pour les détails d'un point de tri ---------
+class _PointBottomSheet extends StatelessWidget {
+  final Map<String, dynamic> point;
+  final VoidCallback onOpenFullMap;
+
+  const _PointBottomSheet({required this.point, required this.onOpenFullMap});
+
+  @override
+  Widget build(BuildContext context) {
+    final types = (point['types'] as List?)?.map((t) => t.toString()).toList() ?? [];
+    final status = (point['status'] as String? ?? 'disponible').toLowerCase();
+    final statusColor = status.contains('sat') ? Colors.red
+        : status.contains('maint') ? Colors.orange
+        : AppTheme.primaryGreen;
+    final statusLabel = status.contains('sat') ? 'Saturé'
+        : status.contains('maint') ? 'Maintenance'
+        : 'Disponible';
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.recycling_rounded, color: AppTheme.primaryGreen, size: 26),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      point['name'] as String? ?? '',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 17, color: AppTheme.deepNavy),
+                    ),
+                    if ((point['address'] as String? ?? '').isNotEmpty)
+                      Text(
+                        point['address'] as String,
+                        style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(statusLabel,
+                  style: GoogleFonts.outfit(color: statusColor, fontWeight: FontWeight.w700, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if ((point['hours'] as String? ?? '').isNotEmpty) ...[
+            Row(children: [
+              const Icon(Icons.access_time_rounded, size: 16, color: AppTheme.primaryGreen),
+              const SizedBox(width: 6),
+              Text('Horaires : ', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepNavy)),
+              Text(point['hours'] as String, style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted)),
+            ]),
+            const SizedBox(height: 10),
+          ],
+          if (types.isNotEmpty) ...[
+            Row(children: [
+              const Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.primaryGreen),
+              const SizedBox(width: 6),
+              Text('Déchets acceptés : ', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepNavy)),
+            ]),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6, runSpacing: 6,
+              children: types.map((t) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(t, style: GoogleFonts.outfit(fontSize: 12, color: AppTheme.primaryGreen, fontWeight: FontWeight.w600)),
+              )).toList(),
+            ),
+            const SizedBox(height: 16),
+          ],
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onOpenFullMap,
+              icon: const Icon(Icons.map_rounded, size: 18),
+              label: Text('Voir sur la carte complète',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
             ),
           ),
         ],

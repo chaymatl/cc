@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
@@ -844,90 +844,174 @@ class _EtatModeration extends State<_SectionModeration> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 6 — CENTRES DE TRI (Firebase /admin_stats/)
-// ═══════════════════════════════════════════════════════════════════
+// SECTION 6 — CENTRES DE TRI (API REST — source de vérité)
+// ===================================================================
+// Appel direct /admin/analytics/centers depuis PostgreSQL,
+// toujours synchronisé avec l'onglet Points de Tri.
+// ===================================================================
 
-class _SectionCentres extends StatelessWidget {
+class _SectionCentres extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
   const _SectionCentres({super.key, required this.coordinateur});
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<AdminStatsSnapshot>(
-      stream: FirebaseAdminStatsService().watchAdminStats(),
-      builder: (context, snapshot) {
-        final s = snapshot.data ?? AdminStatsSnapshot.empty();
-        final total = s.totalCenters;
-        final dispo = s.centersDisponible;
-        final sat   = s.centersSature;
-        final maint = s.centersMaintenance;
+  State<_SectionCentres> createState() => _SectionCentresState();
+}
 
-        return SectionCard(
-          titre: 'Centres de Tri & Collecte',
-          icone: Icons.location_on_rounded,
-          couleur: const Color(0xFFF59E0B),
-          chargement: !snapshot.hasData,
-          filtres: const [],
-          onActualiser: () {},
-          contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            LayoutBuilder(builder: (_, c) {
-              final w = (c.maxWidth - 12) / 2;
-              return Column(children: [
-                Row(children: [
-                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$total',
-                    etiquette: 'Total centres',
-                    sousTitre: 'Toutes villes',
-                    icone: Icons.location_on_rounded, couleur: const Color(0xFFF59E0B))),
-                  const SizedBox(width: 12),
-                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$dispo',
-                    etiquette: 'Disponible',
-                    sousTitre: total > 0 ? '${(dispo / total * 100).toStringAsFixed(0)}% opérationnels' : '',
-                    icone: Icons.check_circle_outline_rounded, couleur: Colors.green)),
-                ]),
-                const SizedBox(height: 12),
-                Row(children: [
-                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$sat',
-                    etiquette: 'Saturés',
-                    sousTitre: sat > 0 ? 'Intervention requise' : 'Aucun saturé',
-                    icone: Icons.warning_amber_rounded,
-                    couleur: sat > 0 ? Colors.red : Colors.green,
-                    alerte: sat > 0)),
-                  const SizedBox(width: 12),
-                  SizedBox(width: w, child: IndicateurPrincipal(valeur: '$maint',
-                    etiquette: 'Maintenance',
-                    sousTitre: maint > 0 ? '$maint hors service' : 'Aucun',
-                    icone: Icons.build_circle_outlined,
-                    couleur: maint > 0 ? Colors.orange : Colors.green,
-                    alerte: maint > 0)),
-                ]),
-              ]);
-            }),
-            if (total > 0) ...[
-              const SizedBox(height: 20),
-              Text('État des centres', style: GoogleFonts.inter(
-                fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
-              const SizedBox(height: 12),
-              GraphiqueAnneau(
-                tranches: [
-                  if (dispo > 0) MapEntry('Disponible', dispo.toDouble()),
-                  if (sat > 0) MapEntry('Saturé', sat.toDouble()),
-                  if (maint > 0) MapEntry('Maintenance', maint.toDouble()),
-                ],
-                couleurs: const [Colors.green, Colors.red, Colors.orange],
-                etiquettes: const ['Disponible', 'Saturé', 'Maintenance'],
+class _SectionCentresState extends State<_SectionCentres> {
+  int _total = 0, _dispo = 0, _sat = 0, _maint = 0;
+  bool _loading = true;
+  DateTime? _fetchedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    widget.coordinateur.register(_load);
+  }
+
+  @override
+  void dispose() {
+    widget.coordinateur.unregister(_load);
+    super.dispose();
+  }
+
+  void _load() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+    try {
+      final data = await analyticsGet('/admin/analytics/centers');
+      if (!mounted) return;
+      if (data != null && data is Map) {
+        final summary = (data['summary'] as Map?) ?? {};
+        setState(() {
+          _total = (summary['total'] as num?)?.toInt() ?? 0;
+          _dispo = (summary['disponible'] as num?)?.toInt() ?? 0;
+          _sat   = (summary['sature'] as num?)?.toInt() ?? 0;
+          _maint = (summary['maintenance'] as num?)?.toInt() ?? 0;
+          _fetchedAt = DateTime.now();
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final border = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.location_on_rounded, color: Color(0xFFF59E0B), size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Centres de Tri & Collecte',
+              style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800,
+                color: Theme.of(context).textTheme.titleLarge?.color ?? AppTheme.deepSlate)),
+            if (_fetchedAt != null)
+              Text('Sync API \u00b7 ',
+                style: GoogleFonts.inter(fontSize: 9, color: Colors.green.shade600, fontWeight: FontWeight.w600)),
+          ])),
+          GestureDetector(
+            onTap: _load,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              child: _loading
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen))
+                : const Icon(Icons.sync_rounded, color: AppTheme.primaryGreen, size: 16),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        if (_loading && _total == 0)
+          const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 12),
+            child: CircularProgressIndicator(color: AppTheme.primaryGreen, strokeWidth: 2)))
+        else
+          Row(children: [
+            _StatPill(value: '$_total', label: 'Total',       color: const Color(0xFFF59E0B)),
+            const SizedBox(width: 8),
+            _StatPill(value: '$_dispo', label: 'Disponibles', color: Colors.green),
+            const SizedBox(width: 8),
+            _StatPill(value: '$_sat',   label: 'Saturés',     color: _sat > 0 ? Colors.red : Colors.grey),
+            const SizedBox(width: 8),
+            _StatPill(value: '$_maint', label: 'Maintenance', color: _maint > 0 ? Colors.orange : Colors.grey),
           ]),
-        );
-      },
+        if (_total > 0) ...[ 
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Row(children: [
+              if (_dispo > 0) Expanded(flex: _dispo, child: Container(height: 6, color: Colors.green)),
+              if (_sat > 0)   Expanded(flex: _sat,   child: Container(height: 6, color: Colors.red)),
+              if (_maint > 0) Expanded(flex: _maint, child: Container(height: 6, color: Colors.orange)),
+              if (_dispo + _sat + _maint < _total)
+                Expanded(flex: _total - _dispo - _sat - _maint, child: Container(height: 6, color: Colors.grey.shade300)),
+            ]),
+          ),
+          const SizedBox(height: 4),
+          Text('${_total > 0 ? ((_dispo / _total) * 100).toStringAsFixed(0) : 0}% opérationnels',
+            style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted)),
+        ],
+      ]),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// SECTION POUBELLES ðŸ”¥ Firebase RTDB /poubelles/
-// État temps réel de chaque Smart Bin mis à jour après chaque scan.
-// ═══════════════════════════════════════════════════════════════════
+class _StatPill extends StatelessWidget {
+  final String value, label;
+  final Color color;
+  const _StatPill({required this.value, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(children: [
+        Text(value, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        Text(label, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white60 : AppTheme.textMuted),
+          textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ]),
+    ));
+  }
+}
+
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// SECTION POUBELLES ├░┼©ÔÇØ┬Ñ Firebase RTDB /poubelles/
+// ├ëtat temps r├®el de chaque Smart Bin mis ├á jour apr├¿s chaque scan.
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 
 class _SectionPoubelles extends StatelessWidget {
   const _SectionPoubelles({super.key});
@@ -968,7 +1052,7 @@ class _SectionPoubelles extends StatelessWidget {
         final isLoading = snapshot.connectionState == ConnectionState.waiting
             && !snapshot.hasData;
 
-        // Compteurs par état
+        // Compteurs par ├®tat
         final nbPlein  = poubelles.where((p) => p.isPlein).length;
         final nbMiPl   = poubelles.where((p) => p.isMiPlein).length;
         final nbMaint  = poubelles.where((p) => p.isMaintenance).length;
@@ -980,7 +1064,7 @@ class _SectionPoubelles extends StatelessWidget {
           icone: Icons.delete_rounded,
           couleur: Colors.green,
           chargement: isLoading,
-          onActualiser: () {},  // Firebase push — pas de polling
+          onActualiser: () {},  // Firebase push ÔÇö pas de polling
           lastUpdated: null,
           cacheAge: 0,
           filtres: [
@@ -995,7 +1079,7 @@ class _SectionPoubelles extends StatelessWidget {
                 Container(width: 6, height: 6,
                   decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                 const SizedBox(width: 5),
-                Text('Firebase RTDB · Temps réel',
+                Text('Firebase RTDB ┬À Temps r├®el',
                   style: GoogleFonts.inter(
                     fontSize: 9, fontWeight: FontWeight.w700, color: Colors.green.shade700)),
               ]),
@@ -1009,18 +1093,18 @@ class _SectionPoubelles extends StatelessWidget {
                       const Icon(Icons.delete_outline_rounded,
                         size: 40, color: AppTheme.textMuted),
                       const SizedBox(height: 12),
-                      Text('Aucune poubelle connectée',
+                      Text('Aucune poubelle connect├®e',
                         style: GoogleFonts.inter(
                           fontSize: 13, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('Les données apparaîtront après le premier scan QR',
+                      Text('Les donn├®es appara├«tront apr├¿s le premier scan QR',
                         style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
                     ]),
                   ),
                 )
               : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                  // ── Résumé compteurs ───────────────────────────────────
+                  // ÔöÇÔöÇ R├®sum├® compteurs ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
                   LayoutBuilder(builder: (_, c) {
                     final w = (c.maxWidth - 24) / 4;
                     return Row(children: [
@@ -1054,10 +1138,10 @@ class _SectionPoubelles extends StatelessWidget {
                     ),
                   ],
 
-                  // ── Liste des poubelles triées (pleines en premier) ────
+                  // ÔöÇÔöÇ Liste des poubelles tri├®es (pleines en premier) ÔöÇÔöÇÔöÇÔöÇ
                   if (poubelles.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    Text('État détaillé par poubelle',
+                    Text('├ëtat d├®taill├® par poubelle',
                       style: GoogleFonts.inter(
                         fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
                     const SizedBox(height: 10),
@@ -1065,7 +1149,7 @@ class _SectionPoubelles extends StatelessWidget {
                       final color    = _etatColor(p.etat);
                       final icon     = _etatIcon(p.etat);
                       final label    = _etatLabel(p.etat);
-                      final majStr   = p.derniereMaj != null ? _formatAgo(p.derniereMaj!) : '—';
+                      final majStr   = p.derniereMaj != null ? _formatAgo(p.derniereMaj!) : 'ÔÇö';
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1075,7 +1159,7 @@ class _SectionPoubelles extends StatelessWidget {
                           border: Border.all(color: color.withOpacity(0.15)),
                         ),
                         child: Row(children: [
-                          // Icône état
+                          // Ic├┤ne ├®tat
                           Container(
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
@@ -1094,7 +1178,7 @@ class _SectionPoubelles extends StatelessWidget {
                                   fontSize: 12, fontWeight: FontWeight.w800,
                                   color: AppTheme.deepSlate),
                                 overflow: TextOverflow.ellipsis),
-                              Text('MàJ : $majStr',
+                              Text('M├áJ : $majStr',
                                 style: GoogleFonts.inter(
                                   fontSize: 10, color: AppTheme.textMuted)),
                             ],
@@ -1107,7 +1191,7 @@ class _SectionPoubelles extends StatelessWidget {
                                 color: AppTheme.deepSlate)),
                             const SizedBox(width: 8),
                           ],
-                          // Badge état
+                          // Badge ├®tat
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -1163,9 +1247,9 @@ class _SectionPoubelles extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 7 — ANOMALIES (GET /admin/analytics/anomalies)
-// ═══════════════════════════════════════════════════════════════════
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// SECTION 7 ÔÇö ANOMALIES (GET /admin/analytics/anomalies)
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 
 class _SectionAnomalies extends StatefulWidget {
   final _CoordinateurRefresh coordinateur;
@@ -1253,10 +1337,10 @@ class _EtatAnomalies extends State<_SectionAnomalies> {
                   color: _count > 0 ? Colors.red : Colors.green, size: 22),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_count > 0 ? '$_count anomalie(s) détectée(s)' : 'Aucune anomalie',
+                  Text(_count > 0 ? '$_count anomalie(s) d├®tect├®e(s)' : 'Aucune anomalie',
                     style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900,
                       color: _count > 0 ? Colors.red.shade800 : Colors.green.shade800)),
-                  Text(_count > 0 ? 'Actions recommandées ci-dessous' : 'Système normal',
+                  Text(_count > 0 ? 'Actions recommand├®es ci-dessous' : 'Syst├¿me normal',
                     style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
                 ]),
               ]),
@@ -1265,7 +1349,7 @@ class _EtatAnomalies extends State<_SectionAnomalies> {
         ]),
         if (_anomalies.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Détail des anomalies', style: GoogleFonts.inter(
+          Text('D├®tail des anomalies', style: GoogleFonts.inter(
             fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
           const SizedBox(height: 10),
           ..._anomalies.map((a) {
@@ -1306,7 +1390,7 @@ class _EtatAnomalies extends State<_SectionAnomalies> {
         ] else if (!_chargement)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Center(child: Text('✅ Aucun comportement suspect détecté',
+            child: Center(child: Text('Ô£à Aucun comportement suspect d├®tect├®',
               style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12))),
           ),
       ]),

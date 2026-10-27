@@ -722,3 +722,38 @@ def update_admin_stats(db) -> bool:
         _safe_print(f"[Firebase] [ERREUR] update_admin_stats : {e}")
         traceback.print_exc()
         return False
+
+
+def notify_new_message(receiver_id: int, sender_name: str, content: str,
+                       sender_id: int, msg_type: str = "message",
+                       group_id: int = None, group_name: str = None) -> bool:
+    """
+    Ecrit une notification de message dans Firebase RTDB.
+    Structure : /notifications/{receiver_id}/new_message
+    L'app Flutter ecoute ce noeud et affiche une notification locale.
+    Compatible Huawei EMUI (pas besoin de Google Play Services).
+    """
+    if not _init_firebase():
+        return False
+    try:
+        from firebase_admin import db as rtdb
+        from datetime import datetime, timezone
+        payload = {
+            "type": msg_type,
+            "sender_id": sender_id,
+            "sender_name": sender_name,
+            "preview": content[:100] if content else "",
+            "ts": datetime.now(timezone.utc).isoformat(),
+        }
+        if group_id:
+            payload["group_id"] = group_id
+        if group_name:
+            payload["group_name"] = group_name
+
+        ref = rtdb.reference(f"/notifications/{receiver_id}/new_message")
+        ref.set(payload)
+        _safe_print(f"[Firebase] Notif message ecrite pour user {receiver_id}")
+        return True
+    except Exception as e:
+        _safe_print(f"[Firebase] Erreur notify_new_message : {e}")
+        return False

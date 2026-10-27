@@ -3,12 +3,8 @@ routers/messaging.py — API de messagerie inter-rôles EcoRewind
 ===============================================================
 
 Matrice des conversations autorisées :
-  admin/superadmin  → intercommunality, collector, pointManager, educator
-  intercommunality  → admin, collector (individuel ou groupe), pointManager
-  collector         → admin, intercommunality, pointManager
-  pointManager      → admin, intercommunality, collector
-  educator          → admin, citoyen individuel, groupe de citoyens
-  user (citoyen)    → educator uniquement
+  Tous les acteurs peuvent ecrire a tous les acteurs (matrice ouverte)
+  Roles : admin, superadmin, intercommunality, collector, educator, citoyen
 
 Endpoints :
   GET  /messages/eligible-recipients          → utilisateurs à qui on peut écrire
@@ -42,17 +38,10 @@ router = APIRouter(prefix="/messages", tags=["messaging"])
 # Matrice des rôles autorisés
 # ──────────────────────────────────────────────────────────────────────────────
 
-ALLOWED_TARGETS: dict[str, list[str]] = {
-    "admin":            ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user", "citoyen"],
-    "superadmin":       ["intercommunality", "collector", "pointManager", "educator", "educateur", "admin", "superadmin", "user", "citoyen"],
-    "intercommunality": ["admin", "superadmin", "collector", "pointManager"],
-    "collector":        ["admin", "superadmin", "intercommunality", "pointManager"],
-    "pointManager":     ["admin", "superadmin", "intercommunality", "collector"],
-    "educator":         ["admin", "superadmin", "user", "citoyen"],
-    "educateur":        ["admin", "superadmin", "user", "citoyen"],   # variante française
-    "user":             ["educator", "educateur", "admin", "superadmin"],
-    "citoyen":          ["educator", "educateur", "admin", "superadmin"],  # alias DB de 'user'
-}
+# Tous les acteurs peuvent s'envoyer des messages entre eux (matrice ouverte)
+_ALL_ROLES = ["admin", "superadmin", "intercommunality", "collector",
+              "educator", "educateur", "user", "citoyen"]
+ALLOWED_TARGETS: dict[str, list[str]] = {role: _ALL_ROLES for role in _ALL_ROLES}
 
 
 def _normalize_role(role: str) -> str:
@@ -64,8 +53,6 @@ def _normalize_role(role: str) -> str:
     """
     _map = {
         "educateur":    "educator",
-        "point_manager": "pointManager",
-        "point manager": "pointManager",
     }
     return _map.get(role.lower().strip(), role)
 
@@ -260,6 +247,19 @@ async def send_message(
     except Exception:
         pass  # Push non bloquant
 
+    # Fallback RTDB pour Huawei/EMUI (pas de Google Play Services)
+    try:
+        from services.firebase_service import notify_new_message as _rtdb_notify
+        _rtdb_notify(
+            receiver_id=payload.receiver_id,
+            sender_name=current_user.full_name or "Quelqu'un",
+            content=payload.content,
+            sender_id=current_user.id,
+            msg_type="message",
+        )
+    except Exception:
+        pass
+
     return _serialize_message(msg, current_user.id)
 
 
@@ -327,6 +327,23 @@ async def send_group_message(
             )
     except Exception:
         pass  # Push non bloquant
+
+    # Fallback RTDB pour chaque membre du groupe (Huawei/EMUI)
+    try:
+        from services.firebase_service import notify_new_message as _rtdb_notify
+        sender_name_g = current_user.full_name or "Quelqu'un"
+        for member in group.members:
+            _rtdb_notify(
+                receiver_id=member.user_id,
+                sender_name=f"{sender_name_g} ({group.name})",
+                content=payload.content,
+                sender_id=current_user.id,
+                msg_type="group_message",
+                group_id=group.id,
+                group_name=group.name,
+            )
+    except Exception:
+        pass
 
     return {
         **_serialize_message(msg, current_user.id),

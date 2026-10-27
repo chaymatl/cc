@@ -1,5 +1,6 @@
-﻿venv/
+venv/
 .venv/
+v/
 __pycache__/
 *.pyc
 *.pyo
@@ -7,10 +8,29 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Données et backups
 scratch/
+backups/
+backup_ecorewind.sql
+
+# Tests
+tests/
+
+# Secrets (ne jamais embarquer dans l'image)
 .env
+firebase_credentials.json
+
+# Git
 .git/
 .gitignore
+
+# Logs et fichiers temporaires
 *.log
 .DS_Store
 Thumbs.db
+
+# Docs
+*.md
+STEPS.md
+DEPENDENCIES.md

@@ -1,4 +1,4 @@
-// lib/services/messaging_service.dart
+﻿// lib/services/messaging_service.dart
 // Service Flutter pour la messagerie inter-rôles EcoRewind
 
 import 'dart:convert';
@@ -107,33 +107,6 @@ class MessagingService {
         body: json.encode({
           'group_id': groupId,
           'content': content,
-          if (parentId != null) 'parent_id': parentId,
-        }),
-      );
-      if (r.statusCode == 201) return _decode(r);
-    } catch (_) {}
-    return null;
-  }
-
-  // ── Broadcast collecteurs ─────────────────────────────────────────────────
-
-  static Future<Map<String, dynamic>?> broadcastToCollectors({
-    required List<int> receiverIds,
-    required String content,
-    String? collectorGroupLabel,
-    int? parentId,
-  }) async {
-    if (!_hasValidToken) return null;
-    try {
-      final h = await _headers();
-      final r = await http.post(
-        Uri.parse('$_base/messages/broadcast'),
-        headers: h,
-        body: json.encode({
-          'receiver_ids': receiverIds,
-          'content': content,
-          if (collectorGroupLabel != null)
-            'collector_group_label': collectorGroupLabel,
           if (parentId != null) 'parent_id': parentId,
         }),
       );

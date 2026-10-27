@@ -1,8 +1,6 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../theme/app_theme.dart';
@@ -11,7 +9,6 @@ import '../../services/auth_service.dart';
 import '../../services/messaging_service.dart';
 import '../client/profile_tab.dart';
 import 'user_management_screen.dart';
-import 'admin_proposals_screen.dart';
 import 'admin_analytics_tab.dart' show AdminAnalyticsTab;
 import 'analytics_helpers.dart';
 import '../../services/l10n_service.dart';
@@ -35,7 +32,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     L10n.addListener(_onLocaleChange);
     _loadStats();
     _loadUnreadCount();
@@ -111,7 +108,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                     Tab(text: L10n.tr('admin_tab_indicators')),
                     Tab(text: L10n.tr('admin_tab_moderation')),
                     Tab(text: L10n.tr('admin_tab_content')),
-                    Tab(text: L10n.tr('admin_tab_proposals')),
                     Tab(text: L10n.tr('admin_tab_points')),
                     Tab(text: L10n.tr('admin_tab_users')),
                     Tab(
@@ -144,7 +140,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             const AdminAnalyticsTab(),
             _PostsModerationTab(onStatsUpdated: _loadStats),
             _buildContentValidationTab(),
-            const AdminProposalsScreen(),
             _buildPointsManagementTab(),
             const UserManagementScreen(),
             const MessagingScreen(key: ValueKey('admin_messaging')),
@@ -347,34 +342,217 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
     }
   }
 
-  Future<void> _approveTestimonial(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
-    await http.put(
-      Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/approve'),
-      headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+  // ---------- confirmation dialog helper ----------
+  Future<bool> _showConfirmDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color color,
+    required String confirmLabel,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16))),
+        ]),
+        content: Text(message, style: GoogleFonts.inter(fontSize: 14, height: 1.5)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Annuler', style: GoogleFonts.inter(color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: Text(confirmLabel, style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
-    _loadTestimonials();
+    return result ?? false;
   }
 
-  Future<void> _rejectTestimonial(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
-    await http.put(
-      Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/reject'),
-      headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+  // ---------- action methods with confirmation ----------
+  Future<void> _approveTestimonial(Map<String, dynamic> t) async {
+    final id = t['id'];
+    final name = t['user_name'] ?? 'Anonyme';
+    final confirmed = await _showConfirmDialog(
+      title: 'Approuver le témoignage',
+      message: 'Voulez-vous approuver le témoignage de "$name" ? Il sera visible publiquement.',
+      icon: Icons.check_circle_outline,
+      color: Colors.green,
+      confirmLabel: 'Approuver',
     );
-    _loadTestimonials();
+    if (!confirmed || !mounted) return;
+    try {
+      final jwt = await _authService.getToken();
+      final res = await http.put(
+        Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/approve'),
+        headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Text('Témoignage de "$name" approuvé ✓', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ]),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+        _loadTestimonials();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Erreur lors de l'approbation", style: GoogleFonts.inter()),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erreur réseau', style: GoogleFonts.inter()),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ));
+    }
   }
 
-  Future<void> _toggleFeatured(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
-    await http.put(
-      Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/feature'),
-      headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+  Future<void> _rejectTestimonial(Map<String, dynamic> t) async {
+    final id = t['id'];
+    final name = t['user_name'] ?? 'Anonyme';
+    final isPending = t['is_approved'] != true;
+    final confirmed = await _showConfirmDialog(
+      title: isPending ? 'Rejeter le témoignage' : 'Supprimer le témoignage',
+      message: isPending
+          ? 'Voulez-vous rejeter le témoignage de "$name" ? Il ne sera pas publié.'
+          : 'Voulez-vous supprimer définitivement le témoignage de "$name" ?',
+      icon: isPending ? Icons.cancel_outlined : Icons.delete_outline,
+      color: Colors.red,
+      confirmLabel: isPending ? 'Rejeter' : 'Supprimer',
     );
-    _loadTestimonials();
+    if (!confirmed || !mounted) return;
+    try {
+      final jwt = await _authService.getToken();
+      final res = await http.put(
+        Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/reject'),
+        headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.info_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(isPending ? 'Témoignage rejeté' : 'Témoignage supprimé', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ]),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+        _loadTestimonials();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Erreur lors de l'opération", style: GoogleFonts.inter()),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erreur réseau', style: GoogleFonts.inter()),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ));
+    }
+  }
+
+  Future<void> _toggleFeatured(Map<String, dynamic> t) async {
+    final id = t['id'];
+    final name = t['user_name'] ?? 'Anonyme';
+    final isFeatured = t['is_featured'] == true;
+    final confirmed = await _showConfirmDialog(
+      title: isFeatured ? 'Retirer de la mise en avant' : 'Mettre en avant',
+      message: isFeatured
+          ? 'Voulez-vous retirer le témoignage de "$name" de la mise en avant ?'
+          : 'Voulez-vous mettre en avant le témoignage de "$name" ? Il apparaîtra en priorité.',
+      icon: isFeatured ? Icons.star_outline : Icons.star,
+      color: Colors.amber.shade700,
+      confirmLabel: isFeatured ? 'Retirer' : 'Mettre en avant',
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      final jwt = await _authService.getToken();
+      final res = await http.put(
+        Uri.parse('${AuthService.baseUrl}/admin/testimonials/$id/feature'),
+        headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            Icon(isFeatured ? Icons.star_outline : Icons.star, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(
+              isFeatured ? 'Retiré de la mise en avant' : '★ Témoignage mis en avant !',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+          ]),
+          backgroundColor: Colors.amber.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+        _loadTestimonials();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Erreur lors de l'opération", style: GoogleFonts.inter()),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erreur réseau', style: GoogleFonts.inter()),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ));
+    }
   }
 
   @override
@@ -474,18 +652,18 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (isPending) ...[
-                _actionBtn(Icons.check_circle, Colors.green, 'Approuver', () => _approveTestimonial(t['id'])),
+                _actionBtn(Icons.check_circle, Colors.green, 'Approuver', () => _approveTestimonial(t)),
                 const SizedBox(width: 8),
-                _actionBtn(Icons.cancel, Colors.red, 'Rejeter', () => _rejectTestimonial(t['id'])),
+                _actionBtn(Icons.cancel, Colors.red, 'Rejeter', () => _rejectTestimonial(t)),
               ] else ...[
                 _actionBtn(
                   t['is_featured'] == true ? Icons.star : Icons.star_border,
                   Colors.amber.shade700,
                   t['is_featured'] == true ? 'Retirer' : 'Mettre en avant',
-                  () => _toggleFeatured(t['id']),
+                  () => _toggleFeatured(t),
                 ),
                 const SizedBox(width: 8),
-                _actionBtn(Icons.delete_outline, Colors.red, 'Supprimer', () => _rejectTestimonial(t['id'])),
+                _actionBtn(Icons.delete_outline, Colors.red, 'Supprimer', () => _rejectTestimonial(t)),
               ],
             ],
           ),
@@ -529,11 +707,6 @@ class _CollectionPointsManagementTab extends StatefulWidget {
 class _CollectionPointsManagementTabState extends State<_CollectionPointsManagementTab> {
   final AuthService _authService = AuthService();
   List<Map<String, dynamic>> _points = [];
-  List<Map<String, dynamic>> _alerts = [];
-  int _unreadCount = 0;
-  bool _loadingAlerts = true;
-  bool _showAlerts = true;
-  Timer? _pollingTimer;
   // Types pré-remplis (liste fixe du backend) + complétés par les centres chargés
   List<String> _typesFromApi = [
     'Plastique', 'Verre', 'Papier', 'Carton',
@@ -546,65 +719,16 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
   void initState() {
     super.initState();
     _loadPoints();
-    _loadAlerts();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadAlerts());
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadAlerts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
-      if (jwt == null) return;
-      final response = await http.get(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts?limit=20'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-      final countRes = await http.get(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts/unread-count'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-      if (!mounted) return;
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes)) as List;
-        final count = countRes.statusCode == 200
-            ? (json.decode(countRes.body)['count'] ?? 0) as int
-            : 0;
-        setState(() {
-          _alerts = data.cast<Map<String, dynamic>>();
-          _unreadCount = count;
-          _loadingAlerts = false;
-        });
-      } else {
-        setState(() => _loadingAlerts = false);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingAlerts = false);
-    }
-  }
-
-  Future<void> _markAlertsRead() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
-      if (jwt == null) return;
-      await http.put(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts/read-all'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-      await _loadAlerts();
-    } catch (_) {}
   }
 
   Future<void> _updatePointStatus(int id, String newStatus) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
+      final jwt = await _authService.getToken();
       final response = await http.put(
         Uri.parse('${AuthService.baseUrl}/admin/collection-points/$id'),
         headers: {'Authorization': 'Bearer $jwt', 'Content-Type': 'application/json'},
@@ -623,7 +747,6 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ));
         _loadPoints();
-        _loadAlerts();
       }
     } catch (e) {
       if (mounted) {
@@ -650,8 +773,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
   Future<void> _loadPoints() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
+      final jwt = await _authService.getToken();
       if (jwt != null) {
         http.post(
           Uri.parse('${AuthService.baseUrl}/admin/collection-points/backfill-addresses'),
@@ -689,8 +811,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
   }
 
   Future<void> _deletePoint(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
+    final jwt = await _authService.getToken();
     final response = await http.delete(
       Uri.parse('${AuthService.baseUrl}/admin/collection-points/$id'),
       headers: {'Authorization': 'Bearer $jwt'},
@@ -709,8 +830,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
     );
     if (result == null || result is! Map) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final jwt = prefs.getString('jwt_token');
+    final jwt = await _authService.getToken();
     final location = result['location'];
     final latStr = location.latitude.toString();
     final lngStr = location.longitude.toString();
@@ -868,126 +988,6 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
             ),
           ],
         ),
-        const SizedBox(height: 20),
-
-        // ── Panneau Alertes Centres ──────────────────────────────────────────
-        GestureDetector(
-          onTap: () => setState(() => _showAlerts = !_showAlerts),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _unreadCount > 0 ? Colors.red.shade50 : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _unreadCount > 0 ? Colors.red.shade200 : Colors.grey.shade200,
-              ),
-            ),
-            child: Row(children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: (_unreadCount > 0 ? Colors.red : Colors.grey).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.notifications_active_rounded,
-                    color: _unreadCount > 0 ? Colors.red : Colors.grey, size: 16),
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('ALERTES CENTRES DE TRI',
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900,
-                        letterSpacing: 1, color: _unreadCount > 0 ? Colors.red.shade800 : AppTheme.textMuted)),
-                Text(_unreadCount > 0 ? '$_unreadCount alerte(s) non lue(s)' : 'Aucune alerte non lue',
-                    style: GoogleFonts.inter(fontSize: 11,
-                        color: _unreadCount > 0 ? Colors.red.shade600 : AppTheme.textMuted)),
-              ])),
-              if (_unreadCount > 0)
-                TextButton(
-                  onPressed: _markAlertsRead,
-                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10)),
-                  child: Text('Tout lire', style: GoogleFonts.inter(
-                      fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryGreen)),
-                ),
-              Icon(_showAlerts ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                  color: AppTheme.textMuted, size: 18),
-            ]),
-          ),
-        ),
-
-        if (_showAlerts) ...[
-          const SizedBox(height: 12),
-          if (_loadingAlerts)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
-            )
-          else if (_alerts.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade100),
-              ),
-              child: Row(children: [
-                Icon(Icons.check_circle_outline_rounded, color: AppTheme.primaryGreen.withOpacity(0.6), size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Aucune alerte récente — tous les centres sont normaux.',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted)),
-                ),
-              ]),
-            )
-          else
-            ..._alerts.map((alert) {
-              final isSature = (alert['title'] ?? '').toString().contains('Saturé');
-              final isRead = alert['is_read'] == true;
-              final color = isSature ? Colors.red : Colors.orange;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isRead ? Theme.of(context).colorScheme.surface : color.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isRead ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade100) : color.withOpacity(0.25),
-                    width: isRead ? 1 : 1.5,
-                  ),
-                ),
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-                    child: Icon(
-                      isSature ? Icons.error_rounded : Icons.build_circle_rounded,
-                      color: color, size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Expanded(child: Text(alert['title'] ?? '',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.bold, fontSize: 12,
-                             color: isRead ? AppTheme.textMuted : (Theme.of(context).textTheme.titleLarge?.color ?? AppTheme.deepSlate),
-                          ))),
-                      if (!isRead) Container(width: 7, height: 7,
-                          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                    ]),
-                    const SizedBox(height: 3),
-                    Text(alert['body'] ?? '',
-                        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
-                        maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text(_timeAgo(alert['created_at']?.toString()),
-                        style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted.withOpacity(0.6),
-                            fontWeight: FontWeight.w600)),
-                  ])),
-                ]),
-              );
-            }).toList(),
-        ],
-
         const SizedBox(height: 20),
 
         // Filtres statut

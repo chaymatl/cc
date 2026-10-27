@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/firebase/firebase_admin_stats_service.dart';
 import '../../models/user_model.dart';
@@ -145,11 +145,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                     ]),
                   ),
                   const Divider(color: Color(0xFF334155), height: 20),
-                  // Scrollable form content
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // Scrollable form content — Flexible prevents overflow when keyboard is visible
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       if (errorMsg != null) Container(
                         padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(color: Colors.red.shade900.withOpacity(0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade400)),
@@ -223,6 +224,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                       ]),
                     ]),
                   ),
+                  ), // end Flexible
                 ],
               ),
             ),
@@ -259,6 +261,84 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
   }
 
   Future<void> _processUser({required bool isEditing, int? userId, required String email, required String name, required String role, required String password}) async {
+    // Popup de confirmation avant d'agir
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.12), shape: BoxShape.circle),
+            child: Icon(isEditing ? Icons.edit_rounded : Icons.person_add_rounded, color: AppTheme.primaryGreen, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(
+            isEditing ? "Modifier l'utilisateur" : "Creer l'utilisateur",
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
+          )),
+        ]),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: 4),
+          Text(
+            isEditing ? 'Confirmer les modifications pour :' : 'Confirmer la creation de ce compte :',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.2)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.person_outline, size: 14, color: AppTheme.primaryGreen),
+                const SizedBox(width: 6),
+                Expanded(child: Text(name, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14))),
+              ]),
+              if (!isEditing) ...[
+                const SizedBox(height: 4),
+                Row(children: [
+                  Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade500),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(email, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))),
+                ]),
+              ],
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(_getRoleIcon(role), size: 14, color: _getRoleColor(role)),
+                const SizedBox(width: 6),
+                Text(_getRoleLabel(role), style: GoogleFonts.inter(fontSize: 12, color: _getRoleColor(role), fontWeight: FontWeight.w600)),
+              ]),
+            ]),
+          ),
+        ]),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Annuler', style: GoogleFonts.inter(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: Text(isEditing ? 'Confirmer' : 'Creer', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _isLoading = true);
     Map<String, dynamic> result;
     if (isEditing) {
@@ -271,35 +351,129 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     if (result['success']) {
       await _loadUsers();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('Utilisateur enregistre', style: GoogleFonts.inter(fontWeight: FontWeight.w600)), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
+      messenger.showSnackBar(SnackBar(
+        content: Row(children: [
+          Icon(isEditing ? Icons.check_circle : Icons.person_add, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            isEditing ? 'Utilisateur "$name" modifie' : 'Compte de "$name" cree',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          )),
+        ]),
+        backgroundColor: AppTheme.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ));
     } else {
       setState(() => _isLoading = false);
       if (!mounted) return;
-      showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Erreur'), content: Text(result['message'] ?? 'Erreur inconnue'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Compris'))]));
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(children: [
+            Icon(Icons.error_outline_rounded, color: Colors.red.shade400),
+            const SizedBox(width: 10),
+            Text('Erreur', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          ]),
+          content: Text(result['message'] ?? 'Erreur inconnue', style: GoogleFonts.inter(fontSize: 14)),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: Text('Compris', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
     }
   }
 
   Future<void> _deleteUser(int userId, String userName) async {
     final confirm = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(children: [Icon(Icons.warning_amber_rounded, color: Colors.red.shade400), const SizedBox(width: 10), const Text('Confirmation')]),
-        content: const Text('Cette action est irreversible.'),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.red.withOpacity(0.12), shape: BoxShape.circle),
+            child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text("Supprimer l'utilisateur", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16))),
+        ]),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: 4),
+          Text.rich(TextSpan(
+            style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700, height: 1.5),
+            children: [
+              const TextSpan(text: 'Voulez-vous supprimer definititivement le compte de '),
+              TextSpan(text: '"$userName"', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.red.shade700)),
+              const TextSpan(text: ' ?\n\nToutes ses donnees seront perdues.'),
+            ],
+          )),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.red.shade100)),
+            child: Row(children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red.shade400, size: 16),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Cette action est irreversible.', style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade700, fontWeight: FontWeight.w600))),
+            ]),
+          ),
+        ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red), onPressed: () => Navigator.pop(ctx, true), child: const Text('Supprimer', style: TextStyle(color: Colors.white))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Annuler', style: GoogleFonts.inter(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Supprimer', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
     if (confirm == true) {
       setState(() => _isLoading = true);
       final success = await _authService.deleteUserAdmin(userId);
+      if (!mounted) return;
       if (success) {
         await _loadUsers();
-      } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Impossible de supprimer.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Compte de "$userName" supprime', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+          ]),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Impossible de supprimer "$userName".', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ));
         setState(() => _isLoading = false);
       }
     }

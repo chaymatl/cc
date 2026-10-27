@@ -887,13 +887,11 @@ class _MapTabState extends State<MapTab> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
                 userAgentPackageName: 'com.ecorewind.app',
                 tileProvider: CancellableNetworkTileProvider(),
-                // Tuile inaccessible → échec silencieux (fond gris par défaut)
                 errorTileCallback: (tile, error, stackTrace) {},
-                // Fallback : fond neutre si aucune tuile n'est disponible
-                fallbackUrl: 'https://tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+                fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
               ),
 
               // ── Tracé de l'itinéraire ────────────────────────────────

@@ -1,4 +1,4 @@
-/// lib/core/firebase/firebase_admin_stats_service.dart
+﻿/// lib/core/firebase/firebase_admin_stats_service.dart
 ///
 /// ╔══════════════════════════════════════════════════════════════════╗
 /// ║  SERVICE FIREBASE RTDB — DASHBOARD ADMIN TEMPS RÉEL             ║
@@ -12,6 +12,8 @@
 /// ║  LECTURE SEULE — Firebase Admin SDK écrit, Flutter lit.          ║
 /// ╚══════════════════════════════════════════════════════════════════╝
 library firebase_admin_stats_service;
+
+import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -247,19 +249,74 @@ class FirebaseAdminStatsService {
 
   bool get _isAuth => FirebaseAuth.instance.currentUser != null;
 
-  // ── Streams ────────────────────────────────────────────────────────────────
+  // ── Streams ────────────────────────────────────────────────────────────
 
-  /// Stream temps réel des statistiques agrégées admin depuis /admin_stats/
-  /// Mis à jour par le backend FastAPI à chaque scan QR.
+  // Stream singleton partage pour /admin_stats/ - une seule subscription RTDB
+  // pour toute l'app, evite le MissingPluginException lors du cancel.
+  Stream<AdminStatsSnapshot>? _adminStatsStream;
+  StreamSubscription<DatabaseEvent>? _adminStatsSub;
+  StreamSubscription<User?>? _adminAuthSub;
+  StreamController<AdminStatsSnapshot>? _adminStatsCtrl;
+
+  /// Stream temps reel des statistiques agregees admin depuis /admin_stats/
+  /// Stream singleton partage - tous les widgets recoivent le meme stream.
   Stream<AdminStatsSnapshot> watchAdminStats() {
     if (!_isAuth) return Stream.value(AdminStatsSnapshot.empty());
-    return _db.ref('admin_stats').onValue.map((event) {
-      final data = event.snapshot.value;
-      if (data == null) return AdminStatsSnapshot.empty();
-      if (data is Map) return AdminStatsSnapshot.fromMap(data);
-      return AdminStatsSnapshot.empty();
-    }).handleError((_) => AdminStatsSnapshot.empty());
+
+    // Reutiliser le stream existant si deja actif
+    if (_adminStatsStream != null && _adminStatsCtrl?.isClosed == false) {
+      return _adminStatsStream!;
+    }
+
+    _adminStatsCtrl = StreamController<AdminStatsSnapshot>.broadcast(
+      onListen: () {
+        _adminStatsSub = _db.ref('admin_stats').onValue.listen(
+          (event) {
+            if (_adminStatsCtrl?.isClosed == true) return;
+            final data = event.snapshot.value;
+            if (data == null) {
+              _adminStatsCtrl?.add(AdminStatsSnapshot.empty());
+            } else if (data is Map) {
+              _adminStatsCtrl?.add(AdminStatsSnapshot.fromMap(data));
+            } else {
+              _adminStatsCtrl?.add(AdminStatsSnapshot.empty());
+            }
+          },
+          onError: (Object err) {
+            debugPrint('[RTDB] watchAdminStats error: $err');
+            if (_adminStatsCtrl?.isClosed == false) {
+              _adminStatsCtrl?.add(AdminStatsSnapshot.empty());
+            }
+          },
+          cancelOnError: false,
+        );
+        _adminAuthSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+          if (user == null) _disposeAdminStats();
+        });
+      },
+      onCancel: () {
+        // broadcast: onCancel quand dernier listener part
+        // On garde le stream vivant pour eviter les cancel RTDB intempestifs
+      },
+    );
+    _adminStatsStream = _adminStatsCtrl!.stream;
+    return _adminStatsStream!;
   }
+
+  void _disposeAdminStats() {
+    try { _adminStatsSub?.cancel(); } catch (_) {}
+    try { _adminAuthSub?.cancel(); } catch (_) {}
+    _adminStatsSub = null;
+    _adminAuthSub = null;
+    if (_adminStatsCtrl?.isClosed == false) {
+      try { _adminStatsCtrl?.close(); } catch (_) {}
+    }
+    _adminStatsCtrl = null;
+    _adminStatsStream = null;
+  }
+
+  /// A appeler lors du logout pour nettoyer les subscriptions Firebase.
+  void dispose() => _disposeAdminStats();
 
   /// Stream temps réel du leaderboard depuis /leaderboard/
   Stream<List<LeaderboardEntry>> watchLeaderboard() {
