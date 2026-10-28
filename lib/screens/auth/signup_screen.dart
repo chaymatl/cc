@@ -18,7 +18,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _dobController = TextEditingController();
@@ -43,7 +43,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     int count = 0;
     if (_nameController.text.trim().isNotEmpty) count++;
     if (_emailController.text.trim().isNotEmpty) count++;
-    if (_phoneController.text.trim().isNotEmpty) count++;
     if (_dobController.text.trim().isNotEmpty) count++;
     if (_passwordController.text.trim().isNotEmpty) count++;
     if (_confirmPasswordController.text.trim().isNotEmpty) count++;
@@ -54,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 20))..repeat(reverse: true);
-    for (var c in [_nameController, _emailController, _phoneController, _passwordController, _confirmPasswordController, _dobController]) {
+    for (var c in [_nameController, _emailController, _passwordController, _confirmPasswordController, _dobController]) {
       c.addListener(() => setState(() {}));
     }
   }
@@ -65,7 +64,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     _resendTimer?.cancel();
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _dobController.dispose();
@@ -88,7 +87,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     if (_isLoading) return; // Empêche la double soumission
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
@@ -96,8 +94,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       setState(() => _errorMessage = 'Veuillez remplir le nom et le mot de passe');
       return;
     }
-    if (email.isEmpty && phone.isEmpty) {
-      setState(() => _errorMessage = 'Veuillez saisir un email ou un numéro de téléphone');
+    if (email.isEmpty) {
+      setState(() => _errorMessage = 'Veuillez saisir une adresse email');
       return;
     }
     if (password.length < 6) {
@@ -116,7 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     setState(() { _isLoading = true; _errorMessage = null; });
 
     try {
-      final identifier = email.isNotEmpty ? email : '+216$phone';
+      final identifier = email;
       final result = await _authService.register(identifier, name, password);
 
       if (!mounted) return;
@@ -406,19 +404,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
             style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
             decoration: const InputDecoration(hintText: 'votre@email.com', prefixIcon: Icon(Icons.alternate_email_rounded, size: 18)),
           ),
-          const SizedBox(height: 8),
-          Center(child: Text('ou', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted))),
-          const SizedBox(height: 8),
-
-          // Phone
-          Text('Téléphone', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-            decoration: const InputDecoration(hintText: '+216 XX XXX XXX', prefixIcon: Icon(Icons.phone_iphone_rounded, size: 18)),
-          ),
           const SizedBox(height: 16),
 
           // Date of birth
@@ -525,7 +510,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         Row(children: [
           Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress, minHeight: 4, backgroundColor: Colors.white.withOpacity(0.06), valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen)))),
           const SizedBox(width: 12),
-          Text('$_filledFields/6', style: GoogleFonts.outfit(color: AppTheme.primaryGreen, fontSize: 13, fontWeight: FontWeight.bold)),
+          Text('$_filledFields/5', style: GoogleFonts.outfit(color: AppTheme.primaryGreen, fontSize: 13, fontWeight: FontWeight.bold)),
         ]).animate().fadeIn(delay: 250.ms),
 
         const SizedBox(height: 24),
@@ -557,10 +542,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
               _buildField(controller: _nameController, label: 'Nom complet', icon: Icons.person_outline_rounded).animate().fadeIn(delay: 300.ms).slideX(begin: -0.03, end: 0),
               const SizedBox(height: 14),
               _buildField(controller: _emailController, label: 'Email', icon: Icons.alternate_email_rounded, keyboardType: TextInputType.emailAddress).animate().fadeIn(delay: 350.ms).slideX(begin: -0.03, end: 0),
-              const SizedBox(height: 6),
-              Center(child: Text('ou', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.4), fontSize: 12))),
-              const SizedBox(height: 6),
-              _buildField(controller: _phoneController, label: 'Téléphone', icon: Icons.phone_iphone_rounded, prefix: '+216 ', keyboardType: TextInputType.phone).animate().fadeIn(delay: 400.ms).slideX(begin: -0.03, end: 0),
               const SizedBox(height: 14),
               _buildField(controller: _dobController, label: 'Date de naissance', icon: Icons.calendar_today_rounded, readOnly: true, onTap: () => _selectDate(context)).animate().fadeIn(delay: 450.ms).slideX(begin: -0.03, end: 0),
               const SizedBox(height: 14),
