@@ -274,6 +274,32 @@ async def posts_by_month(
     return [{"month": m, "count": counts[m]} for m in labels]
 
 
+# ─── Centres de tri — résumé global ─────────────────────────────────────────
+
+@router.get("/centers")
+async def centers_summary(
+    db: Session = Depends(get_db),
+    _admin=Depends(get_admin_user),
+):
+    """Résumé global des centres de tri — appelé par admin_analytics_tab Flutter."""
+    q = db.query(db_models.CollectionPoint)
+    total      = q.count()
+    disponible = q.filter(db_models.CollectionPoint.status == "disponible").count()
+    sature     = q.filter(db_models.CollectionPoint.status.in_(["saturé", "sature"])).count()
+    maintenance= q.filter(db_models.CollectionPoint.status == "maintenance").count()
+    taux       = round((disponible / max(1, total)) * 100, 1)
+
+    return {
+        "summary": {
+            "total":        total,
+            "disponible":   disponible,
+            "sature":       sature,
+            "maintenance":  maintenance,
+            "taux_disponibilite": taux,
+        }
+    }
+
+
 # ─── Centres de tri par ville ────────────────────────────────────────────────
 
 @router.get("/centers/by-city")
