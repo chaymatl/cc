@@ -554,13 +554,16 @@ class ProfileTabState extends State<ProfileTab> {
                       backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
                       backgroundImage: NetworkImage(_currentAvatarUrl),
                       onBackgroundImageError: (_, __) {},
-                      child: Text(
-                        (user?.name != null && user!.name.trim().isNotEmpty
-                            ? user.name.trim()[0]
-                            : 'U').toUpperCase(),
-                        style: GoogleFonts.outfit(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
-                      ),
+                      child: (AuthState.currentUser?.avatarUrl?.isNotEmpty == true)
+                          ? null  // photo réelle → pas d'initiale par-dessus
+                          : Text(
+                              (user?.name != null && user!.name.trim().isNotEmpty
+                                  ? user.name.trim()[0]
+                                  : 'U').toUpperCase(),
+                              style: GoogleFonts.outfit(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                            ),
                     ),
+
                     if (_isUploadingAvatar)
                       Container(
                         width: 120, height: 120,
