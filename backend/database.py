@@ -46,6 +46,10 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Force le driver psycopg2 (v2) — evite l'import de psycopg (v3) par SQLAlchemy 2.x
+if DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 if not DATABASE_URL.startswith("postgresql"):
     _fail_fast(
         "DATABASE_URL ne pointe pas vers PostgreSQL.\n"
