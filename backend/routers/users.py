@@ -104,11 +104,11 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
         cur = raw_conn.cursor()
         uid = user_id
 
-        def try_exec(sql):
-            """Execute avec SAVEPOINT — ignore les erreurs (table absente, colonne absente, etc.)."""
+        def try_exec(sql, params=None):
+            """Execute avec SAVEPOINT — ignore les erreurs (table/colonne absente, etc.)."""
             cur.execute("SAVEPOINT sp")
             try:
-                cur.execute(sql, (uid,))
+                cur.execute(sql, params or (uid,))
                 cur.execute("RELEASE SAVEPOINT sp")
             except Exception:
                 cur.execute("ROLLBACK TO SAVEPOINT sp")
@@ -116,29 +116,43 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
         # 1. FK nullable → SET NULL
         try_exec("UPDATE notifications SET replied_by = NULL WHERE replied_by = %s")
 
-        # 2. Tables enfants avec user_id
+        # 2. Supprimer les commentaires ENFANTS (self-ref parent_id) avant les parents
+        #    On doit supprimer les replies des commentaires de cet user en premier
+        try_exec("DELETE FROM comments WHERE parent_id IN (SELECT id FROM comments WHERE user_id = %s)")
+        # Puis les commentaires directs de cet user
+        try_exec("DELETE FROM comments WHERE user_id = %s")
+
+        # 3. Supprimer les likes/comments des AUTRES users sur les POSTS de cet user
+        #    (sinon DELETE FROM posts échouera à cause de likes_post_id_fkey)
+        try_exec("DELETE FROM likes WHERE post_id IN (SELECT id FROM posts WHERE user_id = %s)")
+        try_exec("DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE user_id = %s)")
+        try_exec("DELETE FROM saved_posts WHERE post_id IN (SELECT id FROM posts WHERE user_id = %s)")
+
+        # 4. Supprimer les likes/saved_posts DE cet user (sur posts d'autres)
+        try_exec("DELETE FROM likes WHERE user_id = %s")
+        try_exec("DELETE FROM saved_posts WHERE user_id = %s")
+
+        # 5. Tables enfants simples avec user_id
         for tbl in [
             "user_rewards", "bin_scans",
-            "center_proposals", "collector_zone_assignments",
+            "center_proposals",
             "group_members", "meeting_participants",
             "message_group_recipients",
-            "likes", "saved_posts", "comments",
         ]:
             try_exec(f"DELETE FROM {tbl} WHERE user_id = %s")
 
-        # 3. collector_zone_assignments.assigned_by
+        # 6. collector_zone_assignments — deux colonnes FK
+        try_exec("DELETE FROM collector_zone_assignments WHERE user_id = %s")
         try_exec("DELETE FROM collector_zone_assignments WHERE assigned_by = %s")
 
-        # 4. collector_logs — colonne collector_id (pas user_id)
+        # 7. collector_logs / collection_routes — colonne collector_id (pas user_id)
         try_exec("DELETE FROM collector_logs WHERE collector_id = %s")
-
-        # 5. collection_routes — colonne collector_id
         try_exec("DELETE FROM collection_routes WHERE collector_id = %s")
 
-        # 6. quiz_submissions — colonne student_id (pas user_id)
+        # 8. quiz_submissions — colonne student_id
         try_exec("DELETE FROM quiz_submissions WHERE student_id = %s")
 
-        # 7. Tables avec colonnes FK differentes
+        # 9. Tables avec colonnes FK differentes
         try_exec("DELETE FROM notifications WHERE user_id = %s")
         try_exec("DELETE FROM notifications WHERE sender_id = %s")
         try_exec("DELETE FROM citizen_reports WHERE user_id = %s")
@@ -148,7 +162,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
         try_exec("DELETE FROM posts WHERE user_id = %s")
         try_exec("DELETE FROM testimonials WHERE user_id = %s")
 
-        # 8. Tables educateur / acteur / collecteur
+        # 10. Tables educateur / acteur / collecteur
         for tbl, col in [
             ("citizen_groups",      "educator_id"),
             ("educator_groups",     "educator_id"),
@@ -167,7 +181,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
         ]:
             try_exec(f"DELETE FROM {tbl} WHERE {col} = %s")
 
-        # 9. Supprimer l'utilisateur
+        # 11. Supprimer l'utilisateur
         cur.execute("DELETE FROM users WHERE id = %s", (uid,))
         raw_conn.commit()
         cur.close()
@@ -178,6 +192,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
         raw_conn.close()
 
     return {"message": "Utilisateur supprime avec succes"}
+
 
 
 
