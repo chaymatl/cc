@@ -316,12 +316,13 @@ _BASIC_MOD_KEYWORDS_REJECT = [
 ]
 
 # Mots-clés hors-sujet (non liés à l'écologie/tri des déchets)
+# Attention : éviter les mots ambigus (ex: "plage" = peut être nettoyage de plage)
 _BASIC_MOD_KEYWORDS_OFFTOPIC = [
-    "maquillage", "makeup", "beauté", "beauty", "cosmetique", "cosmetic",
-    "mode", "fashion", "vetement", "robe", "chaussure", "sac",
-    "cuisine", "recette", "restaurant", "food", "nourriture",
-    "sport", "football", "match", "cinema", "film", "musique",
-    "voyage", "vacances", "plage", "selfie", "photo de moi",
+    "maquillage", "makeup", "beaute", "beauty", "cosmetique", "cosmetic",
+    "fashion", "vetement", "robe", "chaussure",
+    "recette", "restaurant",
+    "football", "cinema", "musique",
+    "vacances", "selfie", "photo de moi",
 ]
 
 def _get_moderator():
