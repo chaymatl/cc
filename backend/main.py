@@ -86,6 +86,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[STARTUP] [WARN] BinSync non demarre : {e}")
 
+    # Pré-chargement des modèles IA de modération (en thread pour ne pas bloquer)
+    try:
+        import threading
+        def _preload_ai():
+            try:
+                from moderation_ai.eco_moderator import cnn_moderator  # noqa
+                print("[STARTUP] [OK] Modeles IA moderation charges (TextCNN + ResNet18 + NudeNet)")
+            except Exception as _e:
+                print(f"[STARTUP] [WARN] Modeles IA non charges : {_e}")
+        threading.Thread(target=_preload_ai, daemon=True).start()
+    except Exception as e:
+        print(f"[STARTUP] [WARN] Pre-chargement IA impossible : {e}")
+
+
     yield
     # ── Shutdown ─────────────────────────────────────────────────────────────
     # (aucune ressource explicite à fermer pour l'instant)
