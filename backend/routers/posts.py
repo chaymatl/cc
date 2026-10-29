@@ -350,16 +350,19 @@ def _basic_mod_fallback(description: str, has_image: bool = False) -> dict:
     """
     Modération par règles simples quand les modèles IA ne sont pas disponibles.
 
-    Politique prudente :
-    - Mots interdits (spam, haine)      → pending_review
-    - Mots hors-sujet détectés          → pending_review
-    - Texte trop court (<= 5 mots) + image → pending_review (image non analysée)
-    - Sinon                             → pending_review par défaut (l'admin valide)
+    Politique :
+    ─────────────────────────────────────────────────────────────────
+    • Texte hors-sujet OU mot interdit                → pending_review
+    • Image présente (sans IA pour l'analyser)        → pending_review
+      (on ne peut pas garantir que l'image est écolo)
+    • Texte seul + propre (aucun mot problématique)   → published
+    ─────────────────────────────────────────────────────────────────
+    Les DEUX éléments (texte + image) doivent être valides pour publier.
+    Sans IA disponible, l'image est invérifiable → toujours pending.
     """
     text = (description or "").lower()
-    word_count = len(text.split())
 
-    # 1. Mots interdits
+    # 1. Mots interdits (spam, haine, violence…)
     for kw in _BASIC_MOD_KEYWORDS_REJECT:
         if kw in text:
             return {
@@ -370,36 +373,36 @@ def _basic_mod_fallback(description: str, has_image: bool = False) -> dict:
                 "details": None,
             }
 
-    # 2. Mots hors-sujet détectés
+    # 2. Mots hors-sujet dans le texte
     for kw in _BASIC_MOD_KEYWORDS_OFFTOPIC:
         if kw in text:
             return {
                 "final_status": "pending_review",
                 "score": 0.70,
-                "reason": f"BASIC_RULES:hors_sujet='{kw}'",
+                "reason": f"BASIC_RULES:texte_hors_sujet='{kw}'",
                 "model_version": "rules_v1.0",
                 "details": None,
             }
 
-    # 3. Texte trop court avec image (image non analysable sans IA)
-    if has_image and word_count <= 5:
+    # 3. Image présente sans IA → impossible de vérifier le contenu visuel
+    if has_image:
         return {
             "final_status": "pending_review",
             "score": 0.50,
-            "reason": "BASIC_RULES:texte_court_avec_image",
+            "reason": "BASIC_RULES:image_non_analysable_sans_ia",
             "model_version": "rules_v1.0",
             "details": None,
         }
 
-    # 4. Politique par défaut : pending_review (l'admin valide manuellement)
-    #    On ne publie JAMAIS automatiquement sans analyse IA.
+    # 4. Texte seul + propre → publié directement
     return {
-        "final_status": "pending_review",
-        "score": 0.30,
-        "reason": "BASIC_RULES:attente_validation_admin",
+        "final_status": "published",
+        "score": 0.05,
+        "reason": "BASIC_RULES:texte_seul_approuve",
         "model_version": "rules_v1.0",
         "details": None,
     }
+
 
 
 def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: int, db: Session):
