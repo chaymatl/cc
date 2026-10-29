@@ -309,9 +309,19 @@ async def moderate_image(file: UploadFile = File(...)):
 _AI_MODERATOR   = None   # instance du modérateur CNN
 _AI_AVAILABLE   = None   # None = pas encore essayé, True/False après 1ère tentative
 
-_BASIC_MOD_KEYWORDS = [
+_BASIC_MOD_KEYWORDS_REJECT = [
     "spam", "pub", "promo", "vente", "achat", "soldes",
     "insulte", "haine", "violence", "connard", "salope",
+    "arnaque", "gagner", "gratuit", "cliquez", "lien",
+]
+
+# Mots-clés hors-sujet (non liés à l'écologie/tri des déchets)
+_BASIC_MOD_KEYWORDS_OFFTOPIC = [
+    "maquillage", "makeup", "beauté", "beauty", "cosmetique", "cosmetic",
+    "mode", "fashion", "vetement", "robe", "chaussure", "sac",
+    "cuisine", "recette", "restaurant", "food", "nourriture",
+    "sport", "football", "match", "cinema", "film", "musique",
+    "voyage", "vacances", "plage", "selfie", "photo de moi",
 ]
 
 def _get_moderator():
@@ -336,25 +346,57 @@ def _get_moderator():
     return _AI_MODERATOR
 
 
-def _basic_mod_fallback(description: str) -> dict:
+def _basic_mod_fallback(description: str, has_image: bool = False) -> dict:
     """
-    Modération par règles simples utilisée quand les modèles IA ne sont pas installés.
-    Garantit qu'un post est toujours résolu (publié ou signalé), jamais bloqué.
+    Modération par règles simples quand les modèles IA ne sont pas disponibles.
+
+    Politique prudente :
+    - Mots interdits (spam, haine)      → pending_review
+    - Mots hors-sujet détectés          → pending_review
+    - Texte trop court (<= 5 mots) + image → pending_review (image non analysée)
+    - Sinon                             → pending_review par défaut (l'admin valide)
     """
     text = (description or "").lower()
-    for kw in _BASIC_MOD_KEYWORDS:
+    word_count = len(text.split())
+
+    # 1. Mots interdits
+    for kw in _BASIC_MOD_KEYWORDS_REJECT:
         if kw in text:
             return {
                 "final_status": "pending_review",
-                "score": 0.80,
-                "reason": f"BASIC_RULES:keyword='{kw}'",
+                "score": 0.90,
+                "reason": f"BASIC_RULES:interdit='{kw}'",
                 "model_version": "rules_v1.0",
                 "details": None,
             }
+
+    # 2. Mots hors-sujet détectés
+    for kw in _BASIC_MOD_KEYWORDS_OFFTOPIC:
+        if kw in text:
+            return {
+                "final_status": "pending_review",
+                "score": 0.70,
+                "reason": f"BASIC_RULES:hors_sujet='{kw}'",
+                "model_version": "rules_v1.0",
+                "details": None,
+            }
+
+    # 3. Texte trop court avec image (image non analysable sans IA)
+    if has_image and word_count <= 5:
+        return {
+            "final_status": "pending_review",
+            "score": 0.50,
+            "reason": "BASIC_RULES:texte_court_avec_image",
+            "model_version": "rules_v1.0",
+            "details": None,
+        }
+
+    # 4. Politique par défaut : pending_review (l'admin valide manuellement)
+    #    On ne publie JAMAIS automatiquement sans analyse IA.
     return {
-        "final_status": "published",
-        "score": 0.05,
-        "reason": "BASIC_RULES:approved",
+        "final_status": "pending_review",
+        "score": 0.30,
+        "reason": "BASIC_RULES:attente_validation_admin",
         "model_version": "rules_v1.0",
         "details": None,
     }
@@ -397,7 +439,7 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
 
         if moderator is None:
             # ── Mode règles basiques de secours (Fallback si pas d'IA) ─────
-            decision = _basic_mod_fallback(description)
+            decision = _basic_mod_fallback(description, has_image=bool(image_url))
             final_status = decision["final_status"]
             moderation_score = decision["score"]
             moderation_reason = decision["reason"]
