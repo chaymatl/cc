@@ -1,4 +1,5 @@
-﻿import 'dart:convert';
+﻿// ignore_for_file: avoid_dynamic_calls
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';

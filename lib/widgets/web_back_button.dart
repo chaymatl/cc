@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Bouton retour mobile — compatible Android et iOS.
+/// Bouton retour mobile - compatible Android et iOS.
 ///
 /// Usage dans un AppBar :
 ///   leading: const WebBackButton(),

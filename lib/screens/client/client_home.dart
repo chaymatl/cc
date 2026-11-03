@@ -39,9 +39,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   final GlobalKey<ProfileTabState> _profileKey = GlobalKey<ProfileTabState>();
 
   // ── Streams Firebase temps réel ──────────────────────────────────────────
-  /// /scores/{userId}   — mis à jour par l'API (scan Flutter, quiz)
+  /// /scores/{userId}   - mis à jour par l'API (scan Flutter, quiz)
   StreamSubscription<ScoreSnapshot>? _firebaseScoreSub;
-  /// /utilisateurs/{qrCode}/score — mis à jour par l'Arduino ESP32 directement
+  /// /utilisateurs/{qrCode}/score - mis à jour par l'Arduino ESP32 directement
   StreamSubscription<double>? _firebaseArduinoSub;
   /// Écoute l'état de la session Firebase pour annuler les streams au logout
   StreamSubscription? _firebaseAuthSub;
@@ -78,7 +78,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
   }
 
-  /// Écoute /scores/{userId} — mis à jour par l'API FastAPI.
+  /// Écoute /scores/{userId} - mis à jour par l'API FastAPI.
   void _startFirebaseScoreListener() {
     final userId = int.tryParse(AuthState.currentUser?.id ?? '');
     if (userId == null || userId <= 0) return; // 0 = session expirée (fallback JWT)
@@ -102,7 +102,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     });
   }
 
-  /// Écoute /utilisateurs/{qrCode}/score — mis à jour par l'Arduino ESP32.
+  /// Écoute /utilisateurs/{qrCode}/score - mis à jour par l'Arduino ESP32.
   /// L'Arduino écrit directement dans Firebase sans passer par l'API :
   ///   Firebase.setInt(fbdo, '/utilisateurs/' + qrID + '/score', newScore)
   /// Ce listener garantit que le score affiché dans l'app est mis à jour
@@ -145,7 +145,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
 
-  /// Appelé quand on change d'onglet — simple setState pour conserver l'état des tabs
+  /// Appelé quand on change d'onglet - simple setState pour conserver l'état des tabs
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
     final role = AuthState.currentUser?.role ?? UserRole.citoyen;
@@ -266,7 +266,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   List<NavigationDestination> _getDestinations(UserRole role) {
-    // Visiteur non connecté — pas d'onglet Profil
+    // Visiteur non connecté - pas d'onglet Profil
     if (!_isLoggedIn) {
       return [
         NavigationDestination(icon: const FaIcon(FontAwesomeIcons.house, size: 20), label: L10n.tr('tab_feed')),

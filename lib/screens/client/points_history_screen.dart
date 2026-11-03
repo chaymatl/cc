@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -38,8 +39,8 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
   }
 
   /// Écoute les DEUX chemins Firebase en temps réel :
-  ///   • /scores/{userId}               — mis à jour par l'API FastAPI
-  ///   • /utilisateurs/{qrCode}/score   — mis à jour directement par l'Arduino
+  ///   * /scores/{userId}               - mis à jour par l'API FastAPI
+  ///   * /utilisateurs/{qrCode}/score   - mis à jour directement par l'Arduino
   /// Quand l'un ou l'autre augmente, on recharge l'historique.
   void _startFirebaseListeners() {
     final userId = int.tryParse(AuthState.currentUser?.id ?? '');
@@ -115,7 +116,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = 'Historique des points';
+    const title = 'Historique des points';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -259,7 +260,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
         children: [
           const SizedBox(height: 12),
 
-          // ── Carte Score Total ────────────────────────────────────────────
+          // -- Carte Score Total --------------------------------------------
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
@@ -354,7 +355,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
 
           const SizedBox(height: 28),
 
-          // ── Titre liste ──────────────────────────────────────────────────
+          // -- Titre liste --------------------------------------------------
           Text(
             'Détail des gains',
             style: GoogleFonts.outfit(
@@ -410,7 +411,7 @@ class _PointsHistoryScreenState extends State<PointsHistoryScreen> {
 
     final String dateLabel = isArduino
         ? 'Via capteur IoT · horodatage non dispo.'
-        : (dateStr != null ? _formatDate(dateStr) : '—');
+        : (dateStr != null ? _formatDate(dateStr) : '-');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

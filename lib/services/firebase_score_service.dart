@@ -1,13 +1,13 @@
 /// lib/services/firebase_score_service.dart
 ///
 /// ╔══════════════════════════════════════════════════════════════════╗
-/// ║  RÈGLE ARCHITECTURALE — LECTURE SEULE                           ║
+/// ║  RÈGLE ARCHITECTURALE - LECTURE SEULE                           ║
 /// ║                                                                  ║
 /// ║  Ce service est STRICTEMENT en lecture.                          ║
 /// ║  Flutter n'écrit JAMAIS dans Firebase Realtime Database.         ║
 /// ║                                                                  ║
 /// ║  Seul FastAPI (Admin SDK) peut écrire via :                      ║
-/// ║    services/firebase_service.py → update_user_score()            ║
+/// ║    services/firebase_service.py -> update_user_score()            ║
 /// ║                                                                  ║
 /// ║  Les règles Firebase (.write: false côté client) renforcent       ║
 /// ║  cette contrainte au niveau infrastructure.                      ║
@@ -71,7 +71,7 @@ class FirebaseScoreService {
 
   /// Écoute les mises à jour du score d'un citoyen en temps réel.
   ///
-  /// LECTURE SEULE — ne pas appeler de méthode .set() / .update() / .remove()
+  /// LECTURE SEULE - ne pas appeler de méthode .set() / .update() / .remove()
   /// sur cette référence. Les Security Rules Firebase rejettent toute écriture
   /// côté client (.write: false sur tous les nœuds).
   ///
@@ -96,7 +96,7 @@ class FirebaseScoreService {
 
   /// Lit le score une seule fois (sans abonnement continu).
   ///
-  /// LECTURE SEULE — voir watchScore() pour les détails de sécurité.
+  /// LECTURE SEULE - voir watchScore() pour les détails de sécurité.
   Future<ScoreSnapshot> getScoreOnce(int userId) async {
     if (!_isFirebaseAuthenticated) {
       return ScoreSnapshot.empty();
@@ -210,7 +210,7 @@ extension FirebaseBinReader on FirebaseScoreService {
   /// Nœud écouté : /poubelles/{binId}
   /// binId = bin_code de la poubelle (ex: 'BIN-PLASTIC-A3F2')
   ///
-  /// LECTURE SEULE — seul le backend FastAPI écrit dans ce nœud.
+  /// LECTURE SEULE - seul le backend FastAPI écrit dans ce nœud.
   Stream<BinSnapshot> watchBin(String binId) {
     if (!_isFirebaseAuthenticated) {
       return Stream.value(BinSnapshot.empty());

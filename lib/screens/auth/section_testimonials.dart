@@ -147,7 +147,7 @@ class _SectionTestimonialsState extends State<SectionTestimonials>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button — masqué sur web
+                  // Back button - masqué sur web
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -333,7 +333,7 @@ class _SectionTestimonialsState extends State<SectionTestimonials>
         // Regular testimonials
         if (regular.isNotEmpty) ...[
           _buildSectionLabel(
-              '✅  TÉMOIGNAGES VALIDÉS (${regular.length})', AppTheme.primaryGreen),
+              '  TÉMOIGNAGES VALIDÉS (${regular.length})', AppTheme.primaryGreen),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -346,7 +346,7 @@ class _SectionTestimonialsState extends State<SectionTestimonials>
 
         // All featured (if no regular)
         if (featured.isNotEmpty && regular.isEmpty) ...[
-          _buildSectionLabel('✅  TOUS LES TÉMOIGNAGES', AppTheme.primaryGreen),
+          _buildSectionLabel('  TOUS LES TÉMOIGNAGES', AppTheme.primaryGreen),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(

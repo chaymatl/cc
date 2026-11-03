@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -90,7 +91,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
       backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
         children: [
-          // ── Animated Background Orbs ──
+          // -- Animated Background Orbs --
           AnimatedBuilder(
             animation: _bgController,
             builder: (context, child) {
@@ -127,7 +128,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
             },
           ),
           
-          // ── Glass Background Blur ──
+          // -- Glass Background Blur --
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
@@ -135,7 +136,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
             ),
           ),
 
-          // ── Main Content Container ──
+          // -- Main Content Container --
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 24),
@@ -163,7 +164,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
               clipBehavior: Clip.antiAlias,
               child: Row(
                 children: [
-                  // ── Panneau Gauche : Illustration Premium Animée ───────────────────────────
+                  // -- Panneau Gauche : Illustration Premium Animée ---------------------------
                   Expanded(
                     flex: 5,
                     child: Container(
@@ -291,7 +292,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
                     ),
                   ),
 
-                  // ── Panneau Droit : Formulaire Élégant ───────────────────────────────
+                  // -- Panneau Droit : Formulaire Élégant -------------------------------
                   Expanded(
                     flex: 6,
                     child: Container(
@@ -376,7 +377,7 @@ class _WebLoginBodyState extends State<WebLoginBody> with SingleTickerProviderSt
                                       obscureText: widget.obscurePassword,
                                       style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF0F172A), fontWeight: FontWeight.w500),
                                       decoration: InputDecoration(
-                                        hintText: '••••••••',
+                                        hintText: '********',
                                         hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), letterSpacing: 3),
                                         prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: Color(0xFF94A3B8)),
                                         suffixIcon: IconButton(

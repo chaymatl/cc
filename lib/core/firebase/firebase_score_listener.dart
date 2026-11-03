@@ -1,20 +1,20 @@
 /// lib/core/firebase/firebase_score_listener.dart
 ///
 /// ╔══════════════════════════════════════════════════════════════════╗
-/// ║  RÈGLE ARCHITECTURALE — LECTURE SEULE                           ║
+/// ║  RÈGLE ARCHITECTURALE - LECTURE SEULE                           ║
 /// ║                                                                  ║
 /// ║  Ce listener est STRICTEMENT en lecture.                         ║
 /// ║  Flutter n'écrit JAMAIS dans Firebase Realtime Database.         ║
 /// ║                                                                  ║
 /// ║  Seul FastAPI (Admin SDK) peut écrire via :                      ║
-/// ║    backend/services/firebase_service.py → update_user_score()   ║
+/// ║    backend/services/firebase_service.py -> update_user_score()   ║
 /// ║                                                                  ║
 /// ║  Les règles Firebase (.write: false côté client) renforcent      ║
 /// ║  cette contrainte au niveau infrastructure.                      ║
 /// ╚══════════════════════════════════════════════════════════════════╝
 ///
 /// Remplace : lib/services/firebase_score_service.dart (conservé pour
-/// compatibilité — il re-exporte ce fichier).
+/// compatibilité - il re-exporte ce fichier).
 library firebase_score_listener;
 
 import 'package:firebase_auth/firebase_auth.dart';

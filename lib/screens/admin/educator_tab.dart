@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
@@ -183,7 +185,7 @@ class _EducatorTabState extends State<EducatorTab> {
             dropdownColor: Theme.of(ctx).colorScheme.surface,
             decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
             items: [
-              DropdownMenuItem<int?>(value: null, child: Text('— Aucun dossier —', style: const TextStyle())),
+              DropdownMenuItem<int?>(value: null, child: Text('- Aucun dossier -', style: const TextStyle())),
               ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? '', style: const TextStyle()))),
             ],
             onChanged: (v) => setDState(() => selectedCatId = v),
@@ -219,6 +221,94 @@ class _EducatorTabState extends State<EducatorTab> {
     setState(() => _isPublishingVideo = false);
     if (res['success'] == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vidéo publiée !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
+      _loadMyVideos();
+      _loadCategories();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Erreur'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  /// Publie une vidéo via lien YouTube
+  Future<void> _publishYoutubeVideo() async {
+    final urlCtrl = TextEditingController();
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final durationCtrl = TextEditingController();
+    int? selectedCatId;
+
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Ajouter via YouTube', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(14)),
+            child: Row(children: [
+              Icon(Icons.smart_display_rounded, color: Colors.red.shade400, size: 28),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Collez un lien YouTube. Les utilisateurs seront redirigés vers YouTube pour regarder la vidéo.', style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade700))),
+            ]),
+          ),
+          const SizedBox(height: 14),
+          TextField(controller: urlCtrl, decoration: InputDecoration(labelText: 'URL YouTube *', hintText: 'https://youtu.be/...', prefixIcon: const Icon(Icons.link_rounded), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Titre *', prefixIcon: const Icon(Icons.title), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: 'Description (optionnel)', prefixIcon: const Icon(Icons.description), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          TextField(controller: durationCtrl, decoration: InputDecoration(labelText: 'Durée (ex: 5:30)', prefixIcon: const Icon(Icons.timer), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<int?>(
+            value: selectedCatId,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: 'Dossier (sujet)', prefixIcon: const Icon(Icons.folder_special), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
+            items: [
+              const DropdownMenuItem<int?>(value: null, child: Text('- Aucun dossier -')),
+              ..._categories.map((c) => DropdownMenuItem<int?>(value: c['id'] as int, child: Text(c['title'] ?? ''))),
+            ],
+            onChanged: (v) => setDState(() => selectedCatId = v),
+          ),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Publier', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          ),
+        ],
+      )),
+    );
+
+    if (confirmed != true) return;
+    final url = urlCtrl.text.trim();
+    final title = titleCtrl.text.trim();
+    if (url.isEmpty || title.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('URL et titre obligatoires'), backgroundColor: Colors.orange));
+      return;
+    }
+    if (!url.contains('youtube.com') && !url.contains('youtu.be')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez entrer un lien YouTube valide'), backgroundColor: Colors.orange));
+      return;
+    }
+
+    setState(() => _isPublishingVideo = true);
+    final res = await _authService.publishYoutubeVideo(
+      youtubeUrl: url,
+      title: title,
+      description: descCtrl.text.isNotEmpty ? descCtrl.text : null,
+      duration: durationCtrl.text.isNotEmpty ? durationCtrl.text : null,
+      categoryId: selectedCatId,
+    );
+    setState(() => _isPublishingVideo = false);
+    if (res['success'] == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Vidéo YouTube ajoutee !'), backgroundColor: AppTheme.primaryGreen, behavior: SnackBarBehavior.floating));
       _loadMyVideos();
       _loadCategories();
     } else if (mounted) {
@@ -528,6 +618,21 @@ class _EducatorTabState extends State<EducatorTab> {
               const SizedBox(width: 14),
               Expanded(child: _buildActionCard('Publier Vidéo', Icons.video_call_rounded, Colors.teal, _isPublishingVideo ? null : _publishVideo)),
             ]),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isPublishingVideo ? null : _publishYoutubeVideo,
+                icon: const Icon(Icons.link_rounded, size: 18),
+                label: const Text('Ajouter via lien YouTube'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade600,
+                  side: BorderSide(color: Colors.red.shade300),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
             // Category folders
             if (_categories.isNotEmpty) ...[
@@ -744,7 +849,7 @@ class _EducatorTabState extends State<EducatorTab> {
                 Text('Quiz Automatique', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                 const SizedBox(height: 4),
                 Text(
-                  'Uploadez un PDF → Gemini extrait les questions, corrige et note automatiquement sur 10.',
+                  'Uploadez un PDF -> Gemini extrait les questions, corrige et note automatiquement sur 10.',
                   style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 12, height: 1.4),
                 ),
               ],
@@ -1024,6 +1129,8 @@ class _EducatorTabState extends State<EducatorTab> {
     final createdAt = video['created_at'] ?? '';
     final thumbnail = video['thumbnail_url'];
     final videoId = video['id'] as int?;
+    final videoUrl = video['video_url'] ?? '';
+    final isYoutube = videoUrl.contains('youtube.com') || videoUrl.contains('youtu.be');
 
     // Format date
     String dateLabel = '';
@@ -1042,7 +1149,7 @@ class _EducatorTabState extends State<EducatorTab> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.tightShadow,
-        border: const Border(left: BorderSide(color: Colors.teal, width: 4)),
+        border: Border(left: BorderSide(color: isYoutube ? Colors.red : Colors.teal, width: 4)),
       ),
       child: Row(
         children: [
@@ -1051,9 +1158,17 @@ class _EducatorTabState extends State<EducatorTab> {
             borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
             child: SizedBox(
               width: 100, height: 80,
-              child: thumbnail != null
-                  ? Image.network(thumbnail, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, child: const Icon(Icons.play_circle_fill, color: Colors.teal, size: 36)))
-                  : Container(color: Colors.teal.shade50, child: const Icon(Icons.play_circle_fill, color: Colors.teal, size: 36)),
+              child: Stack(children: [
+                thumbnail != null
+                    ? Image.network(thumbnail, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, child: Icon(Icons.play_circle_fill, color: isYoutube ? Colors.red : Colors.teal, size: 36)))
+                    : Container(color: isYoutube ? Colors.red.shade50 : Colors.teal.shade50, child: Icon(Icons.play_circle_fill, color: isYoutube ? Colors.red : Colors.teal, size: 36)),
+                if (isYoutube)
+                  Positioned(bottom: 4, right: 4, child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                    child: const Text('YT', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                  )),
+              ]),
             ),
           ),
           const SizedBox(width: 14),
@@ -1066,7 +1181,12 @@ class _EducatorTabState extends State<EducatorTab> {
                 Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Row(children: [
-                  if (duration.isNotEmpty) ...[
+                  if (isYoutube) ...[ 
+                    Icon(Icons.smart_display_rounded, size: 12, color: Colors.red.shade400),
+                    const SizedBox(width: 3),
+                    Text('YouTube', style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade400)),
+                    const SizedBox(width: 10),
+                  ] else if (duration.isNotEmpty) ...[
                     const Icon(Icons.timer_outlined, size: 12, color: AppTheme.textMuted),
                     const SizedBox(width: 3),
                     Text(duration, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
@@ -1099,7 +1219,7 @@ class _EducatorTabState extends State<EducatorTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Bouton créer séance ──────────────────────────────────────────
+        // -- Bouton créer séance ------------------------------------------
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -1122,7 +1242,7 @@ class _EducatorTabState extends State<EducatorTab> {
         ),
         const SizedBox(height: 20),
 
-        // ── Liste des séances ────────────────────────────────────────────
+        // -- Liste des séances --------------------------------------------
         if (_meetings.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),

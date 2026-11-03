@@ -6,7 +6,7 @@ import '../models/user_model.dart';
 import '../services/l10n_service.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
-// WEB SHELL — Sidebar gauche fixe + contenu principal
+// WEB SHELL - Sidebar gauche fixe + contenu principal
 // Design: dark sidebar premium (Linear / Vercel style)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -53,7 +53,7 @@ class _WebShellState extends State<WebShell> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Row(
         children: [
-          // ── Dark Sidebar ───────────────────────────────────────────────
+          // -- Dark Sidebar -----------------------------------------------
           _Sidebar(
             items: items,
             currentIndex: widget.currentIndex,
@@ -61,7 +61,7 @@ class _WebShellState extends State<WebShell> {
             isLoggedIn: widget.isLoggedIn,
           ),
 
-          // ── Contenu principal ──────────────────────────────────────────
+          // -- Contenu principal ------------------------------------------
           Expanded(
             child: Column(
               children: [
@@ -81,13 +81,13 @@ class _WebShellState extends State<WebShell> {
   }
 
   List<_NavItem> _getNavItems(UserRole role) {
-    final principalSec = 'PRINCIPAL';
-    final decouvrirSec = 'DÉCOUVRIR';
-    final espaceProSec = 'ESPACE PRO';
-    final communauteSec = 'COMMUNAUTÉ';
-    final compteSec = 'COMPTE';
+    const principalSec = 'PRINCIPAL';
+    const decouvrirSec = 'DÉCOUVRIR';
+    const espaceProSec = 'ESPACE PRO';
+    const communauteSec = 'COMMUNAUTÉ';
+    const compteSec = 'COMPTE';
 
-    // ── Visiteur non connecté ──
+    // -- Visiteur non connecté --
     if (!widget.isLoggedIn) {
       return [
         _NavItem(icon: FontAwesomeIcons.house, label: L10n.tr('tab_feed'), section: principalSec),
@@ -130,7 +130,7 @@ class _NavItem {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SIDEBAR — Dark premium (Linear/Vercel style)
+// SIDEBAR - Dark premium (Linear/Vercel style)
 // ════════════════════════════════════════════════════════════════════════════
 class _Sidebar extends StatelessWidget {
   final List<_NavItem> items;
@@ -162,7 +162,7 @@ class _Sidebar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ── Logo ──────────────────────────────────────────────────────
+          // -- Logo ------------------------------------------------------
           Container(
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -204,7 +204,7 @@ class _Sidebar extends StatelessWidget {
           Container(height: 1, color: _sidebarBorder),
           const SizedBox(height: 8),
 
-          // ── Navigation ────────────────────────────────────────────────
+          // -- Navigation ------------------------------------------------
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -238,7 +238,7 @@ class _Sidebar extends StatelessWidget {
 
           Container(height: 1, color: _sidebarBorder),
 
-          // ── Bas : user card ou bouton connexion ────────────────────────
+          // -- Bas : user card ou bouton connexion ------------------------
           Container(
             padding: const EdgeInsets.all(16),
             child: _buildBottomCard(context, user),
@@ -249,7 +249,7 @@ class _Sidebar extends StatelessWidget {
   }
 
   Widget _buildBottomCard(BuildContext context, User? user) {
-    // ── Visiteur non connecté → CTA Se connecter ──
+    // -- Visiteur non connecté -> CTA Se connecter --
     if (user == null) {
       return GestureDetector(
         onTap: () => Navigator.pushNamed(context, '/login'),
@@ -289,7 +289,7 @@ class _Sidebar extends StatelessWidget {
       );
     }
 
-    // ── Utilisateur connecté → carte profil ──
+    // -- Utilisateur connecté -> carte profil --
     final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
     final displayName = user.name.isNotEmpty ? user.name : 'Utilisateur';
 
@@ -363,7 +363,7 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
-// ── Navigation Tile ──────────────────────────────────────────────────────────
+// -- Navigation Tile ----------------------------------------------------------
 class _NavTile extends StatefulWidget {
   final _NavItem item;
   final int index;
@@ -451,7 +451,7 @@ class _NavTileState extends State<_NavTile> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TOP BAR — Barre supérieure du contenu principal
+// TOP BAR - Barre supérieure du contenu principal
 // ════════════════════════════════════════════════════════════════════════════
 class _TopBar extends StatelessWidget {
   final int currentIndex;
@@ -482,7 +482,7 @@ class _TopBar extends StatelessWidget {
         ],
       ),
       child: Row(children: [
-        // ── Breadcrumb ────────────────────────────────────────────────
+        // -- Breadcrumb ------------------------------------------------
         Row(children: [
           const Icon(Icons.eco_rounded, size: 16, color: AppTheme.primaryGreen),
           const SizedBox(width: 6),
@@ -498,7 +498,7 @@ class _TopBar extends StatelessWidget {
 
         const Spacer(),
 
-        // ── Notifications ────────────────────────────────────────────
+        // -- Notifications --------------------------------------------
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).dividerColor : const Color(0xFFE2E8F0)),
@@ -520,7 +520,7 @@ class _TopBar extends StatelessWidget {
 
         const SizedBox(width: 12),
 
-        // ── User chip ou bouton connexion ──────────────────────────────
+        // -- User chip ou bouton connexion ------------------------------
         user == null
             ? _buildLoginChip(context)
             : _buildUserChip(context, initial, firstName),

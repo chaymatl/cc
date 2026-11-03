@@ -51,29 +51,48 @@ SEARCH_QUERIES = {
         ("electric vehicle charging renewable",       40),
     ],
     "off_topic": [
-        ("football match stadium sport crowd game",       90),
-        ("election campaign politics politician",         90),
-        ("restaurant food plate meal fine dining",        80),
-        ("makeup cosmetics beauty products brushes",      80),
-        ("lipstick mascara eyeliner beauty products",     80),
-        ("fashion clothing dress outfit model",           80),
-        ("shopping mall retail clothing fashion store",   75),
-        ("business meeting office corporate people",      75),
-        ("music concert band performance crowd",          75),
-        ("travel tourism city landmark architecture",     75),
-        ("cooking recipe kitchen chef food",              65),
-        ("car accident road crash police",                65),
-        ("fitness gym workout exercise sport",            65),
-        ("perfume cologne luxury cosmetics bottle",       60),
-        ("jewelry accessories fashion luxury brand",      60),
-        ("news anchor broadcast television studio",       55),
-        ("school classroom students learning lesson",     55),
-        ("hospital emergency medical doctor nurse",       55),
-        ("stock market financial trading charts",         50),
-        ("construction building workers site",            50),
-        ("wedding celebration party people dancing",      50),
-        ("airport travel luggage plane boarding",         50),
-        ("smartphone technology gadget electronics",      50),
+        # Sport (generique)
+        ("football match stadium sport crowd game",        90),
+        ("soccer ball fire water flames sport",            85),  # NOUVEAU: ballon foot effets
+        ("basketball court game nba sport player",         75),
+        ("tennis player court sport tournament",           70),
+        # Crypto / Finance
+        ("bitcoin cryptocurrency coin gold digital",       90),  # NOUVEAU: Bitcoin pièce
+        ("ethereum crypto coin blockchain digital",        85),  # NOUVEAU: Ethereum
+        ("stock market trading chart financial graph",     80),
+        ("gold coin currency money finance",               75),  # NOUVEAU: pièce d'or
+        # Politique
+        ("election campaign politics politician",          90),
+        # Nourriture
+        ("restaurant food plate meal fine dining",         80),
+        ("cooking recipe kitchen chef food",               65),
+        # Mode / Beaute
+        ("makeup cosmetics beauty products brushes",       80),
+        ("lipstick mascara eyeliner beauty products",      80),  # NOUVEAU: close-up maquillage
+        ("fashion clothing dress outfit model",            80),
+        ("shopping mall retail clothing fashion store",    75),
+        ("perfume cologne luxury cosmetics bottle",        60),
+        ("jewelry accessories fashion luxury brand",       60),
+        # Automobile
+        ("luxury sports car racing street",                80),  # NOUVEAU: voiture sport
+        ("car accident road crash police emergency",       65),
+        ("car engine mechanic workshop repair",            60),  # NOUVEAU: mécanique
+        # Divertissement
+        ("music concert band performance crowd",           75),
+        ("video game console gaming controller screen",    75),  # NOUVEAU: gaming
+        ("netflix movie cinema entertainment popcorn",     70),  # NOUVEAU: streaming
+        # Business / Tech
+        ("business meeting office corporate people",       75),
+        ("smartphone technology gadget electronics",       50),
+        # Autres
+        ("travel tourism city landmark architecture",      75),
+        ("news anchor broadcast television studio",        55),
+        ("hospital emergency medical doctor nurse",        55),
+        ("construction building workers site",             50),
+        ("wedding celebration party people dancing",       50),
+        ("airport travel luggage plane boarding",          50),
+        ("school classroom students learning lesson",      55),
+        ("fitness gym workout exercise sport",             65),
     ],
     "nsfw": [
         ("lingerie fashion model photoshoot editorial", 100),

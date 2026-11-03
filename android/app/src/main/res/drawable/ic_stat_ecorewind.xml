@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ic_stat_ecorewind.xml — Icône de notification Android EcoRewind
+    ================================================================
+    RÈGLES Android pour les petites icônes de notification (status bar) :
+      • Doit être monochrome : uniquement blanc (#FFFFFF) sur fond transparent
+      • Taille de référence : 24dp × 24dp (Android la redimensionne automatiquement)
+      • NE PAS utiliser @mipmap/ic_launcher (icône adaptative = logo Flutter dans notifs)
+      • Référencer avec @drawable/ic_stat_ecorewind
+
+    Design : feuille verte (eco) + deux flèches rewind à la base (rewind)
+    Représente le concept EcoRewind = nature + recyclage/retour en arrière.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!--
+        Feuille principale (forme de goutte pointant vers le haut)
+        Tracé : départ au sommet (12,3) → courbe gauche → arc bas → courbe droite → retour
+    -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,3
+            C12,3 6,11 6,15
+            A6,6 0,0,0 18,15
+            C18,11 12,3 12,3 Z" />
+
+    <!--
+        Tige de la feuille (ligne verticale de la feuille vers les flèches)
+    -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M12,21 L12,18" />
+
+    <!--
+        Flèche gauche (◁) — symbole rewind gauche
+        Triangle pointant vers la gauche
+    -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,18 L8,19.5 L10,21 Z" />
+
+    <!--
+        Flèche droite (▷) — symbole rewind droit
+        Triangle pointant vers la droite (complète le symbole ◁▷ = rewind)
+    -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,18 L16,19.5 L14,21 Z" />
+
+</vector>

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -176,7 +178,7 @@ class _PointManagerTabState extends State<PointManagerTab>
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         slivers: [
-        // ── AppBar ─────────────────────────────────────────────────────────
+        // -- AppBar ---------------------------------------------------------
         SliverAppBar(
           automaticallyImplyLeading: false,
           expandedHeight: 220,
@@ -212,17 +214,17 @@ class _PointManagerTabState extends State<PointManagerTab>
           padding: const EdgeInsets.all(20),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // ── Résumé rapide ───────────────────────────────────────────
+              // -- Résumé rapide -------------------------------------------
               _buildQuickStats(satureCenters.length, maintenanceCenters.length, _centers.length),
               const SizedBox(height: 28),
 
-              // ── Bannière critique ───────────────────────────────────────
+              // -- Bannière critique ---------------------------------------
               if (criticalCenters.isNotEmpty) ...[
                 _buildCriticalBanner(criticalCenters),
                 const SizedBox(height: 28),
               ],
 
-              // ── Alertes ─────────────────────────────────────────────────
+              // -- Alertes -------------------------------------------------
               Row(
                 children: [
                   Container(
@@ -268,7 +270,7 @@ class _PointManagerTabState extends State<PointManagerTab>
 
               const SizedBox(height: 28),
 
-              // ── Centres en temps réel ───────────────────────────────────
+              // -- Centres en temps réel -----------------------------------
               Row(children: [
                 Container(
                   padding: const EdgeInsets.all(7),
@@ -294,7 +296,7 @@ class _PointManagerTabState extends State<PointManagerTab>
 
               const SizedBox(height: 28),
 
-              // ── Bouton intervention ─────────────────────────────────────
+              // -- Bouton intervention -------------------------------------
               Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -367,7 +369,7 @@ class _PointManagerTabState extends State<PointManagerTab>
   );
 }
 
-  // ── Header animé ────────────────────────────────────────────────────────────
+  // -- Header animé ------------------------------------------------------------
   Widget _buildHeader(int criticalCount) {
     return Container(
       decoration: const BoxDecoration(
@@ -482,7 +484,7 @@ class _PointManagerTabState extends State<PointManagerTab>
     );
   }
 
-  // ── Résumé ──────────────────────────────────────────────────────────────────
+  // -- Résumé ------------------------------------------------------------------
   Widget _buildQuickStats(int sature, int maintenance, int total) {
     return Row(children: [
       _statCard('$total', 'Centres', Icons.place_rounded, Colors.blue),
@@ -514,7 +516,7 @@ class _PointManagerTabState extends State<PointManagerTab>
     ).animate().fadeIn().slideY(begin: 0.2);
   }
 
-  // ── Bannière critique ────────────────────────────────────────────────────────
+  // -- Bannière critique --------------------------------------------------------
   Widget _buildCriticalBanner(List<Map<String, dynamic>> criticalCenters) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -537,14 +539,14 @@ class _PointManagerTabState extends State<PointManagerTab>
           Text('${criticalCenters.length} Centre(s) Nécessitent une Attention',
               style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
           const SizedBox(height: 4),
-          Text(criticalCenters.map((c) => c['name'] ?? '').join(' • '),
+          Text(criticalCenters.map((c) => c['name'] ?? '').join(' * '),
               style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
         ])),
       ]),
     ).animate().fadeIn().shake(hz: 1, curve: Curves.easeInOut);
   }
 
-  // ── Carte alerte ─────────────────────────────────────────────────────────────
+  // -- Carte alerte -------------------------------------------------------------
   Widget _buildAlertCard(Map<String, dynamic> alert) {
     final isSature = (alert['title'] ?? '').toString().contains('Saturé');
     final isRead = alert['is_read'] == true;
@@ -614,7 +616,7 @@ class _PointManagerTabState extends State<PointManagerTab>
     );
   }
 
-  // ── Carte centre ─────────────────────────────────────────────────────────────
+  // -- Carte centre -------------------------------------------------------------
   Widget _buildCenterCard(Map<String, dynamic> center) {
     final status = (center['status'] ?? 'disponible').toString();
     final loadLevel = double.tryParse(center['load_level']?.toString() ?? '0') ?? 0.0;

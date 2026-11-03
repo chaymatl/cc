@@ -1,6 +1,6 @@
 /// lib/core/api/auth_interceptor.dart
 ///
-/// Intercepteur d'authentification — utilitaires partagés.
+/// Intercepteur d'authentification - utilitaires partagés.
 ///
 /// Centralise la logique de token pour éviter la duplication entre services.
 library auth_interceptor;
@@ -34,5 +34,5 @@ Map<String, String> bearerHeaders({bool withJson = true}) {
 /// Vérifie si l'utilisateur est actuellement authentifié.
 bool get isAuthenticated => AuthState.authToken != null;
 
-/// ApiClient global — accessible depuis tous les services feature-based.
+/// ApiClient global - accessible depuis tous les services feature-based.
 final api = ApiClient();

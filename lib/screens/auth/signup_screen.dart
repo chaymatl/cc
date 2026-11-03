@@ -120,7 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       if (!mounted) return;
 
       if (result['success'] == true) {
-        // Registration successful → send OTP
+        // Registration successful -> send OTP
         _otpIdentifier = identifier;
         _otpMethod = email.isNotEmpty ? 'email' : 'sms';
         await _sendOTP();

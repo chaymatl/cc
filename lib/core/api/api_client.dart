@@ -1,12 +1,13 @@
+// ignore_for_file: avoid_dynamic_calls
 /// lib/core/api/api_client.dart
 ///
-/// Client HTTP centralisé — point d'entrée unique vers FastAPI.
+/// Client HTTP centralisé - point d'entrée unique vers FastAPI.
 ///
 /// Responsabilités :
-///   • Attacher automatiquement le Bearer token JWT
-///   • Rafraîchir le token (401 → refresh → retry)
-///   • Décoder UTF-8 de façon uniforme
-///   • Gérer les erreurs réseau
+///   * Attacher automatiquement le Bearer token JWT
+///   * Rafraîchir le token (401 -> refresh -> retry)
+///   * Décoder UTF-8 de façon uniforme
+///   * Gérer les erreurs réseau
 ///
 /// Règle : TOUS les services feature-based passent par ApiClient.
 /// Personne n'instancie http.Client directement sauf ici.
@@ -52,18 +53,18 @@ class ApiClient {
   final http.Client _http = http.Client();
   static const Duration _timeout = Duration(seconds: 20);
 
-  // ── Secure Token Storage ───────────────────────────────────────────────────
-  // ⚠️ Les options Android doivent correspondre exactement à celles utilisées
+  // -- Secure Token Storage ---------------------------------------------------
+  // ! Les options Android doivent correspondre exactement à celles utilisées
   // dans AuthService et main.dart (AndroidOptions()) pour accéder au même
   // espace de stockage Keystore. Une instance sans options utiliserait un
   // cipher différent et ne lirait pas les tokens écrits par AuthService.
   static const FlutterSecureStorage _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(), // AES-256 via Keystore — idem AuthService
+    aOptions: AndroidOptions(), // AES-256 via Keystore - idem AuthService
   );
   static const String _kToken   = 'jwt_token';
   static const String _kRefresh = 'refresh_token';
 
-  // ── Token Management ──────────────────────────────────────────────────────
+  // -- Token Management ------------------------------------------------------
 
   /// Retourne le token JWT : d'abord depuis AuthState (mémoire, sans I/O),
   /// puis fallback vers le SecureStorage. Retourne null si AuthState.authToken
@@ -71,7 +72,7 @@ class ApiClient {
   /// contient encore un token expiré.
   Future<String?> getToken() async {
     // AuthState est la source de vérité en mémoire.
-    // Si null → session expirée/déconnectée, ne pas lire le stockage.
+    // Si null -> session expirée/déconnectée, ne pas lire le stockage.
     final memToken = AuthState.authToken;
     if (memToken != null) return memToken;
     return null;
@@ -130,7 +131,7 @@ class ApiClient {
     return false;
   }
 
-  // ── HTTP Verbs ───────────────────────────────────────────────────────────────
+  // -- HTTP Verbs ---------------------------------------------------------------
 
   /// GET authentifié avec retry 401.
   Future<ApiResponse> get(String path, {Map<String, String>? query}) async {
@@ -156,7 +157,7 @@ class ApiClient {
   Future<ApiResponse> post(String path, {Map<String, dynamic>? body, bool requireAuth = true}) async {
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     try {
-      // ignore: prefer_final_locals — headers est muté si !requireAuth
+      // ignore: prefer_final_locals - headers est muté si !requireAuth
       var headers = await _headers();
       if (!requireAuth) headers.remove('Authorization');
       final response = await _http
@@ -255,7 +256,7 @@ class ApiClient {
     }
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  // -- Helpers -----------------------------------------------------------------
 
   ApiResponse _parse(http.Response response) {
     final body = _tryDecode(utf8.decode(response.bodyBytes));
@@ -268,7 +269,7 @@ class ApiClient {
     if (rawDetail is String) {
       error = rawDetail;
     } else if (rawDetail is List) {
-      // 422 Unprocessable Entity — extraire le premier message de validation
+      // 422 Unprocessable Entity - extraire le premier message de validation
       error = rawDetail.isNotEmpty
           ? (rawDetail.first['msg'] ?? 'Validation error').toString()
           : 'Erreur de validation';

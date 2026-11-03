@@ -442,7 +442,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 }
 
-// ══════════ Forgot Password Dialog — 3 étapes ══════════
+// ══════════ Forgot Password Dialog - 3 étapes ══════════
 class _ForgotPasswordDialog extends StatefulWidget {
   final AuthService authService;
   const _ForgotPasswordDialog({required this.authService});

@@ -30,9 +30,9 @@ Map<String, dynamic> _waste(String? type) =>
 
 // ── Médailles pour le leaderboard ───────────────────────────────────────────
 const List<Map<String, dynamic>> _medals = [
-  {'icon': 'ðŸ¥‡', 'color': Color(0xFFFFD700)},
-  {'icon': 'ðŸ¥ˆ', 'color': Color(0xFFC0C0C0)},
-  {'icon': 'ðŸ¥‰', 'color': Color(0xFFCD7F32)},
+  {'icon': '🥇', 'color': Color(0xFFFFD700)},
+  {'icon': '🥈', 'color': Color(0xFFC0C0C0)},
+  {'icon': '🥉', 'color': Color(0xFFCD7F32)},
 ];
 
 class ScanHistoryScreen extends StatefulWidget {

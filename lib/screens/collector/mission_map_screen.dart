@@ -143,7 +143,7 @@ class _MissionMapScreenState extends State<MissionMapScreen> {
       if (resp.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('✅ Mission terminée !', style: GoogleFonts.outfit()), backgroundColor: _primaryColor),
+            SnackBar(content: Text(' Mission terminée !', style: GoogleFonts.outfit()), backgroundColor: _primaryColor),
           );
           Navigator.pop(context);
         }

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -60,7 +61,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     try {
       res = await _authService.submitQuizAnswers(quizId, _answers);
     } catch (_) {
-      res = {'success': false, 'message': 'Erreur réseau — réessayez'};
+      res = {'success': false, 'message': 'Erreur réseau - réessayez'};
     }
 
     if (mounted) {

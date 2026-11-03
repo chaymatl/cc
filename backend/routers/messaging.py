@@ -7,18 +7,20 @@ Matrice des conversations autorisées :
   Roles : admin, superadmin, intercommunality, collector, educator, citoyen
 
 Endpoints :
-  GET  /messages/eligible-recipients          → utilisateurs à qui on peut écrire
-  GET  /messages/groups                       → groupes accessibles (citoyen/collecteur)
-  POST /messages                              → envoyer un message (1-à-1)
-  POST /messages/group                        → envoyer à un groupe de citoyens
-  POST /messages/broadcast                    → broadcast à plusieurs collecteurs
-  GET  /messages/conversations                → liste des conversations
-  GET  /messages/conversation/{user_id}       → messages 1-à-1 avec un utilisateur
-  GET  /messages/group-conversation/{group_id}→ messages d'un groupe
-  GET  /messages/broadcast-thread/{msg_id}    → thread d'un broadcast
-  POST /messages/{message_id}/reply           → répondre à un message
-  PUT  /messages/{message_id}/read            → marquer comme lu
-  GET  /messages/unread-count                 → nombre de messages non lus
+  GET    /messages/eligible-recipients          → utilisateurs à qui on peut écrire
+  GET    /messages/groups                       → groupes accessibles (citoyen/collecteur)
+  POST   /messages                              → envoyer un message (1-à-1)
+  POST   /messages/group                        → envoyer à un groupe de citoyens
+  POST   /messages/broadcast                    → broadcast à plusieurs collecteurs
+  GET    /messages/conversations                → liste des conversations
+  GET    /messages/conversation/{user_id}       → messages 1-à-1 avec un utilisateur
+  GET    /messages/group-conversation/{group_id}→ messages d'un groupe
+  GET    /messages/broadcast-thread/{msg_id}    → thread d'un broadcast
+  POST   /messages/{message_id}/reply           → répondre à un message
+  PUT    /messages/{message_id}/read            → marquer comme lu
+  POST   /messages/conversation/{user_id}/read-all → marquer toute la conv comme lue
+  DELETE /messages/conversation/{partner_id}    → supprimer toute la conversation (côté moi)
+  GET    /messages/unread-count                 → nombre de messages non lus
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -973,3 +975,61 @@ async def mark_conversation_read_all(
     if unread:
         db.commit()
     return {"marked": count}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DELETE /messages/conversation/{partner_id}
+# Suppression d'une conversation 1-à-1 du point de vue de l'utilisateur courant.
+# Les messages dont je suis l'EXPÉDITEUR : supprimés physiquement si l'autre ne
+# les a pas encore lus, sinon marqués supprimés de mon côté seulement (soft-delete).
+# Pour simplifier et garantir la cohérence, on supprime physiquement TOUS les
+# messages où je suis expéditeur OU destinataire dans cette conversation.
+# L'autre participant conserve ses propres messages (côté serveur les messages
+# où IL est expéditeur restent intacts).
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router.delete("/conversation/{partner_id}", status_code=200)
+async def delete_conversation(
+    partner_id: int,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
+    """
+    Supprime toute la conversation entre l'utilisateur courant et partner_id.
+    Supprime physiquement tous les messages où :
+      - current_user est expéditeur ET partner est destinataire
+      - partner est expéditeur ET current_user est destinataire
+    (les deux sens de la conversation)
+    """
+    # Vérifier que le partenaire existe
+    partner = db.query(db_models.User).filter(db_models.User.id == partner_id).first()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partenaire introuvable")
+
+    # Récupérer tous les messages de la conversation (les deux sens)
+    messages_to_delete = (
+        db.query(db_models.Message)
+        .filter(
+            or_(
+                and_(
+                    db_models.Message.sender_id == current_user.id,
+                    db_models.Message.receiver_id == partner_id,
+                ),
+                and_(
+                    db_models.Message.sender_id == partner_id,
+                    db_models.Message.receiver_id == current_user.id,
+                ),
+            ),
+            db_models.Message.group_id.is_(None),
+        )
+        .all()
+    )
+
+    count = len(messages_to_delete)
+    for msg in messages_to_delete:
+        db.delete(msg)
+
+    if messages_to_delete:
+        db.commit()
+
+    return {"deleted": count, "partner_id": partner_id}

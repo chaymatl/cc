@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -27,9 +28,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final TextEditingController _replyController = TextEditingController();
   bool _isSendingReply = false;
 
-  // ── Rafraîchissement automatique toutes les 30 secondes ──
+  // -- Rafraîchissement automatique toutes les 30 secondes --
   Timer? _refreshTimer;
-  // ── Écouteur FCM foreground (nouvelle notif reçue quand écran ouvert) ──
+  // -- Écouteur FCM foreground (nouvelle notif reçue quand écran ouvert) --
   StreamSubscription<RemoteMessage>? _fcmSubscription;
 
   @override
@@ -38,7 +39,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     timeago.setLocaleMessages('fr', timeago.FrMessages());
     _loadNotifications();
 
-    // Rafraîchir toutes les 30 s → nouvelles notifs visibles sans action
+    // Rafraîchir toutes les 30 s -> nouvelles notifs visibles sans action
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted && AuthState.hasValidToken) _silentRefresh();
     });
@@ -156,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final type   = notif['type'] ?? '';
     final notifId = notif['id'];
 
-    // — Réponse à un message de l'intercommunalité
+    // - Réponse à un message de l'intercommunalité
     if (type == 'intercommunality_message' || type == 'intercommunality_group_message') {
       if (notifId == null) return;
       setState(() => _isSendingReply = true);
@@ -192,7 +193,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    // — Réponse classique à un commentaire
+    // - Réponse classique à un commentaire
     final postId = notif['post_id'];
     final commentId = notif['comment_id'];
     if (postId == null) return;
@@ -313,7 +314,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final isReplying = _replyingToNotifId == notifId;
     final fromUser = notif['from_user_name'] ?? 'Intercommunalité';
 
-    // ── Correction BUG : role est un enum UserRole, PAS une String ──
+    // -- Correction BUG : role est un enum UserRole, PAS une String --
     final userRole = AuthState.currentUser?.role;
     final canReply = isIntercommunality &&
         (userRole == UserRole.collector ||
@@ -380,7 +381,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ],
                         ),
                       ),
-                    // Reply button — commentaires ET messages intercommunalité
+                    // Reply button - commentaires ET messages intercommunalité
                     if ((isComment && postId != null || canReply) && AuthState.isLoggedIn)
                       GestureDetector(
                         onTap: () {

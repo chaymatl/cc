@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls, prefer_const_constructors, prefer_interpolation_to_compose_strings
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -201,7 +202,7 @@ class _CollectorTabState extends State<CollectorTab>
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         slivers: [
-        // ── AppBar ─────────────────────────────────────────────────────────
+        // -- AppBar ---------------------------------------------------------
         SliverAppBar(
           automaticallyImplyLeading: false,
           expandedHeight: 220,
@@ -236,21 +237,21 @@ class _CollectorTabState extends State<CollectorTab>
           padding: const EdgeInsets.all(20),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // ── Bannière d'urgence ──────────────────────────────────────
+              // -- Bannière d'urgence --------------------------------------
               if (hasCritical) ...[
                 _buildUrgentBanner(satureCenters, maintenanceCenters),
                 const SizedBox(height: 24),
               ],
 
-              // ── Mes Missions (assignées par l'intercommunalité) ──────────
+              // -- Mes Missions (assignées par l'intercommunalité) ----------
               _buildMissionsSection(),
               const SizedBox(height: 28),
 
-              // ── Résumé flux ─────────────────────────────────────────────
+              // -- Résumé flux ---------------------------------------------
               _buildFluxStats(satureCenters.length, maintenanceCenters.length, _centers.length),
               const SizedBox(height: 28),
 
-              // ── Alertes ─────────────────────────────────────────────────
+              // -- Alertes -------------------------------------------------
               Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -344,7 +345,7 @@ class _CollectorTabState extends State<CollectorTab>
 
               const SizedBox(height: 28),
 
-              // ── Flux par centre ─────────────────────────────────────────
+              // -- Flux par centre -----------------------------------------
               Row(children: [
                 Container(
                   padding: const EdgeInsets.all(7),
@@ -378,7 +379,7 @@ class _CollectorTabState extends State<CollectorTab>
   );
 }
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  // -- Header ------------------------------------------------------------------
   Widget _buildHeader(int sature, int maintenance) {
     return Container(
       decoration: const BoxDecoration(
@@ -494,7 +495,7 @@ class _CollectorTabState extends State<CollectorTab>
     );
   }
 
-  // ── Bannière urgence ─────────────────────────────────────────────────────────
+  // -- Bannière urgence ---------------------------------------------------------
   Widget _buildUrgentBanner(List<Map<String, dynamic>> sature, List<Map<String, dynamic>> maintenance) {
     final count = sature.length + maintenance.length;
     return Container(
@@ -539,7 +540,7 @@ class _CollectorTabState extends State<CollectorTab>
     Expanded(child: Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 11), overflow: TextOverflow.ellipsis)),
   ]);
 
-  // ── Stats flux ───────────────────────────────────────────────────────────────
+  // -- Stats flux ---------------------------------------------------------------
   Widget _buildFluxStats(int sature, int maintenance, int total) {
     final disponible = total - sature - maintenance;
     return Row(children: [
@@ -565,7 +566,7 @@ class _CollectorTabState extends State<CollectorTab>
     ]),
   );
 
-  // ── Carte alerte ─────────────────────────────────────────────────────────────
+  // -- Carte alerte -------------------------------------------------------------
   Widget _buildAlertCard(Map<String, dynamic> alert) {
     final isSature = (alert['title'] ?? '').toString().contains('Saturé');
     final isRead = alert['is_read'] == true;
@@ -628,7 +629,7 @@ class _CollectorTabState extends State<CollectorTab>
     ]),
   );
 
-  // ── Flux par centre ──────────────────────────────────────────────────────────
+  // -- Flux par centre ----------------------------------------------------------
   Widget _buildFlowItem(Map<String, dynamic> center) {
     final status = center['status'] ?? 'disponible';
     final loadLevel = double.tryParse(center['load_level']?.toString() ?? '0') ?? 0.0;
@@ -688,7 +689,7 @@ class _CollectorTabState extends State<CollectorTab>
     );
   }
 
-  // ── Section Mes Missions ───────────────────────────────────────────────────
+  // -- Section Mes Missions ---------------------------------------------------
 
   static const _missionPrimary = Color(0xFF1565C0);
 
@@ -701,7 +702,7 @@ class _CollectorTabState extends State<CollectorTab>
         .toList();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // ── En-tête section ─────────────────────────────────────────────────
+      // -- En-tête section -------------------------------------------------
       Material(
         color: Colors.transparent,
         child: InkWell(
@@ -890,7 +891,7 @@ class _CollectorTabState extends State<CollectorTab>
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ── En-tête carte couleur zone ─────────────────────────────────
+          // -- En-tête carte couleur zone ---------------------------------
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -1074,5 +1075,5 @@ class _CollectorTabState extends State<CollectorTab>
   }
 }
 
-// ── Widgets helper ────────────────────────────────────────────────────────────
+// -- Widgets helper ------------------------------------------------------------
 

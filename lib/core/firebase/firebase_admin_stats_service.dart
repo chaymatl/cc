@@ -1,15 +1,15 @@
-﻿/// lib/core/firebase/firebase_admin_stats_service.dart
+/// lib/core/firebase/firebase_admin_stats_service.dart
 ///
 /// ╔══════════════════════════════════════════════════════════════════╗
-/// ║  SERVICE FIREBASE RTDB — DASHBOARD ADMIN TEMPS RÉEL             ║
+/// ║  SERVICE FIREBASE RTDB - DASHBOARD ADMIN TEMPS RÉEL             ║
 /// ║                                                                  ║
 /// ║  Sources Firebase utilisées :                                    ║
-/// ║    /admin_stats/         → KPIs agrégés (mise à jour par backend)║
-/// ║    /leaderboard/         → Top citoyens par score                ║
-/// ║    /poubelles/           → État temps réel de chaque poubelle    ║
-/// ║    /utilisateurs/        → Profils utilisateurs                  ║
+/// ║    /admin_stats/         -> KPIs agrégés (mise à jour par backend)║
+/// ║    /leaderboard/         -> Top citoyens par score                ║
+/// ║    /poubelles/           -> État temps réel de chaque poubelle    ║
+/// ║    /utilisateurs/        -> Profils utilisateurs                  ║
 /// ║                                                                  ║
-/// ║  LECTURE SEULE — Firebase Admin SDK écrit, Flutter lit.          ║
+/// ║  LECTURE SEULE - Firebase Admin SDK écrit, Flutter lit.          ║
 /// ╚══════════════════════════════════════════════════════════════════╝
 library firebase_admin_stats_service;
 

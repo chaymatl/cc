@@ -1,9 +1,11 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../constants.dart';
 import '../../widgets/meetings_section.dart';
@@ -202,7 +204,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
               child: AppLoadingView(message: 'Chargement du contenu pédagogique...'),
             )
           else ...[
-            // ── Séances Google Meet ──────────────────────────────────────
+            // -- Séances Google Meet --------------------------------------
             if (_selectedCategory == 'Tout')
               const SliverToBoxAdapter(
                 child: MeetingsSection(),
@@ -389,8 +391,8 @@ class _MultimediaTabState extends State<MultimediaTab> {
                   const SizedBox(height: 4),
                   Text(
                     isCompleted
-                        ? 'Quiz complété ✓  •  Score enregistré'
-                        : (desc.isNotEmpty ? desc : '$totalQ questions • Corrigé par IA'),
+                        ? 'Quiz complété -  *  Score enregistré'
+                        : (desc.isNotEmpty ? desc : '$totalQ questions * Corrigé par IA'),
                     style: GoogleFonts.inter(
                       color: Colors.white.withOpacity(0.75),
                       fontSize: 12,
@@ -585,6 +587,13 @@ class _MultimediaTabState extends State<MultimediaTab> {
       fullUrl = '${ApiConstants.baseUrl}$videoUrl';
     }
 
+    // Si c'est une URL YouTube -> ouvrir dans le navigateur externe
+    final isYoutube = fullUrl.contains('youtube.com') || fullUrl.contains('youtu.be');
+    if (isYoutube) {
+      launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -621,6 +630,7 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
   late VideoPlayerController _videoController;
   ChewieController? _chewieController;
   bool _hasError = false;
+  bool _retrying = false;
 
   @override
   void initState() {
@@ -629,8 +639,10 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
   }
 
   Future<void> _initializePlayer() async {
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    setState(() { _hasError = false; _retrying = true; });
+    _chewieController?.dispose();
     try {
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
       await _videoController.initialize();
       if (!mounted) return;
       _chewieController = ChewieController(
@@ -648,16 +660,17 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
           backgroundColor: Colors.grey.shade300,
         ),
       );
-      setState(() {});
+      setState(() { _retrying = false; });
     } catch (e) {
-      if (mounted) setState(() => _hasError = true);
+      debugPrint('[VideoPlayer] Erreur: $e | URL: ${widget.videoUrl}');
+      if (mounted) setState(() { _hasError = true; _retrying = false; });
     }
   }
 
   @override
   void dispose() {
     _chewieController?.dispose();
-    _videoController.dispose();
+    if (!_retrying) _videoController.dispose();
     super.dispose();
   }
 
@@ -708,11 +721,37 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
           // Video player
           Expanded(
             child: _hasError
-                ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                    const SizedBox(height: 12),
-                    Text('Impossible de lire la vidéo', style: GoogleFonts.inter(color: Colors.white70)),
-                  ]))
+                ? Center(child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 56),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Impossible de lire la vidéo',
+                        style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Le fichier vidéo est introuvable sur le serveur.\nContactez l\'administrateur pour re-uploader la vidéo.',
+                        style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, height: 1.5),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: _retrying ? null : _initializePlayer,
+                        icon: _retrying
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.refresh_rounded, size: 16),
+                        label: Text(_retrying ? 'Chargement...' : 'Réessayer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                      ),
+                    ]),
+                  ))
                 : _chewieController != null
                     ? Chewie(controller: _chewieController!)
                     : const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
@@ -723,7 +762,7 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
   }
 }
 
-/// Page de détail d'une catégorie — affiche toutes les vidéos du dossier
+/// Page de détail d'une catégorie - affiche toutes les vidéos du dossier
 class _CategoryDetailPage extends StatefulWidget {
   final int catId;
   final String title;
@@ -762,6 +801,12 @@ class _CategoryDetailPageState extends State<_CategoryDetailPage> {
   void _playVideo(String videoUrl, String title, String educatorName, String dateLabel) {
     String fullUrl = videoUrl;
     if (videoUrl.startsWith('/')) fullUrl = '${ApiConstants.baseUrl}$videoUrl';
+    // YouTube -> ouvrir dans le navigateur
+    final isYoutube = fullUrl.contains('youtube.com') || fullUrl.contains('youtu.be');
+    if (isYoutube) {
+      launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
+      return;
+    }
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => _VideoPlayerSheet(videoUrl: fullUrl, title: title, educatorName: educatorName, dateLabel: dateLabel),

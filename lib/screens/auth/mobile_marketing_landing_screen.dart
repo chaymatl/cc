@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -519,7 +520,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
 
 class _ContinuousKenBurns extends StatefulWidget {
   final List<String> imageUrls;
-  const _ContinuousKenBurns({super.key, required this.imageUrls});
+  const _ContinuousKenBurns({required this.imageUrls});
 
   @override
   State<_ContinuousKenBurns> createState() => _ContinuousKenBurnsState();

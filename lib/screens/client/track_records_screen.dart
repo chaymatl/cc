@@ -426,7 +426,7 @@ class _TrackRecordsScreenState extends State<TrackRecordsScreen> {
     final weight = (scan['weight_kg'] as num?)?.toDouble();
     final binCode = scan['bin_code'] as String? ?? '';
     final rawDate = scan['scanned_at'] as String?;
-    final dateStr = rawDate != null ? _formatDate(rawDate) : '—';
+    final dateStr = rawDate != null ? _formatDate(rawDate) : '-';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),

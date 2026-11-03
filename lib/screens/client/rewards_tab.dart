@@ -326,7 +326,7 @@ class _RewardsTabState extends State<RewardsTab> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                _loaded ? _score.toStringAsFixed(0) : '—',
+                _loaded ? _score.toStringAsFixed(0) : '-',
                 style: GoogleFonts.spaceGrotesk(
                   color: Colors.white,
                   fontSize: 48,
@@ -483,7 +483,7 @@ class _RewardsTabState extends State<RewardsTab> {
     const LevelInfo(rank: 1, name: 'Éco-Citoyen',        icon: '🌱', color: '#4CAF50', gradient: [], minPoints: 0,      advantages: [], exclusiveRewards: []),
     const LevelInfo(rank: 2, name: 'Champion Vert',       icon: '🏆', color: '#FF9800', gradient: [], minPoints: 2000,   advantages: [], exclusiveRewards: []),
     const LevelInfo(rank: 3, name: 'Gardien de la Terre', icon: '🌍', color: '#2196F3', gradient: [], minPoints: 5000,   advantages: [], exclusiveRewards: []),
-    const LevelInfo(rank: 4, name: 'Héros du Recyclage',  icon: '♻️', color: '#9C27B0', gradient: [], minPoints: 10000,  advantages: [], exclusiveRewards: []),
+    const LevelInfo(rank: 4, name: 'Héros du Recyclage',  icon: '', color: '#9C27B0', gradient: [], minPoints: 10000,  advantages: [], exclusiveRewards: []),
     const LevelInfo(rank: 5, name: 'Ambassadeur Éco',     icon: '⭐', color: '#FF5722', gradient: [], minPoints: 20000,  advantages: [], exclusiveRewards: []),
     const LevelInfo(rank: 6, name: 'Légende Verte',       icon: '👑', color: '#FFD700', gradient: [], minPoints: 50000,  advantages: [], exclusiveRewards: []),
   ];
@@ -554,7 +554,7 @@ class _RewardsTabState extends State<RewardsTab> {
               ),
               const SizedBox(height: 4),
               Text(
-                isCurrent ? ('Niveau Actuel ✓') : subtitle,
+                isCurrent ? ('Niveau Actuel ') : subtitle,
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -761,7 +761,7 @@ class _RewardsTabState extends State<RewardsTab> {
                 Row(children: [
                   Icon(Icons.check_circle_rounded, color: color, size: 12),
                   const SizedBox(width: 4),
-                  Text('Débloqué ✓',
+                  Text('Débloqué ',
                     style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
                 ])
               else
@@ -985,7 +985,7 @@ class _RewardsTabState extends State<RewardsTab> {
                     Row(children: [
                       Icon(Icons.check_circle_rounded, color: color, size: 12),
                       const SizedBox(width: 4),
-                      Text('Débloqué ✓',
+                      Text('Débloqué ',
                         style: GoogleFonts.inter(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
                     ]),
                   ],

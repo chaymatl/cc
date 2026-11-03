@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -144,7 +145,7 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
           controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
-            // ── App Bar ──
+            // -- App Bar --
             SliverAppBar(
               automaticallyImplyLeading: false,
               pinned: true,
@@ -206,7 +207,7 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
               ),
             ),
 
-            // ── Contenu ──
+            // -- Contenu --
             if (_loading)
               SliverToBoxAdapter(
                 child: SkeletonList(
@@ -244,7 +245,7 @@ class _FeedTabState extends State<FeedTab> with SingleTickerProviderStateMixin {
   }
 }
 
-// ── Liste verticale (1 post par ligne) ───────────────────────────────────────
+// -- Liste verticale (1 post par ligne) ---------------------------------------
 class _MasonryGrid extends StatelessWidget {
   final List<Map<String, dynamic>> posts;
   final AuthService auth;
@@ -274,7 +275,7 @@ class _MasonryGrid extends StatelessWidget {
 }
 
 
-// ── Pinterest Pin Card ────────────────────────────────────────────────────────
+// -- Pinterest Pin Card --------------------------------------------------------
 class _PinCard extends StatefulWidget {
   final Map<String, dynamic> post;
   final AuthService auth;
@@ -413,7 +414,7 @@ class _PinCardState extends State<_PinCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Image avec overlay actions ──
+            // -- Image avec overlay actions --
             if (hasImage)
               Stack(children: [
                 AspectRatio(
@@ -475,7 +476,7 @@ class _PinCardState extends State<_PinCard> {
                   ),
               ]),
 
-            // ── Texte & Auteur ──
+            // -- Texte & Auteur --
             Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
@@ -586,7 +587,7 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-// ── Create Post Bottom Sheet ──────────────────────────────────────────────────
+// -- Create Post Bottom Sheet --------------------------------------------------
 class _CreatePostSheet extends StatefulWidget {
   final AuthService auth;
   final VoidCallback onPosted;
@@ -638,8 +639,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               Expanded(
                 child: Text(
                   pending
-                      ? ('⏳ Publication envoyée ! Elle sera visible très bientôt.')
-                      : ('✅ Publication publiée !'),
+                      ? 'Publication envoyée ! Elle sera visible très bientôt.'
+                      : 'Publication publiée !',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ),

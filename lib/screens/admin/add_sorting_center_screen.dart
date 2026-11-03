@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls, prefer_const_constructors
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -145,13 +146,13 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     super.dispose();
   }
 
-  // ── Update coord controllers when location changes ─────────────────────────
+  // -- Update coord controllers when location changes -------------------------
   void _updateCoordsDisplay(LatLng loc) {
     _latController.text = loc.latitude.toStringAsFixed(6);
     _lngController.text = loc.longitude.toStringAsFixed(6);
   }
 
-  // ── Reverse geocode: coords → human address ────────────────────────────────
+  // -- Reverse geocode: coords -> human address --------------------------------
   Future<void> _reverseGeocode(LatLng loc) async {
     if (_isReverseGeocoding) return;
     setState(() => _isReverseGeocoding = true);
@@ -178,7 +179,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     if (mounted) setState(() => _isReverseGeocoding = false);
   }
 
-  // ── Apply manually entered coordinates ────────────────────────────────────
+  // -- Apply manually entered coordinates ------------------------------------
   void _applyManualCoords() {
     final lat = double.tryParse(_latController.text.trim());
     final lng = double.tryParse(_lngController.text.trim());
@@ -267,7 +268,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     final trimmed = query.trim();
     List<dynamic> results = [];
 
-    // ── Étape 1 : Photon (komoot) — API gratuite, pas de rate-limit, OSM-based ──
+    // -- Étape 1 : Photon (komoot) - API gratuite, pas de rate-limit, OSM-based --
     try {
       // Centre de la Tunisie pour biaiser les résultats
       final photonUri = Uri.parse(
@@ -281,7 +282,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       if (!mounted) return;
 
       if (resp.statusCode == 200) {
-        // Photon retourne du GeoJSON → convertir au format Nominatim
+        // Photon retourne du GeoJSON -> convertir au format Nominatim
         final geojson = json.decode(resp.body) as Map<String, dynamic>;
         final features = geojson['features'] as List<dynamic>? ?? [];
         // Filtrer sur la Tunisie d'abord
@@ -323,7 +324,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       }
     } catch (_) {}
 
-    // ── Étape 2 : Nominatim fallback (si Photon vide) ──
+    // -- Étape 2 : Nominatim fallback (si Photon vide) --
     if (results.isEmpty && mounted) {
       try {
         final nomUri = Uri.parse(
@@ -343,7 +344,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       } catch (_) {}
     }
 
-    // ── Étape 3 : Nominatim mondial (dernier recours) ──
+    // -- Étape 3 : Nominatim mondial (dernier recours) --
     if (results.isEmpty && mounted) {
       try {
         final nomUri2 = Uri.parse(
@@ -427,7 +428,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('📋 Coordonnées copiées : $text'),
+        content: Text(' Coordonnées copiées : $text'),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
@@ -539,7 +540,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       ),
       body: Stack(
         children: [
-          // ── 1. Interactive Map ───────────────────────────────────────────────
+          // -- 1. Interactive Map -----------------------------------------------
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -551,7 +552,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
             children: [
               TileLayer(
-                // ESRI ArcGIS World Street Map — gratuit, sans clé, CDN mondial
+                // ESRI ArcGIS World Street Map - gratuit, sans clé, CDN mondial
                 // IMPORTANT: ESRI utilise {z}/{y}/{x} (y avant x), pas {z}/{x}/{y}
                 urlTemplate:
                     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -587,7 +588,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ],
           ), // FlutterMap
 
-          // ── 2. Zoom controls (right side) ────────────────────────────────────
+          // -- 2. Zoom controls (right side) ------------------------------------
           Positioned(
             right: 12,
             bottom: screenHeight * 0.48 + 8,
@@ -604,7 +605,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
           ),
 
-          // ── 3. Address bar + GPS chip above bottom sheet ─────────────────────
+          // -- 3. Address bar + GPS chip above bottom sheet ---------------------
           Positioned(
             bottom: screenHeight * 0.46 + 4,
             left: 12,
@@ -677,7 +678,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
           ),
 
-          // ── 3. Bottom Details Sheet ─────────────────────────────────────────
+          // -- 3. Bottom Details Sheet -----------------------------------------
           Positioned(
             bottom: 0,
             left: 0,
@@ -750,7 +751,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // ── Name field ──────────────────────────────────────
+                          // -- Name field --------------------------------------
                           TextField(
                             controller: _nameController,
                             style: GoogleFonts.inter(
@@ -779,7 +780,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                           ),
                           const SizedBox(height: 10),
 
-                          // ── Hours field ─────────────────────────────────────
+                          // -- Hours field -------------------------------------
                           TextField(
                             controller: _hoursController,
                             style: GoogleFonts.inter(
@@ -807,7 +808,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                             ),
                           ),
 
-                          // ── Manual coordinates panel (toggle) ───────────────
+                          // -- Manual coordinates panel (toggle) ---------------
                           if (_showCoords) ...[
                             const SizedBox(height: 12),
                             Container(
@@ -1088,7 +1089,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
           ).animate().slideY(begin: 1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
 
-          // ── 4. Search Bar Overlay ────────────────────────────────────────────
+          // -- 4. Search Bar Overlay --------------------------------------------
           Positioned(
             top: 12,
             left: 16,
@@ -1096,7 +1097,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Search input ──────────────────────────────────────────────
+                // -- Search input ----------------------------------------------
                 ClipRRect(
                   borderRadius: BorderRadius.circular(18),
                   child: BackdropFilter(
@@ -1174,7 +1175,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                   ),
                 ),
 
-                // ── Résultats de recherche ──────────────────────────────────
+                // -- Résultats de recherche ----------------------------------
                 if (_searchResults.isNotEmpty || _searchNoResults)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(18),
@@ -1202,7 +1203,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                           ],
                         ),
                         child: _searchNoResults
-                            // ── Aucun résultat ──────────────────────────────
+                            // -- Aucun résultat ------------------------------
                             ? Padding(
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 16),
@@ -1220,7 +1221,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                                   )),
                                 ]),
                               )
-                            // ── Liste des résultats ─────────────────────────
+                            // -- Liste des résultats -------------------------
                             : ListView.separated(
                                 shrinkWrap: true,
                                 padding:

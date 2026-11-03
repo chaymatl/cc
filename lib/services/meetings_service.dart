@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 // lib/services/meetings_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,7 +14,7 @@ class MeetingsService {
           'Authorization': 'Bearer ${AuthState.authToken}',
       };
 
-  // ── Éducateur ──────────────────────────────────────────────────────────────
+  // -- Éducateur --------------------------------------------------------------
 
   /// Créer une séance
   static Future<Map<String, dynamic>> createMeeting({
@@ -76,7 +77,7 @@ class MeetingsService {
     return res.statusCode == 200;
   }
 
-  // ── Citoyen ────────────────────────────────────────────────────────────────
+  // -- Citoyen ----------------------------------------------------------------
 
   /// Séances à venir pour le citoyen
   static Future<List<dynamic>> getUpcomingMeetings() async {

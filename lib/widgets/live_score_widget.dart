@@ -1,6 +1,6 @@
 /// lib/widgets/live_score_widget.dart
 ///
-/// Widget Score Temps Réel — affiché dans le profil/dashboard du citoyen.
+/// Widget Score Temps Réel - affiché dans le profil/dashboard du citoyen.
 /// S'abonne à Firebase RTDB et affiche une animation lors de chaque gain de points.
 
 import 'package:flutter/material.dart';
@@ -47,9 +47,9 @@ class LiveScoreWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Stream 1 : /scores/{userId} — mis à jour par l'API (quiz, scan Flutter)
+    // Stream 1 : /scores/{userId} - mis à jour par l'API (quiz, scan Flutter)
     final apiStream = FirebaseScoreService().watchScore(userId);
-    // Stream 2 : /utilisateurs/{qrCode}/score — mis à jour par l'Arduino ESP32
+    // Stream 2 : /utilisateurs/{qrCode}/score - mis à jour par l'Arduino ESP32
     final arduinoStream = FirebaseScoreService().watchArduinoScore(qrCode);
 
     return StreamBuilder<ScoreSnapshot>(

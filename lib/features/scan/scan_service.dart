@@ -2,7 +2,7 @@
 ///
 /// Responsabilité unique : appels HTTP vers les endpoints /qr/* de FastAPI.
 ///
-/// Ce service NE contient pas de logique métier — il traduit des appels
+/// Ce service NE contient pas de logique métier - il traduit des appels
 /// Dart en requêtes HTTP et retourne des données brutes ou typées.
 /// La logique de validation (bin actif, anti double-scan) reste dans FastAPI.
 library scan_service;
@@ -112,7 +112,7 @@ class ScanService {
 
       if (response.statusCode == 200) {
         final result = ScanResult.fromMap(data);
-        // ── Synchronisation score → Firebase RTDB /utilisateurs/{qrCode}/ ──
+        // ── Synchronisation score -> Firebase RTDB /utilisateurs/{qrCode}/ ──
         // Écrire le score dans le nœud existant du citoyen (clé = QR code).
         if (result.success && result.scoreAfter > 0) {
           final user = AuthState.currentUser;
@@ -122,7 +122,7 @@ class ScanService {
               qrCode:   qrCode,
               name:     user?.name ?? result.userName ?? 'Citoyen',
               newScore: result.scoreAfter,
-            ).ignore(); // fire-and-forget — non bloquant
+            ).ignore(); // fire-and-forget - non bloquant
             debugPrint('[SCAN] Score RTDB mis à jour : ${result.scoreAfter} pts ($qrCode)');
           }
         }

@@ -185,7 +185,7 @@ class AppTheme {
         bodyMedium: base.textTheme.bodyMedium?.copyWith(color: const Color(0xFF94A3B8), textBaseline: TextBaseline.alphabetic),
         bodySmall: base.textTheme.bodySmall?.copyWith(color: const Color(0xFF94A3B8), textBaseline: TextBaseline.alphabetic),
       ),
-      // Cards & surfaces — toutes les Card() deviennent sombres automatiquement
+      // Cards & surfaces - toutes les Card() deviennent sombres automatiquement
       cardTheme: CardTheme(
         color: const Color(0xFF1E293B),
         shadowColor: Colors.black.withOpacity(0.3),
@@ -281,7 +281,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.all(20),
       ),
-      // Dropdown menus — fond sombre avec texte clair
+      // Dropdown menus - fond sombre avec texte clair
       dropdownMenuTheme: DropdownMenuThemeData(
         textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 14),
         menuStyle: const MenuStyle(

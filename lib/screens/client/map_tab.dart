@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -61,7 +62,7 @@ extension VehicleModeExtension on VehicleMode {
     }
   }
 
-  /// Vitesse moyenne réelle en ville (km/h) — utilisée pour estimer la durée
+  /// Vitesse moyenne réelle en ville (km/h) - utilisée pour estimer la durée
   /// quand OSRM échoue ou qu'on tombe sur un serveur au mauvais profil.
   double get speedKmh {
     switch (this) {
@@ -87,14 +88,14 @@ class _MapTabState extends State<MapTab> {
   LatLng? _currentLocation;
   VehicleMode _selectedVehicle = VehicleMode.car;
 
-  // ── Routing state ──────────────────────────────────────────────────────────
+  // -- Routing state ----------------------------------------------------------
   List<LatLng> _routePoints = [];
   bool _isRouting = false;
   Map<String, dynamic>? _activeDestination; // le point vers lequel on navigue
   double? _routeDistanceKm;
   int? _routeDurationMin;
 
-  // ── Types de déchets (français uniquement) ─────────────────────────────────
+  // -- Types de déchets (français uniquement) ---------------------------------
   static const List<Map<String, String>> _typeMap = [
     {'key': 'tous',         'fr': 'Tous'},
     {'key': 'plastique',    'fr': 'Plastique'},
@@ -456,9 +457,9 @@ class _MapTabState extends State<MapTab> {
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Navigation intégrée via OSRM (Open Source Routing Machine — pas Google Maps)
-  // ──────────────────────────────────────────────────────────────────────────
+  // --------------------------------------------------------------------------
+  // Navigation intégrée via OSRM (Open Source Routing Machine - pas Google Maps)
+  // --------------------------------------------------------------------------
   Future<void> _navigateInApp(
     double destLat,
     double destLng,
@@ -485,9 +486,9 @@ class _MapTabState extends State<MapTab> {
       final profile = _selectedVehicle.osrmProfile;
       final vehicle = _selectedVehicle;
 
-      // Le serveur project-osrm supporte tous les profils (foot, car…)
+      // Le serveur project-osrm supporte tous les profils (foot, car...)
       // routing.openstreetmap.de/routed-{profile} utilise /foot/ ou /driving/
-      // selon le profil — pas toujours /driving/.
+      // selon le profil - pas toujours /driving/.
       final List<String> osrmServers = [
         'https://router.project-osrm.org',
         'https://routing.openstreetmap.de/routed-$profile',
@@ -527,19 +528,19 @@ class _MapTabState extends State<MapTab> {
         final data = json.decode(response.body);
         final route = data['routes'][0];
         final double distanceM = (route['distance'] as num).toDouble();
-        // Durée OSRM brute — tient compte des types de routes et limites de vitesse
+        // Durée OSRM brute - tient compte des types de routes et limites de vitesse
         double durationS = (route['duration'] as num).toDouble();
 
-        // ── Durée selon le mode de transport ─────────────────────────────────
-        // • Voiture → durée OSRM directe (limites de vitesse réelles par route)
-        // • Moto    → durée OSRM car × 0.80 (moto dépasse, accélère plus vite)
-        // • À pied  → calcul manuel distance / 5 km/h
-        //             ⚠️ router.project-osrm.org retourne la durée VOITURE
-        //             même avec le profil 'foot' → on ne peut pas s'y fier.
+        // -- Durée selon le mode de transport ---------------------------------
+        // * Voiture -> durée OSRM directe (limites de vitesse réelles par route)
+        // * Moto    -> durée OSRM car x 0.80 (moto dépasse, accélère plus vite)
+        // * À pied  -> calcul manuel distance / 5 km/h
+        //             ! router.project-osrm.org retourne la durée VOITURE
+        //             même avec le profil 'foot' -> on ne peut pas s'y fier.
         final double distKm = distanceM / 1000;
         if (vehicle == VehicleMode.moto) {
           durationS = durationS * 0.80;
-          debugPrint('[OSRM] Moto : durée car × 0.80 = ${(durationS / 60).ceil()} min');
+          debugPrint('[OSRM] Moto : durée car x 0.80 = ${(durationS / 60).ceil()} min');
         } else if (vehicle == VehicleMode.foot) {
           durationS = (distKm / vehicle.speedKmh) * 3600; // 5 km/h marche
           debugPrint('[OSRM] À pied : ${distKm.toStringAsFixed(1)} km ÷ ${vehicle.speedKmh} km/h = ${(durationS / 60).ceil()} min');
@@ -650,9 +651,9 @@ class _MapTabState extends State<MapTab> {
     });
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
+  // --------------------------------------------------------------------------
   // Trouver le point de tri le plus proche et naviguer vers lui (sans Google Maps)
-  // ──────────────────────────────────────────────────────────────────────────
+  // --------------------------------------------------------------------------
   bool _isFindingNearest = false;
 
   Future<void> _findAndNavigateToNearestPoint() async {
@@ -720,7 +721,7 @@ class _MapTabState extends State<MapTab> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Permission de localisation refusée — autorisez-la dans les paramètres',
+                'Permission de localisation refusée - autorisez-la dans les paramètres',
                 style: GoogleFonts.inter(fontSize: 13),
               ),
               backgroundColor: Colors.red,
@@ -811,7 +812,7 @@ class _MapTabState extends State<MapTab> {
         );
       }
 
-      // 6. Calculer l'itinéraire OSRM (non bloquant — affiche le marqueur même si ça échoue)
+      // 6. Calculer l'itinéraire OSRM (non bloquant - affiche le marqueur même si ça échoue)
       await _navigateInApp(nearestLat, nearestLng, nearest);
 
     } catch (e) {
@@ -876,7 +877,7 @@ class _MapTabState extends State<MapTab> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Carte flutter_map (OpenStreetMap — intégrée, sans Google Maps) ──
+          // -- Carte flutter_map (OpenStreetMap - intégrée, sans Google Maps) --
           FlutterMap(
             mapController: _mapController,
             options: const MapOptions(
@@ -894,7 +895,7 @@ class _MapTabState extends State<MapTab> {
                 fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
               ),
 
-              // ── Tracé de l'itinéraire ────────────────────────────────
+              // -- Tracé de l'itinéraire --------------------------------
               if (_routePoints.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -970,7 +971,7 @@ class _MapTabState extends State<MapTab> {
             ],
           ),
 
-          // ── Overlay de chargement initial ────────────────────────────────
+          // -- Overlay de chargement initial --------------------------------
           if (_isLoading)
             Positioned(
               top: 140, left: 0, right: 0,
@@ -993,7 +994,7 @@ class _MapTabState extends State<MapTab> {
               ),
             ),
 
-          // ── Indicateur de calcul d'itinéraire ────────────────────────────
+          // -- Indicateur de calcul d'itinéraire ----------------------------
           if (_isRouting)
             Positioned(
               top: 140, left: 0, right: 0,
@@ -1023,7 +1024,7 @@ class _MapTabState extends State<MapTab> {
               ).animate().fadeIn(duration: 200.ms),
             ),
 
-          // ── Indicateur de mise à jour silencieuse ──────────────────────
+          // -- Indicateur de mise à jour silencieuse ----------------------
           if (_isRefreshing && !_isLoading)
             Positioned(
               top: 100, right: 16,
@@ -1045,7 +1046,7 @@ class _MapTabState extends State<MapTab> {
               ).animate().fadeIn(duration: 300.ms),
             ),
 
-          // ── Gradient top/bottom ──────────────────────────────────────────
+          // -- Gradient top/bottom ------------------------------------------
           IgnorePointer(
             child: Container(
               decoration: BoxDecoration(
@@ -1059,7 +1060,7 @@ class _MapTabState extends State<MapTab> {
             ),
           ),
 
-          // ── Barre de recherche + filtres ─────────────────────────────────
+          // -- Barre de recherche + filtres ---------------------------------
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1103,7 +1104,7 @@ class _MapTabState extends State<MapTab> {
             ),
           ),
 
-          // ── Panneau d'itinéraire actif (visible dès que la destination est choisie) ──
+          // -- Panneau d'itinéraire actif (visible dès que la destination est choisie) --
           if (_activeDestination != null)
             Positioned(
               bottom: 0, left: 0, right: 0,
@@ -1126,7 +1127,7 @@ class _MapTabState extends State<MapTab> {
               ).animate().slideY(begin: 1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
             ),
 
-          // ── Bouton « Point le plus proche » ──────────────────────────────
+          // -- Bouton « Point le plus proche » ------------------------------
           if (!_isLoading && _activeDestination == null)
             Positioned(
               bottom: 192,
@@ -1192,7 +1193,7 @@ class _MapTabState extends State<MapTab> {
               ),
             ),
 
-          // ── Compteur de points ────────────────────────────────────────────
+          // -- Compteur de points --------------------------------------------
           if (!_isLoading && _activeDestination == null)
             Positioned(
               bottom: 148, left: 24,
@@ -1222,7 +1223,7 @@ class _MapTabState extends State<MapTab> {
               ),
             ),
 
-          // ── Bouton ma position & contrôles de zoom ────────────────────────
+          // -- Bouton ma position & contrôles de zoom ------------------------
           Positioned(
             bottom: _activeDestination != null && _routePoints.isNotEmpty ? 220 : 140,
             right: 24,
@@ -1259,7 +1260,7 @@ class _MapTabState extends State<MapTab> {
             ).animate().scale(delay: 1.seconds),
           ),
 
-          // ── Bouton rafraîchir ─────────────────────────────────────────────
+          // -- Bouton rafraîchir ---------------------------------------------
           if (_activeDestination == null)
             Positioned(
               bottom: 140, left: 24 + 120,
@@ -1385,9 +1386,9 @@ class _MapTabState extends State<MapTab> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Bottom sheet des détails d'un point
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 class _PointDetailSheet extends StatefulWidget {
   final Map<String, dynamic> point;
   final String types;
@@ -1568,7 +1569,7 @@ class _PointDetailSheetState extends State<_PointDetailSheet> {
             // Note explicative
             Center(
               child: Text(
-                'Navigation intégrée — fonctionne sans Google Maps',
+                'Navigation intégrée - fonctionne sans Google Maps',
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppTheme.textMuted,
@@ -1610,9 +1611,9 @@ class _PointDetailSheetState extends State<_PointDetailSheet> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Panneau d'itinéraire actif (bas de l'écran)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 class _RouteInfoPanel extends StatelessWidget {
   final Map<String, dynamic> destination;
   final double? distanceKm;
@@ -1638,12 +1639,12 @@ class _RouteInfoPanel extends StatelessWidget {
         ? distanceKm! < 1
             ? '${(distanceKm! * 1000).round()} m'
             : '${distanceKm!.toStringAsFixed(1)} km'
-        : '—';
+        : '-';
     final durStr = durationMin != null
         ? durationMin! < 60
             ? '$durationMin min'
             : '${durationMin! ~/ 60}h ${durationMin! % 60}min'
-        : '—';
+        : '-';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 80),
@@ -1659,7 +1660,7 @@ class _RouteInfoPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Destination + Close ──
+            // -- Destination + Close --
             Row(
               children: [
                 Container(
@@ -1709,7 +1710,7 @@ class _RouteInfoPanel extends StatelessWidget {
             ),
             const SizedBox(height: 14),
 
-            // ── Sélecteur de mode de transport (visible en premier) ──
+            // -- Sélecteur de mode de transport (visible en premier) --
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -1768,7 +1769,7 @@ class _RouteInfoPanel extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // ── Distance & Durée ──
+            // -- Distance & Durée --
             Row(
               children: [
                 Expanded(

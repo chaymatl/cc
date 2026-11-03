@@ -43,7 +43,7 @@ class SectionHowItWorks extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button — masqué sur web (flèches du navigateur suffisent)
+              // Back button - masqué sur web (flèches du navigateur suffisent)
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(

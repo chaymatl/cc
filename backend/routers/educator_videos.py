@@ -164,7 +164,8 @@ async def delete_category(
 
 @router.post("/upload")
 async def upload_video(
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    youtube_url: Optional[str] = Form(None),
     title: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     duration: Optional[str] = Form(None),
@@ -172,12 +173,36 @@ async def upload_video(
     db: Session = Depends(get_db),
     current_user: db_models.User = Depends(get_current_user),
 ):
-    """Upload un fichier vidéo, optionnellement dans une catégorie."""
+    """Upload un fichier vidéo OU fournir une URL YouTube, optionnellement dans une catégorie."""
     if current_user.role not in ("educator", "admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Réservé aux éducateurs.")
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="Nom de fichier manquant.")
+    # Cas 1 : URL YouTube fournie directement
+    if youtube_url and not file:
+        if not any(h in youtube_url for h in ("youtube.com", "youtu.be")):
+            raise HTTPException(status_code=400, detail="URL YouTube invalide.")
+        if category_id:
+            cat = db.query(db_models.VideoCategory).filter(db_models.VideoCategory.id == category_id).first()
+            if not cat:
+                raise HTTPException(status_code=404, detail="Catégorie non trouvée")
+        new_video = db_models.EducatorVideo(
+            educator_id=current_user.id,
+            educator_name=current_user.full_name or current_user.email,
+            title=title or "Vidéo YouTube",
+            description=description,
+            video_url=youtube_url,
+            thumbnail_url=None,
+            duration=duration,
+            category_id=category_id,
+        )
+        db.add(new_video)
+        db.commit()
+        db.refresh(new_video)
+        return {"message": "Vidéo YouTube publiée !", "video": _fmt_video(new_video)}
+
+    # Cas 2 : Fichier vidéo uploadé
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="Fichier vidéo ou URL YouTube requis.")
 
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_VIDEO_EXT:

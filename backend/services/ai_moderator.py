@@ -537,16 +537,28 @@ class AIModerator:
 
         # Case 2: Texte sans contexte environnemental -> pending_review
         # Condition: text_score < SAFE_THRESHOLD évite de double-pénaliser le contenu toxique
+        # Si une image propre accompagne le texte, on reduit la penalite car
+        # l'image de nature EST le contenu environnemental (sans mot-cle requis)
         elif text_stripped and eco_count == 0 and off_topic_count == 0 and text_score < SAFE_THRESHOLD:
-            relevance_penalty += 0.35
-            result.reasons.append("Texte sans contexte environnemental détecté")
+            if image_score < 0.10 and bool(image_local_path):
+                # Image propre presente: penalite reduite (image = contenu eco)
+                relevance_penalty += 0.10
+            else:
+                relevance_penalty += 0.35
+                result.reasons.append("Texte sans contexte environnemental detecte")
 
         # Case 3: Image avec texte éco -> PAS de pénalité image
         # Documenter la pollution avec un message encourageant est un acte éco valide
         if has_image and eco_count == 0 and off_topic_count == 0:
-            relevance_penalty += 0.25
-            if "Image sans contexte environnemental détecté" not in result.reasons:
-                result.reasons.append("Image sans contexte environnemental détecté")
+            # Image sans texte eco: faire confiance a NudeNet.
+            # Si NudeNet confirme image propre (score < 0.10), on reduit la penalite
+            # pour laisser passer les photos de nature, forets, montagnes, etc.
+            if image_score < 0.10:
+                relevance_penalty += 0.18  # En dessous du SAFE_THRESHOLD -> auto-publie
+            else:
+                relevance_penalty += 0.25
+                if "Image sans contexte environnemental detecte" not in result.reasons:
+                    result.reasons.append("Image sans contexte environnemental detecte")
         elif has_image and eco_count > 0:
             # Texte éco présent : l'image (même de pollution) est valide
             # Le texte contextualise et encourage → aucune pénalité image

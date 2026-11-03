@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: avoid_dynamic_calls, unused_element
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -413,7 +414,7 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
           content: Row(children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 8),
-            Text('Témoignage de "$name" approuvé ✓', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            Text('Témoignage de "$name" approuvé ', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ]),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
@@ -524,7 +525,7 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
             Icon(isFeatured ? Icons.star_outline : Icons.star, color: Colors.white),
             const SizedBox(width: 8),
             Text(
-              isFeatured ? 'Retiré de la mise en avant' : '★ Témoignage mis en avant !',
+              isFeatured ? 'Retiré de la mise en avant' : '* Témoignage mis en avant !',
               style: GoogleFonts.inter(fontWeight: FontWeight.w600),
             ),
           ]),
@@ -641,7 +642,7 @@ class _TestimonialsManagementTabState extends State<_TestimonialsManagementTab> 
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: Colors.amber.shade100, borderRadius: BorderRadius.circular(8)),
-                  child: Text('★ Mis en avant', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade900)),
+                  child: Text('* Mis en avant', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade900)),
                 ),
             ],
           ),
@@ -793,7 +794,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
           }
         }
       }
-      // Si aucun type extrait → fallback liste statique
+      // Si aucun type extrait -> fallback liste statique
       final types = typesSet.isEmpty
           ? ['Plastique', 'Verre', 'Papier', 'Carton', 'Métal', 'Électronique', 'Batteries', 'Compost', 'Vêtements', 'Général']
           : (typesSet.toList()..sort());
@@ -846,7 +847,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
       'types': result['types'],
       'hours': result['hours'],
       'status': result['status'],
-      // Si la position a changé → vider l'adresse pour forcer le re-géocodage backend
+      // Si la position a changé -> vider l'adresse pour forcer le re-géocodage backend
       if (locationChanged) 'address': '',
     };
     final body = json.encode(bodyMap);
@@ -870,8 +871,8 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(existing == null
-            ? '✅ Point "${result['name']}" ajouté avec succès'
-            : '✅ Point "${result['name']}" mis à jour'),
+            ? ' Point "${result['name']}" ajouté avec succès'
+            : ' Point "${result['name']}" mis à jour'),
           backgroundColor: AppTheme.primaryGreen,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -879,7 +880,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
         _loadPoints();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('❌ Erreur ${response.statusCode} — Vérifiez les données'),
+          content: Text(' Erreur ${response.statusCode} - Vérifiez les données'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -888,7 +889,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('❌ Erreur de connexion : $e'),
+        content: Text(' Erreur de connexion : $e'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1350,7 +1351,7 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
       _loadPendingPosts();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('✅ Publication approuvée'),
+          content: Text(' Publication approuvée'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ));
@@ -1391,7 +1392,7 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
       _loadPendingPosts();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('❌ Publication rejetée'),
+          content: const Text(' Publication rejetée'),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
         ));
@@ -1673,7 +1674,7 @@ class _PostsModerationTabState extends State<_PostsModerationTab> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// KPI BANNER — MODÉRATION (onglet Modération)
+// KPI BANNER - MODÉRATION (onglet Modération)
 // ═══════════════════════════════════════════════════════════════════
 
 class _ModerationKpiBanner extends StatefulWidget {
@@ -1718,7 +1719,7 @@ class _ModerationKpiBannerState extends State<_ModerationKpiBanner> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// KPI BANNER — ÉDUCATION (onglet Contenu/Témoignages)
+// KPI BANNER - ÉDUCATION (onglet Contenu/Témoignages)
 // ═══════════════════════════════════════════════════════════════════
 
 class _EducationKpiBanner extends StatefulWidget {

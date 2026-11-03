@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -68,7 +69,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tête sans bouton retour — navigation assurée par la barre/sidebar
+            // En-tête sans bouton retour - navigation assurée par la barre/sidebar
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -145,13 +146,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Action buttons ──
+          // -- Action buttons --
           if (AuthState.isLoggedIn && AuthState.currentUser?.role == UserRole.citoyen) ...[
             _buildAddTestimonialButton(),
             const SizedBox(height: 28),
           ],
 
-          // ── Section title ──
+          // -- Section title --
           Row(
             children: [
               Container(
@@ -176,7 +177,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ).animate().fadeIn(delay: 250.ms),
           const SizedBox(height: 20),
 
-          // ── Testimonials list ──
+          // -- Testimonials list --
           if (_testimonials.isEmpty)
             _buildEmptyState()
           else
@@ -195,7 +196,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  // ── Add Testimonial Button ──
+  // -- Add Testimonial Button --
 
   Widget _buildAddTestimonialButton() {
     final userId = int.tryParse(AuthState.currentUser?.id ?? '');
@@ -240,7 +241,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     ).animate().fadeIn().slideY(begin: 0.1, end: 0);
   }
 
-  // ── Add Testimonial Dialog ──
+  // -- Add Testimonial Dialog --
 
   void _showAddTestimonialDialog() {
     final contentController = TextEditingController();
@@ -317,7 +318,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       _loadTestimonials();
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('✅ Avis soumis ! Il sera visible après approbation.'),
+                          content: const Text('  Avis soumis ! Il sera visible après approbation.'),
                           backgroundColor: AppTheme.primaryGreen,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -351,30 +352,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
 
-  Widget _buildField(String label, TextEditingController ctrl, String hint, {int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepSlate)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: ctrl,
-          maxLines: maxLines,
-          style: GoogleFonts.inter(color: AppTheme.deepSlate, fontSize: 14),
-          cursorColor: AppTheme.primaryGreen,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 13),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
-          ),
-        ),
-      ],
-    );
-  }
 
   Future<void> _deleteTestimonial(int id) async {
     final confirm = await showDialog<bool>(
@@ -382,7 +359,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Supprimer votre avis ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: const Text('Cette action est irr├®versible.'),
+        content: const Text('Cette action est irrⓜÂ®versible.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Supprimer', style: TextStyle(color: Colors.red.shade400))),
@@ -409,7 +386,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 20),
             Text('Aucun avis encore', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
             const SizedBox(height: 6),
-            Text('Soyez le premier ├á partager\nvotre exp├®rience !', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted), textAlign: TextAlign.center),
+            Text('Soyez le premier ⓜá partager\nvotre expⓜÂ®rience !', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -495,7 +472,7 @@ class _TestimonialCard extends StatelessWidget {
   String _formatDate(String isoDate) {
     try {
       final dt = DateTime.parse(isoDate);
-      final months = ['jan', 'f├®v', 'mar', 'avr', 'mai', 'jun', 'jul', 'ao├╗', 'sep', 'oct', 'nov', 'd├®c'];
+      final months = ['jan', 'fⓜÂ®v', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoⓜ╖', 'sep', 'oct', 'nov', 'dⓜÂ®c'];
       return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
     } catch (_) {
       return '';

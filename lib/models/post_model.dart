@@ -113,7 +113,7 @@ class PostComment {
 
 /// Global registry for managing posts with reactive updates
 class PostRegistry {
-  // Liste vide — les vraies donnees viennent de l'API via FeedTab (fetchPosts)
+  // Liste vide - les vraies donnees viennent de l'API via FeedTab (fetchPosts)
   static final ValueNotifier<List<Post>> postsNotifier = ValueNotifier<List<Post>>([]);
 
   /// Signal for navigating to a specific post (postId or null)
@@ -185,7 +185,7 @@ class PostRegistry {
     postsNotifier.value = List<Post>.from(postsNotifier.value);
   }
 
-  /// Sync avec le backend — appelé pour forcer un rechargement
+  /// Sync avec le backend - appelé pour forcer un rechargement
   static Future<void> syncAllPosts() async {
     await Future.delayed(const Duration(milliseconds: 100));
     await loadSavedStates();

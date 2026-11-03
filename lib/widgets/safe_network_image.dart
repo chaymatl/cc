@@ -57,9 +57,9 @@ class SafeNetworkImage extends StatelessWidget {
     final int? cacheW = (width != null && width!.isFinite) ? (width! * dpr).toInt() : null;
     final int? cacheH = (height != null && height!.isFinite) ? (height! * dpr).toInt() : null;
 
-    // Résout les chemins relatifs (/uploads/...) → URL absolue sur mobile
+    // Résout les chemins relatifs (/uploads/...) -> URL absolue sur mobile
     String finalUrl = ApiConstants.resolveUrl(url);
-    // Sur Android : normalise aussi localhost → 127.0.0.1 (ADB reverse)
+    // Sur Android : normalise aussi localhost -> 127.0.0.1 (ADB reverse)
     if (defaultTargetPlatform == TargetPlatform.android) {
       finalUrl = finalUrl.replaceAll('//localhost:', '//127.0.0.1:');
     }

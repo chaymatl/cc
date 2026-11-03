@@ -45,9 +45,9 @@ class AuthPromptDialog {
   }
 
   /// Affiche le bottom sheet premium avec les 3 options.
-  /// - Créer un compte → /signup
-  /// - J'ai déjà un compte → /login
-  /// - Continuer sans compte → ferme le dialogue
+  /// - Créer un compte -> /signup
+  /// - J'ai déjà un compte -> /login
+  /// - Continuer sans compte -> ferme le dialogue
   static void show({required BuildContext context}) {
     showModalBottomSheet(
       context: context,
@@ -106,7 +106,7 @@ class AuthPromptDialog {
 
               // Title
               Text(
-                t('Bienvenue sur EcoRewind', 'Ù…Ø±Ø­Ø¨Ø§Ù‹ Ø¨ÙƒÙ… ÙÙŠ EcoRewind'),
+                t('Bienvenue sur EcoRewind', 'Ù...Ø±Ø­Ø¨Ø§Ù‹ Ø¨ÙƒÙ... ÙÙŠ EcoRewind'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 22,
@@ -120,7 +120,7 @@ class AuthPromptDialog {
               Text(
                 t(
                   'Connectez-vous pour profiter pleinement de toutes les fonctionnalités.',
-                  'Ù‚Ù… Ø¨ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù„Ù„Ø§Ø³ØªÙØ§Ø¯Ø© Ø§Ù„ÙƒØ§Ù…Ù„Ø© Ù…Ù† Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…ÙŠØ²Ø§Øª.',
+                  'Ù‚Ù... Ø¨ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù„Ù„Ø§Ø³ØªÙØ§Ø¯Ø© Ø§Ù„ÙƒØ§Ù...Ù„Ø© Ù...Ù† Ø¬Ù...ÙŠØ¹ Ø§Ù„Ù...ÙŠØ²Ø§Øª.',
                 ),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
@@ -225,7 +225,7 @@ class AuthPromptDialog {
                           size: 18, color: isDark ? Colors.grey.shade400 : AppTheme.textMuted),
                       const SizedBox(width: 8),
                       Text(
-                        t('Continuer sans compte', 'Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø¯ÙˆÙ† Ø­Ø³Ø§Ø¨'),
+                        t('Continuer sans compte', 'Ø§Ù„Ù...ØªØ§Ø¨Ø¹Ø© Ø¨Ø¯ÙˆÙ† Ø­Ø³Ø§Ø¨'),
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,

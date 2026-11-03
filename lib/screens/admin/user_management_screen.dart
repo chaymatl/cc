@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: avoid_dynamic_calls, prefer_const_constructors
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/firebase/firebase_admin_stats_service.dart';
 import '../../models/user_model.dart';
@@ -145,7 +146,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                     ]),
                   ),
                   const Divider(color: Color(0xFF334155), height: 20),
-                  // Scrollable form content — Flexible prevents overflow when keyboard is visible
+                  // Scrollable form content - Flexible prevents overflow when keyboard is visible
                   Flexible(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -660,7 +661,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
 }
 
 class _KpisFirebase extends StatelessWidget {
-  const _KpisFirebase({super.key});
+  const _KpisFirebase();
 
   @override
   Widget build(BuildContext context) {

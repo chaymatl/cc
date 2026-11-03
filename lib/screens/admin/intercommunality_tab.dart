@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -30,14 +32,14 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   late final TabController _tabCtrl;
 
-  // ── F1 : Consignes ───────────────────────────────────────────────────────
+  // -- F1 : Consignes -------------------------------------------------------
   List<Map<String, dynamic>> _instructions   = [];
   bool   _loadingInstructions = false;
   String _f1FilterWasteType  = '';
   String _f1FilterTerritory  = '';
   bool?  _f1FilterActive;
 
-  // ── F2 : Points de collecte ───────────────────────────────────────────────
+  // -- F2 : Points de collecte -----------------------------------------------
   List<Map<String, dynamic>> _points          = [];
   bool   _loadingPoints = false;
   String _f2Search      = '';
@@ -48,18 +50,18 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Timer?   _pointsAutoSyncTimer;
   DateTime? _lastPointsSync;
 
-  // ── F3 : Acteurs ─────────────────────────────────────────────────────────
+  // -- F3 : Acteurs ---------------------------------------------------------
   List<Map<String, dynamic>> _actors         = [];
   List<Map<String, dynamic>> _customGroups   = [];
   bool   _loadingActors  = false;
   String _f3FilterRole   = '';
   bool   _showGroups     = false;
 
-  // ── F4 : Réponses / notifications reçues ─────────────────────────────────
+  // -- F4 : Réponses / notifications reçues ---------------------------------
   List<Map<String, dynamic>> _replies         = [];
   bool   _loadingReplies  = false;
 
-  // ── F5 : Pilotage (zones & affectations) ─────────────────────────────────
+  // -- F5 : Pilotage (zones & affectations) ---------------------------------
   List<Map<String, dynamic>> _zones           = [];
   List<Map<String, dynamic>> _assignments     = [];
   List<Map<String, dynamic>> _collectors      = [];
@@ -67,7 +69,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Map<String, dynamic>?     _dashboard;
   int    _unreadMessages  = 0;
 
-  // ── Autocomplete / Presets Data ──────────────────────────────────────────
+  // -- Autocomplete / Presets Data ------------------------------------------
   static const List<String> _wasteTypesList = [
     'Plastique',
     'Verre',
@@ -106,7 +108,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     _loadPilotage();
     _loadDashboard();
     _loadUnreadMessages();
-    // ── Auto-sync des points toutes les 30 secondes ──────────────────────
+    // -- Auto-sync des points toutes les 30 secondes ----------------------
     _pointsAutoSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) _loadPointsSilent();
     });
@@ -137,7 +139,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     return 'il y a ${diff.inHours}h';
   }
 
-  // ── Auth helpers ──────────────────────────────────────────────────────────
+  // -- Auth helpers ----------------------------------------------------------
   Future<String?> _jwt() async {
     return AuthState.authToken ?? (await SharedPreferences.getInstance()).getString('jwt_token');
   }
@@ -148,7 +150,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     'Accept': 'application/json',
   };
 
-  // ── API Loaders ───────────────────────────────────────────────────────────
+  // -- API Loaders -----------------------------------------------------------
   Future<void> _loadInstructions() async {
     if (!mounted) return;
     setState(() => _loadingInstructions = true);
@@ -188,7 +190,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (mounted) setState(() => _loadingPoints = false);
   }
 
-  /// Recharge silencieux (sans spinner) — utilisé par le timer auto-sync
+  /// Recharge silencieux (sans spinner) - utilisé par le timer auto-sync
   Future<void> _loadPointsSilent() async {
     if (!mounted) return;
     try {
@@ -301,7 +303,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     } catch (_) {}
   }
 
-  // ── Empty State Helper ───────────────────────────────────────────────────
+  // -- Empty State Helper ---------------------------------------------------
   Widget _emptyState({required IconData icon, required String title, required String sub, Color color = const Color(0xFF6C3EB8)}) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -330,7 +332,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── Dashboard KPI Cards Row ──────────────────────────────────────────────
+  // -- Dashboard KPI Cards Row ----------------------------------------------
   Widget _buildDashboardCards() {
     final dash = _dashboard;
     final totalInstructions = dash?['total_instructions'] ?? _instructions.length;
@@ -380,7 +382,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── Operations & Dialog Methods ──────────────────────────────────────────
+  // -- Operations & Dialog Methods ------------------------------------------
   Future<void> _notifyCustomGroup(int groupId, String groupName) async {
     final titleCtrl = TextEditingController();
     final msgCtrl   = TextEditingController();
@@ -412,7 +414,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               );
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Message envoyé au groupe'), backgroundColor: Colors.green));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('  Message envoyé au groupe'), backgroundColor: Colors.green));
               }
             },
             child: const Text('Envoyer', style: TextStyle(color: Colors.white)),
@@ -454,7 +456,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               );
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Message envoyé'), backgroundColor: Colors.green));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('  Message envoyé'), backgroundColor: Colors.green));
               }
             },
             child: const Text('Envoyer', style: TextStyle(color: Colors.white)),
@@ -528,14 +530,14 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
     if (res.statusCode == 201 && mounted) {
       final body = json.decode(utf8.decode(res.bodyBytes));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${body['message']}'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('  ${body['message']}'), backgroundColor: Colors.green));
       _loadPilotage();
     } else if (mounted) {
       try {
         final err = json.decode(utf8.decode(res.bodyBytes));
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ ${err['detail'] ?? 'Erreur lors de l\'affectation'}'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(' ${err['detail'] ?? 'Erreur lors de l\'affectation'}'), backgroundColor: Colors.red));
       } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('❌ Erreur de communication avec le serveur'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(' Erreur de communication avec le serveur'), backgroundColor: Colors.red));
       }
     }
   }
@@ -570,7 +572,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       headers: _headers(jwt),
     );
     if (res.statusCode == 200 && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Notification envoyée aux rôles sélectionnés'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('  Notification envoyée aux rôles sélectionnés'), backgroundColor: Colors.green));
     }
   }
 
@@ -602,7 +604,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     _loadPilotage();
   }
 
-  // ── BUILD PRINCIPAL ──────────────────────────────────────────────────────
+  // -- BUILD PRINCIPAL ------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -648,7 +650,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── HEADER ───────────────────────────────────────────────────────────────
+  // -- HEADER ---------------------------------------------------------------
   Widget _buildHeader() {
     return Container(
           padding: EdgeInsets.fromLTRB(20, math.max(MediaQuery.of(context).padding.top, 28) + 12, 20, 16),
@@ -716,7 +718,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         ).animate().fadeIn(duration: 300.ms);
   }
 
-  // ── F1 : UI Consignes ────────────────────────────────────────────────────
+  // -- F1 : UI Consignes ----------------------------------------------------
   Widget _buildF1Consignes() {
     if (_loadingInstructions && _instructions.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -901,8 +903,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── F2 : UI Points ───────────────────────────────────────────────────────
-  // ── Suivi état des points ─────────────────────────────────────────────────
+  // -- F2 : UI Points -------------------------------------------------------
+  // -- Suivi état des points -------------------------------------------------
   Widget _buildPointsStatusDashboard() {
     final total       = _points.length;
     final disponible  = _points.where((p) => (p['status'] ?? 'disponible').toString().toLowerCase() == 'disponible').length;
@@ -963,7 +965,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               ),
             ],
           ),
-          // ── Indicateur de dernière synchronisation ────────────────────
+          // -- Indicateur de dernière synchronisation --------------------
           if (_lastPointsSync != null) ...[
             const SizedBox(height: 4),
             Row(
@@ -1104,7 +1106,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
             child: TextField(
               style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Rechercher un point de collecte…',
+                hintText: 'Rechercher un point de collecte...',
                 prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1115,7 +1117,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               onChanged: (v) => setState(() => _f2Search = v),
             ),
           ),
-          // ── Barre de filtre par type de déchet ────────────────────────
+          // -- Barre de filtre par type de déchet ------------------------
           Container(
             color: Colors.white,
             height: 38,
@@ -1238,7 +1240,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                                             ),
                                           ),
                                         const SizedBox(height: 8),
-                                        // ── Badge État ──
+                                        // -- Badge État --
                                         Builder(builder: (_) {
                                           final status = (p['status'] ?? 'disponible').toString().toLowerCase();
                                           final barColor = status == 'saturé' || status == 'sature'
@@ -1247,10 +1249,10 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                                                   ? const Color(0xFFF59E0B)
                                                   : const Color(0xFF16A34A);
                                           final statusLabel = status == 'saturé' || status == 'sature'
-                                              ? '🔴 Saturé'
+                                              ? 'Sature Saturé'
                                               : status == 'maintenance'
-                                                  ? '🟡 En maintenance'
-                                                  : '🟢 Disponible';
+                                                  ? '~ En maintenance'
+                                                  : 'OK Disponible';
                                           return Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                             decoration: BoxDecoration(
@@ -1328,7 +1330,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── Carte interactive des points filtrés par état ────────────────────────
+  // -- Carte interactive des points filtrés par état ------------------------
   Widget _buildF2PointsMap(List<Map<String, dynamic>> points) {
     final validPoints = points.where((p) => p['lat'] != null && p['lng'] != null).toList();
 
@@ -1385,7 +1387,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('$name — État: ${p['status'] ?? 'disponible'}'),
+                          content: Text('$name - État: ${p['status'] ?? 'disponible'}'),
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1401,7 +1403,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            name.length > 10 ? '${name.substring(0, 10)}…' : name,
+                            name.length > 10 ? '${name.substring(0, 10)}...' : name,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -1476,7 +1478,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   }
 
 
-  // ── F3 : UI Acteurs ──────────────────────────────────────────────────────
+  // -- F3 : UI Acteurs ------------------------------------------------------
   Widget _buildF3Acteurs() {
     if (_loadingActors && _actors.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -1663,7 +1665,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     ).animate().fadeIn().slideY(begin: 0.05);
   }
 
-  // ── F4 : UI Réponses ─────────────────────────────────────────────────────
+  // -- F4 : UI Réponses -----------------------------------------------------
   Widget _buildF4Reponses() {
     if (_loadingReplies && _replies.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -1733,7 +1735,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── F5 : UI Pilotage ─────────────────────────────────────────────────────
+  // -- F5 : UI Pilotage -----------------------------------------------------
   Widget _buildF5Pilotage() {
     if (_loadingPilotage) {
       return const Center(child: CircularProgressIndicator(color: Color(0xFF1A6B3C)));
@@ -1873,7 +1875,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── FAB & Dialogs ────────────────────────────────────────────────────────
+  // -- FAB & Dialogs --------------------------------------------------------
   Widget? _buildFAB() {
     Widget? fab;
     if (_tabCtrl.index == 0) {
@@ -2291,9 +2293,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                 if (res.statusCode == 201) {
                   _loadCustomGroups();
                   if (ctx.mounted) Navigator.pop(ctx);
-                  messenger.showSnackBar(const SnackBar(content: Text('✅ Groupe créé avec succès'), backgroundColor: Colors.green));
+                  messenger.showSnackBar(const SnackBar(content: Text('  Groupe créé avec succès'), backgroundColor: Colors.green));
                 } else {
-                  messenger.showSnackBar(const SnackBar(content: Text('❌ Erreur lors de la création du groupe'), backgroundColor: Colors.red));
+                  messenger.showSnackBar(const SnackBar(content: Text(' Erreur lors de la création du groupe'), backgroundColor: Colors.red));
                 }
               },
               child: Text('Créer', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2552,7 +2554,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   Text('Affecter une mission', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 16),
 
-                  // ── Type de cible ──────────────────────────────────
+                  // -- Type de cible ----------------------------------
                   Text('Cible de la mission', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   Row(
@@ -2604,7 +2606,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Mode Zone ─────────────────────────────────────
+                  // -- Mode Zone -------------------------------------
                   if (targetType == 'zone') ...[
                     Text('Sélectionner la zone', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 6),
@@ -2639,7 +2641,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       ),
                   ],
 
-                  // ── Mode Centres (multi-checkbox) ──────────────────
+                  // -- Mode Centres (multi-checkbox) ------------------
                   if (targetType == 'points') ...[
                     Row(
                       children: [
@@ -2661,7 +2663,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     TextField(
                       style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Rechercher un centre…',
+                        hintText: 'Rechercher un centre...',
                         hintStyle: GoogleFonts.outfit(fontSize: 13, color: Colors.grey),
                         prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Colors.grey),
                         isDense: true,
@@ -2740,7 +2742,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            p['status'] == 'disponible' ? '✓' : '⚠',
+                                            p['status'] == 'disponible' ? '-' : '!',
                                             style: TextStyle(fontSize: 11, color: p['status'] == 'disponible' ? Colors.green.shade700 : Colors.orange.shade700),
                                           ),
                                         ),
@@ -2755,7 +2757,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   ],
                   const SizedBox(height: 16),
 
-                  // ── Collecteur ────────────────────────────────────
+                  // -- Collecteur ------------------------------------
                   Text('Collecteur', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
@@ -2779,7 +2781,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   ),
                   const SizedBox(height: 14),
 
-                  // ── Priorité ──────────────────────────────────────
+                  // -- Priorité --------------------------------------
                   Text('Priorité', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   Row(
@@ -2791,7 +2793,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   ),
                   const SizedBox(height: 14),
 
-                  // ── Message ───────────────────────────────────────
+                  // -- Message ---------------------------------------
                   TextField(
                     controller: msgCtrl,
                     maxLines: 3,
@@ -2802,7 +2804,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   ),
                   const SizedBox(height: 20),
 
-                  // ── Bouton Affecter ───────────────────────────────
+                  // -- Bouton Affecter -------------------------------
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -2867,7 +2869,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     );
   }
 
-  // ── Utils & Helper Methods ───────────────────────────────────────────────
+  // -- Utils & Helper Methods -----------------------------------------------
   String _formatRelativeTime(String dateStr) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
@@ -2911,9 +2913,9 @@ class _TabHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(_TabHeaderDelegate oldDelegate) => false;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Page plein-écran : création d'une zone avec carte OSM intégrée
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 class _CreateZoneMapPage extends StatefulWidget {
   final List<Map<String, dynamic>> points;
   const _CreateZoneMapPage({required this.points});
@@ -2965,7 +2967,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
     if (name.isEmpty || terr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-          name.isEmpty ? '⚠ï¸ Nom de la zone obligatoire' : '⚠ï¸ Territoire obligatoire',
+          name.isEmpty ? '! Nom de la zone obligatoire' : '! Territoire obligatoire',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.red.shade700,
@@ -3015,7 +3017,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
       ),
       body: Column(
         children: [
-          // ── Bande de formulaire compacte ───────────────────────────────
+          // -- Bande de formulaire compacte -------------------------------
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -3113,7 +3115,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
               ],
             ),
           ),
-          // ── Carte ou liste hors-ligne ───────────────────────────────
+          // -- Carte ou liste hors-ligne -------------------------------
           Expanded(
             child: _checkingConnectivity
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A6B3C)))
@@ -3173,7 +3175,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            name.length > 10 ? '${name.substring(0, 10)}…' : name,
+                            name.length > 10 ? '${name.substring(0, 10)}...' : name,
                             style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
                             maxLines: 1,
                           ),
@@ -3264,7 +3266,7 @@ class _CreateZoneMapPageState extends State<_CreateZoneMapPage> {
             children: [
               Icon(Icons.wifi_off_rounded, size: 14, color: Colors.amber.shade800),
               const SizedBox(width: 6),
-              Text('Mode hors-ligne — sélection par liste',
+              Text('Mode hors-ligne - sélection par liste',
                   style: GoogleFonts.inter(fontSize: 12, color: Colors.amber.shade800)),
             ],
           ),

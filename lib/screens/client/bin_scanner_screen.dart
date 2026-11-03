@@ -1,6 +1,6 @@
 /// lib/screens/client/bin_scanner_screen.dart
 ///
-/// Écran de scan QR — Poubelle Intelligente
+/// Écran de scan QR - Poubelle Intelligente
 /// Le citoyen présente son QR code à la poubelle OU scanne le QR
 /// affiché sur la poubelle pour enregistrer son recyclage.
 ///

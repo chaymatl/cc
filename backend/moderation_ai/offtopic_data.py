@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-EcoRewind -- Donnees off_topic enrichies (10 categories)
+EcoRewind -- Donnees off_topic enrichies (18 categories)
 =========================================================
 Technologie, Sport, Sante, Education, Divertissement,
-Politique, Economie, Cuisine, Voyage, Mode/Beaute
+Politique, Economie, Cuisine, Voyage, Mode/Beaute,
+Violence/Accidents, Automobile, Immobilier, Animaux,
+Religion (hors-eco), Mariage/Fetes, Jeux/Paris, Buzz/Viral
 
 Ce module est importe par build_text_dataset.py pour remplacer
 les listes OFFTOPIC_FR / OFFTOPIC_AR / OFFTOPIC_EN originales.
+
+v2.0 — Ajout de 8 nouvelles categories (200+ exemples supplementaires)
+pour améliorer la détection des contenus hors-sujet non-environnementaux.
 """
 
 OFFTOPIC_FR = [
@@ -143,6 +148,114 @@ OFFTOPIC_FR = [
     "Les sneakers les plus stylees de la saison : Nike, Adidas, New Balance",
     "Tutorial maquillage naturel pour le bureau : look frais en 10 minutes",
     "Mode durable : les marques qui misent sur le recyclage des textiles",
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NOUVELLES CATEGORIES v2.0
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    # --- VIOLENCE / ACCIDENTS / SECURITE ROUTIERE ---
+    "Accident de voiture terrible sur l'autoroute, 3 blesses graves transportes",
+    "Bagarre eclate en pleine rue filmee et partagee des millions de fois",
+    "Attaque au couteau dans le metro, le suspect en fuite recherche par la police",
+    "Collision frontale entre deux camions sur la nationale, bilan tres lourd",
+    "Rixe violente entre supporters apres le match, plusieurs arrestations",
+    "Accident de moto grave : le conducteur helitreuille en urgence a l'hopital",
+    "Fusillade dans un centre commercial, la situation encore en cours ce soir",
+    "Combat de boxe clandestin filme et diffuse sur les reseaux sociaux viraux",
+    "Carambolage monstre sur l'autoroute A7 sous le brouillard : 12 vehicules",
+    "Coup de poing filmé en pleine rue devient viral sur TikTok ce matin",
+    "Voitures brulees dans le quartier apres les affrontements nocturnes violents",
+    "Choc violent entre deux motos : les conducteurs projetes sur la chaussee",
+    "Embuscade filmee : groupe attaque passant dans une ruelle sombre la nuit",
+    "Dramatique accident de train : deraillement cause par un camion sur les rails",
+    "Violence conjugale filmee et partagee : les associations appellent a reagir",
+
+    # --- AUTOMOBILE / MECANIQUE / TUNING ---
+    "Mon nouveau SUV vient d'arriver chez le concessionnaire, je suis trop content",
+    "Comparatif des meilleures voitures electriques 2025 : Tesla vs Renault vs BMW",
+    "Tuning extreme : cette berline transformee en monster truck fait le buzz",
+    "Panne de moteur a 200 km de chez moi : que faire sans assistance routiere ?",
+    "Nouveau modele Ferrari 2025 presente au salon de Geneve : prix et specs",
+    "Mon mecano a trouve une fuite d'huile : devis de 800 euros pour la reparation",
+    "Les meilleures huiles moteur pour prolonger la vie de votre vehicule diesel",
+    "Essai routier : 48h au volant du nouveau pickup americain tout-terrain",
+    "Vendre ma voiture d'occasion : ou afficher l'annonce pour un prix maximum ?",
+    "Accident de la route simule pour escroquer l'assurance : 5 ans de prison",
+    "Course illegale sur autoroute : 300 km/h filmes par dashcam embarquee",
+    "Rappel constructeur : ces modeles doivent etre controles d'urgence au garage",
+    "Mon quad personnalise avec led et systeme son : le travail de 6 mois montre",
+    "Kit de carrosserie pour Clio 4 : montage complet en video tutoriel detaille",
+
+    # --- IMMOBILIER / LOGEMENT / DEMENAGEMENT ---
+    "Appartement F3 a vendre dans le centre-ville : 185 000 euros, tres bon etat",
+    "Louer ou acheter en 2025 ? Le calcul complet pour faire le bon choix financier",
+    "Mon demenagement cauchemardesque : les demenageurs ont casse ma television",
+    "Investissement locatif : comment acheter sans apport grace au deficit foncier",
+    "Prix de l'immobilier en chute libre dans ces 10 villes francaises cet automne",
+    "Renovation de salle de bain : mon budget de 5000 euros et le resultat final",
+    "Colocation entre etudiants : mes conseils pour eviter les conflits au quotidien",
+    "Visite guidee de mon studio 25m2 optimise avec des meubles Ikea malines",
+    "Arnaque immobiliere : le proprietaire encaisse le depot de garantie et disparait",
+    "Logement social : liste d'attente de 8 ans dans cette grande agglomeration",
+
+    # --- ANIMAUX DE COMPAGNIE / FAUNE URBAINE ---
+    "Mon chat a mange quelque chose de bizarre dans le jardin, dois-je m'inquieter ?",
+    "Adopter un chien adulte : les avantages par rapport aux chiots selon les vets",
+    "Mon aquarium de 200 litres : les poissons tropicaux que j'ai choisis et pourquoi",
+    "Serpent retrouve dans une maison du quartier, les pompiers interviennent rapidement",
+    "Race de chien ideale pour appartement : comparatif des meilleures races calmes",
+    "Mon perroquet repete des insultes, comment le reeduquer gentiment chez soi ?",
+    "Invasion de fourmis dans la cuisine : les solutions naturelles et chimiques testees",
+    "Nouvelle loi sur les chiens dangereux : ce qui change pour les proprietaires",
+    "Chat abandonne retrouve apres 3 ans par sa famille grace aux reseaux sociaux",
+    "Prix exorbitant du veterinaire : faut-il souscrire a une assurance animaux ?",
+
+    # --- MARIAGE / EVENEMENTS / FETES FAMILIALES ---
+    "Decoration de mariage orientale : les idees les plus belles et tendance 2025",
+    "Mon budget mariage de 15 000 euros : comment le repartir intelligemment ?",
+    "Robe de mariee sur mesure : 6 mois de preparation pour ce grand jour reve",
+    "Organisation d'une henna party : les traditions et la liste des invitations",
+    "Buffet de mariage pour 200 personnes : traiteur ou fait maison, que choisir ?",
+    "Enterrement de vie de garcon a Budapest : programme complet et budget total",
+    "Photographe mariage : comment choisir le bon pour immortaliser votre jour J ?",
+    "Cadeau de mariage original : nos meilleures idees pour un couple moderne",
+    "Baby shower surprise organizee pour ma soeur : decor pastel et jeux amusants",
+    "Anniversaire de 40 ans : soiree surprise organisee avec 80 invites secrets",
+
+    # --- RELIGION / SPIRITUALITE (hors contexte eco) ---
+    "Priere du vendredi : rappel des conditions et de l'importance pour les musulmans",
+    "Ramadan 2025 : horaires de l'imsak et du ftour ville par ville en temps reel",
+    "Pelerinage a La Mecque : conseils pratiques pour les primo-pelerins hajj 2025",
+    "Messe de Noel retransmise en direct de la basilique Saint-Pierre de Rome",
+    "Les fetes juives du calendrier 2025 : dates et significations expliquees",
+    "Meditations bouddhistes du matin pour trouver la paix interieure au quotidien",
+    "Jeune du Yom Kippour : regles, traditions et rupture du jeune expliquees",
+    "Commemoration de l'Achoura : rites et pratiques selon les differentes traditions",
+
+    # --- JEUX D'ARGENT / PARIS SPORTIFS / CASINO ---
+    "Pronostic match de demain : les meilleures cotes sur les bookmakers en ligne",
+    "J'ai gagne 5000 euros au casino en ligne hier soir grace a cette strategie",
+    "Paris sportifs : l'essentiel pour debuter sans perdre trop d'argent au depart",
+    "Machine a sous en ligne : les meilleurs casinos avec bonus sans depot en 2025",
+    "Poker en ligne : les erreurs des debutants que vous devez absolument eviter",
+    "Loterie nationale : le gagnant du jackpot de 30 millions refuse de se montrer",
+    "Scratch : est-ce vraiment une methode rentable sur le long terme ou une arnaque ?",
+
+    # --- BUZZ / VIRAL / INSOLITE / TENDANCES ---
+    "Cette video de chute spectaculaire fait 100 millions de vues en seulement 24h",
+    "Challenge TikTok viral : des milliers de jeunes le reproduisent a travers le monde",
+    "Cet homme a mange 100 hamburgers en une semaine pour battre un record insolite",
+    "Drôle de situation : ce chien conduit une voiture et la video devient virale",
+    "Tatouage raté devient meme mondial : l'histoire derriere ce fail artistique total",
+    "Fail du week-end : ce gars tente de sauter dans la piscine et atterrit a cote",
+    "Ce couple se rencontre sur Tinder et decouvre qu'ils sont cousins par hasard",
+    "Video choc : ce serpent avale un crocodile entier en plein Outback australien",
+    "Ce bebe dit son premier mot a 5 mois et la video devient virale internationalement",
+    "Insolite : cet homme vit dans un supermarche depuis 6 mois sans se faire reperer",
+    "Ce chat joue du piano et la communaute musicale est completement sous le choc",
+    "Humour noir virale : cette blague sur les politiciens brise tous les records",
+    "Prank extreme : il fait croire a sa femme qu'un serpent est dans leur maison",
+    "Reaction en chaine : un domino de 100 000 pieces tombe en 10 secondes chrono",
 ]
 
 OFFTOPIC_AR = [
@@ -187,6 +300,65 @@ OFFTOPIC_AR = [
     # Mode
     "ازياء الصيف 2025 والالوان الصاخبة والاقمشة الخفيفة تهيمن على الموضة",
     "احمر الشفاه والمسكارا والبرونزر وابرز منتجات الميك اب لهذا الموسم",
+
+    # ═══════════════════════════════════════════════════════════════════
+    # NOUVELLES CATEGORIES AR v2.0
+    # ═══════════════════════════════════════════════════════════════════
+
+    # Violence / Accidents
+    "حادث سيارة مروع على الطريق السريع وثلاثة مصابين في حالة حرجة جداً",
+    "شجار عنيف بين مجموعتين في الشارع ومقاطع الفيديو تنتشر بسرعة مذهلة",
+    "هجوم بالسكين في المترو والمشتبه به لا يزال طليقاً يبحث عنه الأمن",
+    "تصادم سيارتين بسرعة جنونية وحريق اندلع على الفور في الطريق",
+    "فيديو مروع لشخص يقع من الطابق الثالث وينجو بأعجوبة من الموت",
+    "مطاردة بوليسية مثيرة انتهت بحادث مروع في وسط المدينة المزدحمة",
+    "ضرب وإيذاء في الملعب بعد نهاية المباراة وتدخل قوات الأمن",
+
+    # Automobile
+    "سيارتي الجديدة وصلت أخيراً وهذا هو استعراض كامل للمواصفات",
+    "مقارنة أفضل السيارات الكهربائية في السوق العربية لعام 2025",
+    "عطل في المحرك في منتصف الطريق ولا أحد يمر هنا للمساعدة",
+    "تعديلات رياضية على سيارتي الخاصة استغرقت مني ستة أشهر كاملة",
+    "أسعار السيارات الجديدة ترتفع 20 بالمئة مقارنة بالعام الماضي",
+
+    # Immobilier
+    "شقة للبيع في قلب المدينة بسعر مناسب والتفاصيل في التعليقات",
+    "الإيجار أم الشراء في 2025 وكيف تتخذ القرار الصحيح لمستقبلك",
+    "تجربة الانتقال إلى منزل جديد وأكثر الأشياء التي أنسيتها وندمت",
+    "أسعار العقارات ترتفع بشكل جنوني في المدن الكبرى ولا حل في الأفق",
+    "تحويل الشقة القديمة إلى فضاء عصري بميزانية محدودة جداً وأفكار ذكية",
+
+    # Animaux
+    "قطتي مريضة ولا أعرف ما الذي أكلته من الحديقة هذا الصباح",
+    "تبني كلب بالغ أفضل من الجرو وإليك الأسباب العلمية المقنعة",
+    "أسماك الزينة في حوضي الجديد وكيف اخترت الأنواع المناسبة",
+    "اكتشاف ثعبان داخل منزل في الحي والأهالي يطلبون تدخلاً عاجلاً",
+    "سعر الطبيب البيطري مرتفع جداً هل التأمين على الحيوانات يستحق ؟",
+
+    # Mariage / Fetes
+    "تحضيرات حفل زفافي بعد ستة أشهر وهذه هي أهم التفاصيل والأسرار",
+    "ميزانية الزفاف ثمانية آلاف دولار وكيف قسمناها على التفاصيل",
+    "فستان العروس المخصص استغرق أربعة أشهر من العمل والتصميم المميز",
+    "حفل الحناء وكيف نظمنا كل التفاصيل التقليدية بطريقة عصرية رائعة",
+    "عيد ميلاد مفاجأة لوالدتي مع خمسين ضيفاً ولم تكن تعلم بشيء",
+
+    # Religion
+    "مواقيت الصلاة في رمضان المبارك وجدول الإمساك والإفطار لكل المدن",
+    "فضل الصيام في العشر الأواخر من رمضان وما ورد في الأحاديث النبوية",
+    "نصائح للحج هذا العام وما يجب معرفته قبل التوجه للأراضي المقدسة",
+    "الدعاء المأثور قبل النوم والذكر الذي يحمي من الشيطان الرجيم",
+
+    # Jeux / Paris
+    "توقعاتي لمباريات اليوم وأفضل الرهانات على المواقع المتاحة",
+    "ربحت ألفي دولار من القمار الإلكتروني الليلة بهذه الطريقة السرية",
+    "أفضل مواقع الرهانات الرياضية العربية المرخصة والآمنة في 2025",
+
+    # Buzz / Viral
+    "مقطع سقوط مضحك يحقق مئة مليون مشاهدة في يوم واحد فقط",
+    "تحدي تيك توك الجديد ينتشر بشكل جنوني بين الشباب في العالم",
+    "هذا الرجل أكل مئة برغر في أسبوع وهذه نتائج الفحص الطبي",
+    "فيديو فيروسي لقطة تقود سيارة لوحدها ويضحك عليها الملايين",
+    "خطأ في الوشم يصبح ميماً عالمياً في غضون ساعات قليلة جداً",
 ]
 
 OFFTOPIC_EN = [
@@ -267,4 +439,89 @@ OFFTOPIC_EN = [
     "Sneaker release alert: the most hyped limited edition drops of the entire season",
     "Fashion week highlights: the most striking looks from the Paris runway shows",
     "Makeup tutorial: how to achieve the glazed donut skin trend step by step",
+
+    # ═══════════════════════════════════════════════════════════════════
+    # NEW CATEGORIES EN v2.0
+    # ═══════════════════════════════════════════════════════════════════
+
+    # Violence / Accidents / Road Safety
+    "Horrific car crash on the highway leaves 3 critically injured and 1 dead",
+    "Street brawl caught on camera goes viral with over 20 million views overnight",
+    "Knife attack in the subway leaves 2 wounded as police hunt for the suspect",
+    "Brutal fight between rival fan groups erupts outside the stadium after the match",
+    "Shocking dashcam footage captures a head-on collision at high speed on the road",
+    "Road rage incident escalates into a violent assault captured on phone cameras",
+    "Mass shooting at a shopping mall: police response and victim count still rising",
+    "Illegal street racing at 200mph caught on camera ends in a massive fireball crash",
+    "Domestic violence video goes viral: advocates call for urgent government action",
+    "Bar fight leaves 5 hospitalized after a brawl erupts following a football game",
+    "Motorcycle accident victim airlifted to hospital after a high-speed collision",
+    "CCTV footage shows armed robbery at a jewelry store in broad daylight downtown",
+
+    # Automobile / Cars / Mechanics
+    "My brand new SUV just arrived at the dealership — here's the full unboxing",
+    "Tesla vs BMW vs Rivian: the ultimate electric car comparison for 2025 buyers",
+    "My car broke down 200 miles from home and there's no roadside assistance here",
+    "Extreme car modification: turning a regular sedan into a monster truck build",
+    "The best motor oils for extending the life of your diesel engine in cold weather",
+    "New Ferrari 2025 model revealed at the Geneva Motor Show: specs and price list",
+    "Illegal street race at 300 km/h caught on dashcam: driver faces serious charges",
+    "Full car restoration: transforming a 1970s rust bucket into a show-stopping gem",
+    "Car recall notice: these specific models must be checked urgently by the dealer",
+    "How to sell your used car for maximum value: tips from an experienced car dealer",
+
+    # Real Estate / Housing
+    "3-bedroom apartment for sale in city center: 250,000 USD, great condition",
+    "Rent or buy in 2025? A complete financial breakdown to help you decide smartly",
+    "My moving nightmare: the movers broke my TV and now refuse to pay damages",
+    "How to invest in real estate with no down payment using creative finance tricks",
+    "Property prices are crashing in these 10 major cities — huge opportunity now",
+    "Bathroom renovation on a $5,000 budget: before and after transformation photos",
+    "Student housing crisis: waiting lists of 8 years in major university cities",
+    "My 25 sqm studio apartment tour: how I maximized every single inch of space",
+
+    # Pets / Animals
+    "My cat ate something strange in the garden — should I take her to the vet now?",
+    "Adopting an adult dog vs a puppy: the 10 reasons adult dogs make better pets",
+    "My 200-liter tropical fish tank setup: the species I chose and why I love them",
+    "Snake found inside a family home in the neighborhood — fire brigade called in",
+    "Is pet insurance worth the cost? A complete breakdown of what it actually covers",
+    "My parrot keeps repeating curse words — how do I teach him better vocabulary?",
+    "Ant invasion in my kitchen: natural vs chemical solutions put to the test",
+
+    # Wedding / Events / Celebrations
+    "My wedding decoration ideas: the most beautiful oriental styles trending in 2025",
+    "Wedding budget breakdown: how we spent $15,000 on our dream wedding day",
+    "Our custom wedding dress took 6 months to make — here's the full behind-the-scenes",
+    "Bachelorette party in Budapest: full itinerary and budget for 8 people",
+    "Wedding photographer: how to choose the right one to capture your perfect day",
+    "Surprise 40th birthday party with 80 secret guests — here's how we pulled it off",
+
+    # Religion / Spirituality (non-eco)
+    "Friday prayer guide: conditions and importance explained for new Muslims",
+    "Ramadan 2025 fasting schedule: city-by-city iftar and suhoor times worldwide",
+    "Hajj pilgrimage tips: everything first-timers need to know before traveling",
+    "Christmas mass live from St. Peter's Basilica in Vatican City this year",
+    "Morning Buddhist meditations to find inner peace in your daily life routine",
+    "Yom Kippur fasting: rules, traditions and how to break the fast properly",
+
+    # Gambling / Betting / Casino
+    "My sports betting predictions for tonight's matches and the best odds available",
+    "I won $5,000 at an online casino last night using this specific strategy method",
+    "Best online slots with no-deposit bonuses: the top 10 casinos ranked in 2025",
+    "Poker mistakes beginners make and exactly how to avoid them for more wins",
+    "National lottery winner refuses to reveal identity despite a $30 million jackpot",
+
+    # Viral / Buzz / Trending
+    "This spectacular fail video just hit 100 million views in under 24 hours online",
+    "New TikTok challenge goes viral: millions of teenagers worldwide are attempting it",
+    "Man eats 100 burgers in one week to break a world record — here are the results",
+    "Funny video of a dog driving a car goes massively viral across every platform",
+    "Tattoo fail becomes a worldwide meme within hours of being posted online",
+    "This couple met on Tinder and then discovered they are distant cousins by chance",
+    "Shocking clip: snake swallows a whole crocodile in the Australian Outback",
+    "Baby says first word at 5 months old and the video breaks all internet records",
+    "Man lives inside a supermarket for 6 months without being noticed by anyone",
+    "Extreme domino chain reaction: 100,000 pieces fall in just 10 incredible seconds",
+    "Prank gone wrong: man convinces wife there's a snake in the house for a laugh",
 ]

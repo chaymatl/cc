@@ -1,12 +1,12 @@
 // lib/widgets/skeleton_loader.dart
-// Skeleton loaders avec shimmer — zéro dépendance externe
+// Skeleton loaders avec shimmer - zéro dépendance externe
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shimmer de base (glissement de lumière gauche → droite)
+// Shimmer de base (glissement de lumière gauche -> droite)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Shimmer extends StatefulWidget {
@@ -57,7 +57,7 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bloc rectangulaire de base â€" brique de construction principale
+// Bloc rectangulaire de base - brique de construction principale
 // ─────────────────────────────────────────────────────────────────────────────
 
 class SkeletonBox extends StatelessWidget {

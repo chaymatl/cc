@@ -10,7 +10,7 @@ import '../../services/fcm_service.dart';
 import '../../models/user_model.dart';
 
 // ══════════════════════════════════════════════════════
-// FORGOT PASSWORD SCREEN — 3 étapes séparées
+// FORGOT PASSWORD SCREEN - 3 étapes séparées
 // Étape 0 : Email  |  Étape 1 : Code OTP  |  Étape 2 : Nouveau MDP
 // ══════════════════════════════════════════════════════
 
@@ -54,7 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String get _otpCode =>
       _otpControllers.map((c) => c.text).join();
 
-  // ── Étape 0 → Envoyer le code ──────────────────────
+  // ── Étape 0 -> Envoyer le code ──────────────────────
   Future<void> _sendCode() async {
     if (_isLoading) return;
     final email = _emailController.text.trim();
@@ -79,7 +79,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  // ── Étape 1 → Valider le code ──────────────────────
+  // ── Étape 1 -> Valider le code ──────────────────────
   Future<void> _verifyCode() async {
     if (_isLoading) return;
     final code = _otpCode;
@@ -104,7 +104,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  // ── Étape 2 → Réinitialiser le MDP ─────────────────
+  // ── Étape 2 -> Réinitialiser le MDP ─────────────────
   Future<void> _resetPassword() async {
     if (_isLoading) return;
     final newPwd = _newPasswordController.text;
@@ -342,7 +342,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 }
 
 // ══════════════════════════════════════════════════════
-// ÉTAPE 0 — Email
+// ÉTAPE 0 - Email
 // ══════════════════════════════════════════════════════
 class _StepEmail extends StatelessWidget {
   final TextEditingController controller;
@@ -406,7 +406,7 @@ class _StepEmail extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════
-// ÉTAPE 1 — Code OTP (6 chiffres individuels)
+// ÉTAPE 1 - Code OTP (6 chiffres individuels)
 // ══════════════════════════════════════════════════════
 class _StepCode extends StatelessWidget {
   final List<TextEditingController> otpControllers;
@@ -554,7 +554,7 @@ class _OtpBox extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════
-// ÉTAPE 2 — Nouveau mot de passe
+// ÉTAPE 2 - Nouveau mot de passe
 // ══════════════════════════════════════════════════════
 class _StepPassword extends StatelessWidget {
   final TextEditingController newController;

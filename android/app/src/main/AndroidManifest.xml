@@ -60,6 +60,23 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
+
+        <!--
+            Icône par défaut des notifications FCM (petite icône dans la barre de statut).
+            DOIT être un drawable monochrome blanc sur fond transparent.
+            NE PAS utiliser @mipmap/ic_launcher (adaptive icon → logo Flutter affiché).
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_ecorewind"/>
+
+        <!--
+            Couleur d'accentuation de l'icône de notification (vert EcoRewind).
+            Utilisée par certains lanceurs Android pour coloriser l'icône monochrome.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_green"/>
         
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

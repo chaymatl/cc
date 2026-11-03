@@ -1,4 +1,4 @@
-﻿// lib/services/messaging_service.dart
+// lib/services/messaging_service.dart
 // Service Flutter pour la messagerie inter-rôles EcoRewind
 
 import 'dart:convert';
@@ -226,7 +226,7 @@ class MessagingService {
         headers: h,
       );
     } catch (_) {
-      // Silencieux — non critique si l'endpoint n'existe pas encore
+      // Silencieux - non critique si l'endpoint n'existe pas encore
     }
   }
 
@@ -246,5 +246,24 @@ class MessagingService {
       }
     } catch (_) {}
     return 0;
+  }
+
+  // ── Supprimer une conversation 1-à-1 ────────────────────────────────────
+
+  /// Supprime physiquement tous les messages échangés avec [partnerId].
+  /// Retourne le nombre de messages supprimés, ou -1 en cas d'erreur.
+  static Future<int> deleteConversation(int partnerId) async {
+    if (!_hasValidToken) return -1;
+    try {
+      final h = await _headers();
+      final r = await http.delete(
+        Uri.parse('$_base/messages/conversation/$partnerId'),
+        headers: h,
+      );
+      if (r.statusCode == 200) {
+        return _decode(r)['deleted'] as int? ?? 0;
+      }
+    } catch (_) {}
+    return -1;
   }
 }

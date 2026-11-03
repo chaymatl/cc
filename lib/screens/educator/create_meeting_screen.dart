@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+// ignore_for_file: avoid_dynamic_calls
 // lib/screens/educator/create_meeting_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -264,7 +266,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       ]),
                       items: [
                         DropdownMenuItem<int?>(value: null,
-                          child: Text('— Aucun groupe —',
+                          child: Text('- Aucun groupe -',
                             style: GoogleFonts.inter(color: Colors.white54))),
                         ..._groups.map((g) => DropdownMenuItem<int?>(
                           value: g['id'] as int,
@@ -306,7 +308,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
             ],
             const SizedBox(height: 32),
 
-            // ── Info Meet ──────────────────────────────────────────────────
+            // -- Info Meet --------------------------------------------------
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -337,7 +339,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   }
 }
 
-// ── Sous-widgets ──────────────────────────────────────────────────────────────
+// -- Sous-widgets --------------------------------------------------------------
 
 class _SectionLabel extends StatelessWidget {
   final String text;

@@ -1,5 +1,5 @@
-﻿// lib/screens/messaging/messaging_screen.dart
-// Écran de messagerie inter-rôles — EcoRewind
+// lib/screens/messaging/messaging_screen.dart
+// Écran de messagerie inter-rôles - EcoRewind
 // Design premium dark avec bulles de chat, groupes, broadcasts
 
 import 'dart:async';
@@ -39,7 +39,7 @@ class _MessagingScreenState extends State<MessagingScreen>
   void initState() {
     super.initState();
     _load();
-    // Polling toutes les 15s — uniquement si l'utilisateur est connecté
+    // Polling toutes les 15s - uniquement si l'utilisateur est connecté
     _pollTimer = Timer.periodic(
       const Duration(seconds: 15),
       (_) {
@@ -70,7 +70,7 @@ class _MessagingScreenState extends State<MessagingScreen>
         });
       }
     } catch (_) {
-      // Serveur inaccessible — on affiche simplement la liste vide
+      // Serveur inaccessible - on affiche simplement la liste vide
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -214,6 +214,102 @@ class _MessagingScreenState extends State<MessagingScreen>
   }
 
 
+  // ── Suppression d'une conversation ──────────────────────────────────────
+
+  Future<void> _deleteConversation(Map<String, dynamic> conv) async {
+    final type = conv['type'] as String;
+    if (type != 'direct') return; // Groupes non gérés pour l'instant
+
+    final partnerId = conv['partner_id'] as int;
+    final partnerName = conv['partner_name'] as String? ?? 'cet utilisateur';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0D1B2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              'Supprimer la conversation',
+              style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16),
+            ),
+          ],
+        ),
+        content: Text(
+          'Voulez-vous supprimer définitivement votre conversation avec $partnerName ?\n\nCette action est irréversible.',
+          style: GoogleFonts.inter(color: Colors.white60, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Annuler',
+                style: GoogleFonts.outfit(
+                    color: Colors.white54, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_rounded, size: 16),
+            label: Text('Supprimer',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final deleted = await MessagingService.deleteConversation(partnerId);
+    if (!mounted) return;
+
+    if (deleted >= 0) {
+      setState(() {
+        _conversations.removeWhere(
+            (c) => c['type'] == 'direct' && c['partner_id'] == partnerId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline_rounded,
+                  color: Colors.white, size: 18),
+              const SizedBox(width: 10),
+              Text('Conversation supprimée',
+                  style: GoogleFonts.outfit(color: Colors.white)),
+            ],
+          ),
+          backgroundColor: const Color(0xFF1B2E1B),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la suppression',
+              style: GoogleFonts.outfit(color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
   Widget _buildConversationList() {
     return RefreshIndicator(
       color: AppTheme.primaryGreen,
@@ -225,9 +321,42 @@ class _MessagingScreenState extends State<MessagingScreen>
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (_, i) {
           final c = _conversations[i];
-          return _ConversationTile(
+          final isDirect = c['type'] == 'direct';
+          final tile = _ConversationTile(
             conversation: c,
             onTap: () => _openConversation(c),
+            onDelete: isDirect ? () => _deleteConversation(c) : null,
+          );
+          if (!isDirect) return tile;
+          return Dismissible(
+            key: ValueKey('conv_${c['partner_id']}'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              await _deleteConversation(c);
+              return false; // La suppression est gérée manuellement
+            },
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.delete_rounded,
+                      color: Colors.white, size: 26),
+                  const SizedBox(height: 4),
+                  Text('Supprimer',
+                      style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            child: tile,
           );
         },
       ),
@@ -273,8 +402,13 @@ class _MessagingScreenState extends State<MessagingScreen>
 class _ConversationTile extends StatelessWidget {
   final Map<String, dynamic> conversation;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
-  const _ConversationTile({required this.conversation, required this.onTap});
+  const _ConversationTile({
+    required this.conversation,
+    required this.onTap,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +434,7 @@ class _ConversationTile extends StatelessWidget {
               .replaceFirst('#', '0xFF')));
     } else {
       title = conversation['partner_name'] as String? ?? '?';
-      subtitle = ismine ? '✓ $lastMsg' : lastMsg;
+      subtitle = ismine ? ' $lastMsg' : lastMsg;
       typeIcon = _roleIcon(conversation['partner_role'] as String? ?? 'citoyen');
       iconColor = AppTheme.primaryGreen;
     }
@@ -385,6 +519,19 @@ class _ConversationTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // Bouton supprimer (long-press révèle aussi ce bouton)
+                  if (onDelete != null)
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.white24,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   if (hasUnread)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -592,7 +739,7 @@ class _ChatScreenState extends State<_ChatScreen> {
     _typingTimer?.cancel();
     if (_myUserId != null) _myTypingRef.remove().ignore();
     if (mounted) setState(() => _sending = true);
-    // NE PAS effacer le texte avant confirmation — on le restaure en cas d'échec
+    // NE PAS effacer le texte avant confirmation - on le restaure en cas d'échec
 
     Map<String, dynamic>? result;
     if (_replyToId != null) {
@@ -847,7 +994,7 @@ class _ChatScreenState extends State<_ChatScreen> {
                 textInputAction: TextInputAction.newline,
                 onChanged: _onTypingChanged,
                 decoration: InputDecoration(
-                  hintText: 'Écrire un message…',
+                  hintText: 'Écrire un message...',
                   hintStyle: GoogleFonts.inter(
                       color: Colors.white30, fontSize: 14),
                   filled: false,
@@ -1267,7 +1414,7 @@ class _GroupChatScreenState extends State<_GroupChatScreen> {
                         color: Colors.white, fontSize: 14),
                     maxLines: null,
                     decoration: InputDecoration(
-                      hintText: 'Message au groupe…',
+                      hintText: 'Message au groupe...',
                       hintStyle: GoogleFonts.inter(
                           color: Colors.white30, fontSize: 14),
                       filled: false,
@@ -2054,13 +2201,10 @@ class _MessageInput extends StatelessWidget {
   final TextEditingController ctrl;
   final bool sending;
   final VoidCallback onSend;
-  final String hint;
-
   const _MessageInput({
     required this.ctrl,
     required this.sending,
     required this.onSend,
-    this.hint = 'Écrire votre message…',
   });
 
   @override
@@ -2072,7 +2216,7 @@ class _MessageInput extends StatelessWidget {
         maxLines: 4,
         minLines: 2,
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: 'Écrire votre message\u2026',
           hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 14),
           filled: true,
           fillColor: const Color(0xFF111827),
@@ -2106,7 +2250,7 @@ class _MessageInput extends StatelessWidget {
                       color: Colors.white, strokeWidth: 2),
                 )
               : const Icon(Icons.send_rounded, size: 18),
-          label: Text(sending ? 'Envoi…' : 'Envoyer',
+          label: Text(sending ? 'Envoi...' : 'Envoyer',
               style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w800, fontSize: 15)),
           style: ElevatedButton.styleFrom(
@@ -2181,7 +2325,7 @@ String _formatTime(String isoString) {
   }
 }
 
-/// Toujours HH:mm — utilisé dans les bulles de message (comme WhatsApp).
+/// Toujours HH:mm - utilisé dans les bulles de message (comme WhatsApp).
 String _formatBubbleTime(String isoString) {
   try {
     final dt = _parseUtc(isoString);
@@ -2223,7 +2367,7 @@ class DirectChatRoute extends StatelessWidget {
     return _ChatScreen(
       partnerId:   partnerId,
       partnerName: partnerName,
-      partnerRole: '',   // inconnu au moment du tap — chargé à l'affichage
+      partnerRole: '',   // inconnu au moment du tap - chargé à l'affichage
     );
   }
 }

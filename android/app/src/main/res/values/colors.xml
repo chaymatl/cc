@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Couleur d'accent des notifications FCM EcoRewind (vert primaire) -->
+    <color name="notification_green">#FF00C896</color>
 </resources>

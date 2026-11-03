@@ -2,10 +2,10 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 
 /// Configuration de l'API backend
 class ApiConstants {
-  // ⚠️ CONFIGURATION IMPORTANTE:
-  // - Pour ÉMULATEUR Android  → utiliser 10.0.2.2 (adresse spéciale)
-  // - Pour APPAREIL PHYSIQUE  → utiliser l'IP locale de votre PC (ex: 192.168.1.X)
-  //   Trouvez votre IP avec: ipconfig (Windows) → cherchez 'Adresse IPv4' (Wi-Fi)
+  // ! CONFIGURATION IMPORTANTE:
+  // - Pour ÉMULATEUR Android  -> utiliser 10.0.2.2 (adresse spéciale)
+  // - Pour APPAREIL PHYSIQUE  -> utiliser l'IP locale de votre PC (ex: 192.168.1.X)
+  //   Trouvez votre IP avec: ipconfig (Windows) -> cherchez 'Adresse IPv4' (Wi-Fi)
   static const String _physicalDeviceIp = '127.0.0.1'; // ← ADB Reverse (USB)
 
   // Mettez à true si vous testez sur un APPAREIL PHYSIQUE (pas un émulateur)
@@ -34,7 +34,7 @@ class ApiConstants {
   static String get emulatorUrl => 'http://10.0.2.2:8000';
 
   /// Résout une URL partielle (ex: /uploads/img.jpg) en URL absolue.
-  /// Préfixe avec baseUrl → http://127.0.0.1:8000/uploads/img.jpg
+  /// Préfixe avec baseUrl -> http://127.0.0.1:8000/uploads/img.jpg
   static String resolveUrl(String url) {
     if (url.isEmpty) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;

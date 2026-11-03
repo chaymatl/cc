@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:convert';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
@@ -107,7 +108,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     if (mounted) setState(() {});
   }
 
-  /// Fetch unique du profil au 1er montage pour aligner SQL → AuthState.
+  /// Fetch unique du profil au 1er montage pour aligner SQL -> AuthState.
   /// Après cela, Firebase RTDB (via MainNavigationShell) prend le relais
   /// en temps réel pour toutes les mises à jour de score.
   Future<void> _refreshUserScoreOnce() async {
@@ -168,7 +169,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       // Trouver le point le plus proche
       Map<String, dynamic>? nearest;
       double minDist = double.infinity;
-      final dist = const Distance();
+      const dist = Distance();
       for (final p in _filteredPoints) {
         final d = dist(userLoc, LatLng(p['lat'] as double, p['lng'] as double));
         if (d < minDist) { minDist = d; nearest = p; }
@@ -199,7 +200,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     final Set<String> types = {'Tous'};
     for (final p in _mapPoints) {
       final t = p['types'];
-      if (t is List) for (final s in t) types.add(s.toString());
+      if (t is List) { for (final s in t) { types.add(s.toString()); } }
     }
     return types.toList();
   }
@@ -252,7 +253,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     if (score >= 10000) return '🌟 Légende Éco';
     if (score >= 5000)  return '🏆 Champion Vert';
     if (score >= 2000)  return '🌿 Expert Vert';
-    if (score >= 800)   return '♻️ Éco-Citoyen';
+    if (score >= 800)   return ' Éco-Citoyen';
     if (score >= 200)   return '🌱 Engagé';
     return '🌾 Débutant';
   }
@@ -631,11 +632,11 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   // 7 conseils qui tournent chaque jour
   static const _tips = [
     'Rincez vos contenants en plastique avant de les jeter pour un meilleur recyclage.',
-    'Préférez un sac réutilisable à chaque course — économisez 300 sacs plastique par an.',
+    'Préférez un sac réutilisable à chaque course - économisez 300 sacs plastique par an.',
     'Le verre est recyclable à l\'infini sans perte de qualité. Pensez à le trier.',
     'Compostez vos épluchures : 30 % des déchets ménagers peuvent devenir de l\'engrais.',
-    'Éteignez les appareils en veille — ils consomment jusqu\'à 10 % de votre facture d\'électricité.',
-    'Une douche de 5 min consomme 3× moins d\'eau qu\'un bain. Chaque goutte compte.',
+    'Éteignez les appareils en veille - ils consomment jusqu\'à 10 % de votre facture d\'électricité.',
+    'Une douche de 5 min consomme 3x moins d\'eau qu\'un bain. Chaque goutte compte.',
     'Achetez en vrac quand c\'est possible pour réduire les emballages à la source.',
   ];
 
@@ -975,7 +976,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     final cards = [
       (
         title: 'Le Futur du Recyclage',
-        meta: 'Vidéo • 4 min',
+        meta: 'Vidéo * 4 min',
         icon: Icons.recycling_rounded,
         gradientColors: [const Color(0xFF0F4C33), const Color(0xFF1A7A50)],
         accentColor: AppTheme.primaryGreen,
@@ -983,7 +984,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       ),
       (
         title: "L'Essentiel du Tri",
-        meta: 'Article • 3 min',
+        meta: 'Article * 3 min',
         icon: Icons.sort_rounded,
         gradientColors: [const Color(0xFF0C3547), const Color(0xFF1565C0)],
         accentColor: const Color(0xFF42A5F5),
@@ -991,7 +992,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
       ),
       (
         title: 'Quiz Hebdo',
-        meta: 'Quiz • +100 pts',
+        meta: 'Quiz * +100 pts',
         icon: Icons.quiz_rounded,
         gradientColors: [const Color(0xFF3A1060), const Color(0xFF6A1B9A)],
         accentColor: const Color(0xFFCE93D8),
@@ -1403,7 +1404,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
           ),
           const SizedBox(height: 8),
 
-          // Filtres par type de d�chet
+          // Filtres par type de dï¿½chet
           SizedBox(
             height: 36,
             child: ListView.separated(
@@ -1662,7 +1663,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   }
 }
 
-// -- Bottom sheet pour les d�tails d'un point de tri ---------
+// -- Bottom sheet pour les dï¿½tails d'un point de tri ---------
 class _PointBottomSheet extends StatelessWidget {
   final Map<String, dynamic> point;
   final VoidCallback onOpenFullMap;
@@ -1676,7 +1677,7 @@ class _PointBottomSheet extends StatelessWidget {
     final statusColor = status.contains('sat') ? Colors.red
         : status.contains('maint') ? Colors.orange
         : AppTheme.primaryGreen;
-    final statusLabel = status.contains('sat') ? 'Satur�'
+    final statusLabel = status.contains('sat') ? 'Saturï¿½'
         : status.contains('maint') ? 'Maintenance'
         : 'Disponible';
 
@@ -1750,7 +1751,7 @@ class _PointBottomSheet extends StatelessWidget {
             Row(children: [
               const Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.primaryGreen),
               const SizedBox(width: 6),
-              Text('D�chets accept�s : ', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepNavy)),
+              Text('Dï¿½chets acceptï¿½s : ', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.deepNavy)),
             ]),
             const SizedBox(height: 6),
             Wrap(
@@ -1771,7 +1772,7 @@ class _PointBottomSheet extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onOpenFullMap,
               icon: const Icon(Icons.map_rounded, size: 18),
-              label: Text('Voir sur la carte compl�te',
+              label: Text('Voir sur la carte complï¿½te',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryGreen,

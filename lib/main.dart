@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -36,7 +37,7 @@ import 'services/fcm_service.dart';
 
 import 'firebase_options.dart';
 
-/// Clé navigateur globale — permet à FcmService d'afficher des toasts
+/// Clé navigateur globale - permet à FcmService d'afficher des toasts
 /// en foreground même sans contexte passé explicitement.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -71,7 +72,7 @@ class _BlockedHttpClient implements HttpClient {
           ? Future.error(const SocketException('Image host blocked (offline mode)'))
           : _real.getUrl(url);
 
-  // ── Délégation complète à _real pour toutes les autres méthodes ──────────
+  // -- Délégation complète à _real pour toutes les autres méthodes ----------
   @override bool get autoUncompress => _real.autoUncompress;
   @override set autoUncompress(bool v) => _real.autoUncompress = v;
   @override Duration? get connectionTimeout => _real.connectionTimeout;
@@ -126,12 +127,12 @@ void main() async {
 
   await L10n.init();
 
-  // ── Enregistrer le handler FCM de fond AVANT Firebase.initializeApp() ─────
+  // -- Enregistrer le handler FCM de fond AVANT Firebase.initializeApp() -----
   // OBLIGATOIRE : doit être top-level ET appelé avant runApp().
   // Sans ça, les notifications reçues quand l'app est FERMÉE ne s'affichent pas.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // ── Initialisation Firebase (Score temps réel — QR Poubelle) ──────────────
+  // -- Initialisation Firebase (Score temps réel - QR Poubelle) --------------
   // DefaultFirebaseOptions fournit la config correcte selon la plateforme
   // (Web, Android, iOS). Si le Web App ID n'est pas encore configuré,
   // Firebase est ignoré silencieusement (app continue en mode dégradé).
@@ -146,22 +147,22 @@ void main() async {
 
   await PostRegistry.loadSavedStates();
 
-  // ── Restauration de session (reload navigateur / cold start) ──────────────
+  // -- Restauration de session (reload navigateur / cold start) --------------
   // Lire le token JWT sauvegardé et reconstruire AuthState.currentUser AVANT
   // que Flutter rende la première route. Sans cela, un reload sur /#/home
   // trouvait AuthState.currentUser == null et affichait le dialog de connexion.
-  // ── Migration transparente : déplacer jwt_token vers le Keystore sécurisé ──
-  // Aucun impact pour les nouveaux utilisateurs (clé absente → rien à faire)
+  // -- Migration transparente : déplacer jwt_token vers le Keystore sécurisé --
+  // Aucun impact pour les nouveaux utilisateurs (clé absente -> rien à faire)
   // Les utilisateurs existants voient leur token migré silencieusement
   await AuthService.migrateTokensIfNeeded();
 
   await _restoreSessionIfAvailable();
 
-  // ── Initialiser Firebase Cloud Messaging (push notifications mobile) ──────
+  // -- Initialiser Firebase Cloud Messaging (push notifications mobile) ------
   // IMPORTANT : on ATTEND la fin de initialize() pour que les permissions
   // Android soient accordées AVANT d'appeler onUserLoggedIn().
   // Sans ce await, getToken() retourne null car les permissions ne sont
-  // pas encore accordées → token jamais envoyé → aucun push reçu.
+  // pas encore accordées -> token jamais envoyé -> aucun push reçu.
   await FcmService.initialize();
   if (AuthState.currentUser != null) {
     unawaited(FcmService.onUserLoggedIn());
@@ -216,7 +217,7 @@ Future<void> _restoreSessionIfAvailable() async {
       );
       debugPrint('[Session] Restaurée : ${AuthState.currentUser?.name}');
 
-      // ── Reconnexion Firebase pour activer le stream de score temps réel ──
+      // -- Reconnexion Firebase pour activer le stream de score temps réel --
       // Sans cette étape, watchScore() retourne Stream.empty() car
       // FirebaseAuth.instance.currentUser == null après un cold start.
       if (role == UserRole.citoyen) {
@@ -224,7 +225,7 @@ Future<void> _restoreSessionIfAvailable() async {
       }
     } else if (result['message']?.toString().contains('Erreur réseau') == true ||
                result['message']?.toString().contains('Erreur serveur') == true) {
-      // Hors-ligne ou erreur serveur → décodage local du token JWT en fallback
+      // Hors-ligne ou erreur serveur -> décodage local du token JWT en fallback
       debugPrint('[Session] Erreur réseau ignorée. Décodage local du token en fallback.');
       try {
         final parts = token.split('.');
@@ -252,7 +253,7 @@ Future<void> _restoreSessionIfAvailable() async {
         debugPrint('[Session] Échec du fallback local : $e');
       }
     } else if (result['message']?.toString().contains('Session expirée') == true) {
-      // Refresh token aussi épuisé → fallback JWT local pour éviter la déconnexion
+      // Refresh token aussi épuisé -> fallback JWT local pour éviter la déconnexion
       debugPrint('[Session] Refresh échoué. Décodage local du token en fallback.');
       try {
         final parts = token.split('.');
@@ -278,16 +279,16 @@ Future<void> _restoreSessionIfAvailable() async {
               email: payloadData['sub'] ?? '',
               role: role,
             );
-            // ⚠️ Effacer le token expiré : le refresh a échoué, envoyer ce token
+            // ! Effacer le token expiré : le refresh a échoué, envoyer ce token
             // aux requêtes HTTP ne ferait que générer des 401 en masse.
-            // currentUser est conservé pour afficher l'UI (nom, avatar…)
+            // currentUser est conservé pour afficher l'UI (nom, avatar...)
             // mais toute action protégée redirigera vers la page de login.
             AuthState.authToken = null;
             await secureStorage.delete(key: 'jwt_token');
             await secureStorage.delete(key: 'refresh_token');
             debugPrint('[Session] Fallback JWT local (session expirée) : ${AuthState.currentUser?.email}');
           } else {
-            // Token trop ancien (> 7j) → vraiment invalide
+            // Token trop ancien (> 7j) -> vraiment invalide
             AuthState.authToken = null;
             AuthState.currentUser = null;
             await secureStorage.delete(key: 'jwt_token');
@@ -326,7 +327,7 @@ Future<void> _refreshFirebaseToken() async {
     }
   } catch (e) {
     debugPrint('[Firebase] Refresh token echoue (mode degrade) : $e');
-    // Non bloquant — l app continue sans temps reel Firebase
+    // Non bloquant - l app continue sans temps reel Firebase
   }
 }
 
@@ -372,7 +373,7 @@ class _EcoRewindAppState extends State<EcoRewindApp> {
       themeMode: ThemeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/splash',
       onGenerateRoute: (settings) {
-        // ─── Sur Web : pas d'historique Flutter — Chrome gère Retour/Avancer ───
+        // --- Sur Web : pas d'historique Flutter - Chrome gère Retour/Avancer ---
         // Sur Mobile : MaterialPageRoute classique avec animation
         Route<T> buildRoute<T>(WidgetBuilder builder, {bool fullscreen = false}) {
           return MaterialPageRoute<T>(
@@ -382,7 +383,7 @@ class _EcoRewindAppState extends State<EcoRewindApp> {
           );
         }
 
-        // ─── Routes d'onglets : chaque onglet = sa propre route ──────────────
+        // --- Routes d'onglets : chaque onglet = sa propre route --------------
         Route<dynamic> tabRoute(int tabIndex) => PageRouteBuilder(
               settings: settings,
               pageBuilder: (context, _, __) =>

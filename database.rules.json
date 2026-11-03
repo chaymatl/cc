@@ -28,7 +28,7 @@
     },
     "notifications": {
       "$user_id": {
-        ".read": "auth != null && auth.uid == $user_id",
+        ".read": "auth != null",
         ".write": false
       }
     },
@@ -39,6 +39,14 @@
     "admin_stats": {
       ".read": "auth != null",
       ".write": false
+    },
+    "typing": {
+      "$sender_id": {
+        "$receiver_id": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
     },
     "$other": {
       ".read": false,

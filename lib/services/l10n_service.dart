@@ -240,7 +240,7 @@ class L10n {
      'home_history': {'fr': 'Historique'},
      'home_education_section': {'fr': 'Espace Éducation'},
      'home_see_all': {'fr': 'Voir tout'},
-     'home_see_all_arrow': {'fr': 'Tout voir →'},
+     'home_see_all_arrow': {'fr': 'Tout voir ->'},
     'home_stat_co2': {'fr': 'CO₂ ÉVITÉ'},
     'home_stat_sorted': {'fr': 'TRIÉ'},
     'home_stat_trees': {'fr': 'ARBRES'},
@@ -256,7 +256,7 @@ class L10n {
 
     // ── Gestion utilisateurs (admin) ─────────────────────────────────────────
     'user_mgmt_title': {'fr': 'Gestion des Utilisateurs'},
-    'user_mgmt_search': {'fr': 'Rechercher un utilisateur…'},
+    'user_mgmt_search': {'fr': 'Rechercher un utilisateur...'},
     'user_mgmt_all_roles': {'fr': 'Tous les rôles'},
     'user_mgmt_no_result': {'fr': 'Aucun utilisateur trouvé'},
     'user_mgmt_score': {'fr': 'Score'},
@@ -290,8 +290,8 @@ class L10n {
     'err_unknown': {'fr': 'Une erreur est survenue.'},
 
     // ── Chargement ────────────────────────────────────────────────────────────
-    'loading': {'fr': 'Chargement…'},
-    'loading_data': {'fr': 'Chargement des données…'},
+    'loading': {'fr': 'Chargement...'},
+    'loading_data': {'fr': 'Chargement des données...'},
     'no_data': {'fr': 'Aucune donnée disponible'},
 
     // ── Actions communes ──────────────────────────────────────────────────────
@@ -307,13 +307,13 @@ class L10n {
     // ── Messagerie ────────────────────────────────────────────────────────────
     'msg_title': {'fr': 'Messagerie'},
     'msg_new': {'fr': 'Nouvelle conversation'},
-    'msg_placeholder': {'fr': 'Écrivez un message…'},
+    'msg_placeholder': {'fr': 'Écrivez un message...'},
     'msg_empty': {'fr': 'Aucune conversation'},
     'msg_empty_sub': {'fr': 'Démarrez une nouvelle discussion'},
 
     // ── Carte / Points de collecte ────────────────────────────────────────────
     'map_title': {'fr': 'Points de Collecte'},
-    'map_search': {'fr': 'Rechercher un centre…'},
+    'map_search': {'fr': 'Rechercher un centre...'},
     'map_available': {'fr': 'Disponible'},
     'map_saturated': {'fr': 'Saturé'},
     'map_maintenance': {'fr': 'Maintenance'},

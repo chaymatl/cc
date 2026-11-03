@@ -21,6 +21,8 @@ import os
 import sys
 import time
 import json
+import unicodedata
+import re
 from typing import Optional
 
 # ── Résolution path backend ───────────────────────────────────────────────────
@@ -35,10 +37,150 @@ from services.ai_moderator import (
 )
 
 # ── Seuils CNN ────────────────────────────────────────────────────────────────
-CNN_ECO_THRESHOLD      = 0.45   # -> publie (seuil abaisse pour eco dominant)
-CNN_OFFTOPIC_THRESHOLD = 0.55   # -> REJETE si image hors-sujet (vetements, maquillage, violence...)
+CNN_ECO_THRESHOLD      = 0.55   # releve : publie seulement si eco clairement dominant
+CNN_OFFTOPIC_THRESHOLD = 0.55   # -> pending si image hors-sujet (vetements, violence...)
 CNN_TOXIC_THRESHOLD    = 0.50   # -> rejete (texte)
-CNN_NSFW_THRESHOLD     = 0.45   # -> rejete (contenu violent/NSFW detecte par ResNet18)
+CNN_NSFW_THRESHOLD     = 0.45   # -> rejete (contenu NSFW/violent detecte par ResNet18)
+
+
+# =============================================================================
+# COUCHE 0b : Dictionnaires de mots-cles hors-sujet (regles dures, < 1ms)
+# =============================================================================
+
+def _normalize_kw(text: str) -> str:
+    """Normalise un texte : minuscule, sans accents, espaces multiples simplifies."""
+    t = text.lower().strip()
+    t = unicodedata.normalize("NFKD", t)
+    t = "".join(c for c in t if not unicodedata.combining(c))
+    t = re.sub(r"\s+", " ", t)
+    return t
+
+
+OFF_TOPIC_HARD_KEYWORDS: dict = {
+
+    # Violence / Accidents / Securite routiere
+    "violence": [
+        "accident de voiture", "accident de moto", "accident de la route",
+        "carambolage", "collision frontale", "crash moto", "securite routiere",
+        "bagarre", "rixe", "combat de rue", "affrontement violent", "coup de poing",
+        "coup de couteau", "agression", "blessure grave", "mort violent",
+        "arme a feu", "pistolet", "fusil", "bombe", "explosion", "fusillade",
+        "attaque armee", "attentat terroriste", "otage", "prise d'otage",
+        "guerre", "conflit arme", "bombardement", "milice",
+        "car crash", "road accident", "shooting", "stabbing", "knife attack",
+        "weapon", "terrorist attack", "hostage situation",
+    ],
+
+    # Automobile / Mecanique (hors vehicules electriques eco)
+    "automobile": [
+        "concessionnaire automobile", "mecano garagiste", "revision voiture",
+        "vidange moteur", "plein d'essence", "pompe a essence",
+        "tuning carrosserie", "bolide sportif", "cylindree chevaux",
+        "course illegale autoroute", "drag race rue", "controle technique",
+        "car dealership", "mechanic shop", "oil change", "drag racing",
+        "exhaust system", "horsepower engine",
+    ],
+
+    # Mode / Beaute / Cosmetiques
+    "mode_beaute": [
+        "maquillage tutorial", "rouge a levres", "mascara eyeliner", "fond de teint",
+        "fard a paupiere", "blush bronzer", "highlighter contouring",
+        "parfum luxe", "bijoux tendance", "collier chunky", "bague tendance",
+        "sneakers collector", "haul shopping", "fashion week defile",
+        "haute couture", "salon de coiffure", "faux ongles", "nail art",
+        "botox lifting", "peeling visage",
+        "makeup tutorial", "lipstick swatch", "perfume luxury",
+        "jewelry collection", "fashion week show", "skincare routine",
+        "nail art tutorial", "botox filler",
+    ],
+
+    # Cuisine / Gastronomie (sans lien eco)
+    "cuisine": [
+        "recette tajine agneau", "recette couscous royal", "patisserie francaise",
+        "gateau anniversaire", "pizza maison", "burger gourmet",
+        "sushi restaurant", "pasta carbonara", "restaurant etoile michelin",
+        "street food marrakech", "smoothie proteine",
+        "lamb recipe", "burger recipe", "sushi restaurant", "michelin star",
+        "baking tutorial", "cocktail recipe", "protein smoothie",
+    ],
+
+    # Sport / Fitness (sans lien eco)
+    "sport": [
+        "ligue des champions football", "coupe du monde foot",
+        "transfert mercato", "carton rouge penalty", "score mi-temps",
+        "programme musculation", "seance gym fitness",
+        "champions league match", "world cup football", "transfer fee player",
+        "gym workout routine", "fitness challenge",
+    ],
+
+    # Politique / Diplomatie
+    "politique": [
+        "elections legislatives", "sondage politique", "coalition gouvernementale",
+        "crise diplomatique", "sommet g20 g7", "premier ministre demissionne",
+        "reforme retraites loi", "vote parlement", "mandat presidentiel",
+        "election results", "political corruption", "diplomatic crisis",
+    ],
+
+    # Finance / Crypto
+    "finance": [
+        "bitcoin prix", "ethereum crypto", "nft collection", "blockchain trading",
+        "bourse chute", "inflation panier courses",
+        "taux d'interet banque centrale", "faillite banque", "credit immobilier",
+        "bitcoin price", "crypto market", "stock market crash",
+        "interest rate hike", "bank bankruptcy",
+    ],
+
+    # Divertissement / Pop culture
+    "divertissement": [
+        "serie netflix saison", "binge watch episode", "oscars palme d'or",
+        "album single stream", "jeu video sortie", "esport tournoi",
+        "tiktok challenge viral", "trending meme buzz",
+        "netflix series", "oscar award", "gaming tournament", "viral tiktok",
+    ],
+
+    # Mariage / Evenements familiaux
+    "mariage": [
+        "robe de mariee", "henna party", "ceremonie fiancailles",
+        "enterrement vie de garcon", "baby shower", "traiteur mariage",
+        "photographe mariage", "bridal dress", "henna night", "wedding photographer",
+    ],
+
+    # Jeux d'argent / Paris
+    "jeux": [
+        "casino en ligne", "machine a sous", "paris sportifs bookmaker",
+        "pronostic cote match", "jackpot loterie", "scratch grattage",
+        "online casino", "sports betting odds", "poker strategy", "lottery jackpot",
+    ],
+}
+
+# Liste plate pour recherche rapide (toutes categories fusionnees)
+_OFF_TOPIC_FLAT: list = [
+    kw for kws in OFF_TOPIC_HARD_KEYWORDS.values() for kw in kws
+]
+
+# Mots dans le TEXTE signalant fortement une image non-eco
+# Si >= 1 terme present ET eco_img < 0.70 -> pending_review automatique
+IMAGE_CONTEXT_BLACKLIST: list = [
+    "accident voiture", "accident moto", "collision", "carambolage",
+    "concessionnaire", "tuning", "drag race", "course illegale",
+    "maquillage", "rouge a levres", "mascara", "parfum luxe",
+    "bijoux tendance", "haul shopping", "fashion week",
+    "recette tajine", "recette couscous", "pizza", "burger", "restaurant etoile",
+    "score match", "ligue champions", "transfert mercato", "programme musculation",
+    "bagarre", "rixe", "fusillade", "arme feu", "blessure grave",
+    "serie netflix", "binge watch", "jeu video",
+    "bitcoin", "crypto trading",
+]
+
+# Termes minimaux pour confirmer la pertinence eco d'une publication
+ECO_GUARDIAN_KEYWORDS: list = [
+    "recycl", "nettoy", "trier", "tri", "compost", "depollut",
+    "ramass", "proteg", "rebois", "plant",
+    "dechet", "ordure", "plastique", "poubelle", "conteneur",
+    "pollution", "pollu", "environnement", "ecologi",
+    "nature", "foret", "biodiversit", "faune", "flore",
+    "solaire", "renouvelab", "eolien",
+]
 
 
 class EcoCNNModerator(AIModerator):
@@ -218,6 +360,74 @@ class EcoCNNModerator(AIModerator):
 
         # Exécuter le pipeline parent (règles + Detoxify + scoring de base)
         result = super().moderate(text=text, image_local_path=image_local_path)
+
+        # ══════════════════════════════════════════════════════════════════════
+        # COUCHE 0b : Détection hors-sujet par mots-clés durs (< 1ms)
+        # ══════════════════════════════════════════════════════════════════════
+        # Evalue le texte contre OFF_TOPIC_HARD_KEYWORDS et IMAGE_CONTEXT_BLACKLIST.
+        # Si >= 2 termes hors-sujet detectes et aucun terme eco -> pending_review.
+        # Cette couche opere AVANT les CNN et ne peut PAS publier.
+        _norm_text_0b = _normalize_kw(text or "")
+        _has_image_0b = bool(image_local_path and os.path.exists(image_local_path))
+
+        # Compter les hits hors-sujet (sur texte normalise)
+        _offtopic_hits: list = []
+        _offtopic_categories: list = []
+        for _cat, _kws in OFF_TOPIC_HARD_KEYWORDS.items():
+            for _kw in _kws:
+                if _normalize_kw(_kw) in _norm_text_0b:
+                    _offtopic_hits.append(_kw)
+                    if _cat not in _offtopic_categories:
+                        _offtopic_categories.append(_cat)
+
+        # Verifier si le texte contient au moins 1 terme eco (garde contre faux positifs)
+        _has_eco_term_0b = any(
+            stem in _norm_text_0b for stem in ECO_GUARDIAN_KEYWORDS
+        )
+
+        # Detecter les termes IMAGE_CONTEXT_BLACKLIST dans le texte
+        _img_ctx_hit = any(
+            _normalize_kw(kw) in _norm_text_0b for kw in IMAGE_CONTEXT_BLACKLIST
+        )
+
+        # Decision couche 0b :
+        # >= 1 terme hors-sujet FORT (categorie violence/violence connue) -> pending direct
+        # >= 2 termes hors-sujet sans terme eco -> pending
+        _violence_hit = any(
+            _normalize_kw(kw) in _norm_text_0b
+            for kw in OFF_TOPIC_HARD_KEYWORDS.get("violence", [])
+        )
+
+        if _violence_hit and not _has_eco_term_0b:
+            # Violence detectee sans contexte eco -> pending_review immediat
+            result.score  = max(result.score, 0.50)
+            result.status = ModerationStatus.PENDING_REVIEW.value
+            _reason_0b = (
+                "Contenu potentiellement violent detecte (regles couche 0b) : "
+                "publication envoyee a l'administrateur pour validation — "
+                "categories: " + ", ".join(_offtopic_categories[:3])
+            )
+            if _reason_0b not in result.reasons:
+                result.reasons.append(_reason_0b)
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
+
+        elif len(_offtopic_hits) >= 2 and not _has_eco_term_0b:
+            # Multiple signaux hors-sujet, zero terme eco -> pending_review
+            result.score  = max(result.score, 0.45)
+            result.status = ModerationStatus.PENDING_REVIEW.value
+            _reason_0b = (
+                "Contenu hors-sujet detecte (regles couche 0b) : "
+                "{} signaux hors-sujet trouves ({}) — "
+                "validation admin requise".format(
+                    len(_offtopic_hits),
+                    ", ".join(_offtopic_categories[:3])
+                )
+            )
+            if _reason_0b not in result.reasons:
+                result.reasons.append(_reason_0b)
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
 
         # ── GARDE CRITIQUE : respect de la décision parente forte ────────────
         # Si le parent a signalé pending_review avec un score élevé (>= 0.50),
@@ -453,28 +663,32 @@ class EcoCNNModerator(AIModerator):
             return result
 
         # ══════════════════════════════════════════════════════════════════════
-        # CAS 2 : Image pollution/déchets + texte encourageant → PUBLISHED
+        # CAS 2 : Image off_topic + texte éco-action fort → PUBLISHED
         # ══════════════════════════════════════════════════════════════════════
         # Ex: Photo de déchets dans la nature + "Protégeons notre environnement,
         #     pensez à trier vos déchets !"
-        # L'image montre une situation négative MAIS le texte encourage à agir.
-        # Cela inclut :
-        #   - Verbes d'action (nettoyons, recyclons, protégeons...)
-        #   - Conseils (pensez à, n'oubliez pas, chaque geste compte...)
-        #   - Sensibilisation (saviez-vous que, impact, conséquences...)
-        if cnn_img_decision in ("off_topic", "eco") and text_is_eco_relevant:
-            if is_safe_text and is_safe_image:
-                result.reasons = [
-                    r for r in result.reasons
-                    if "sans contexte environnemental" not in r
-                    and "hors sujet" not in r.lower()
-                    and "sans action eco" not in r.lower()
-                    and "contenu potentiellement inapproprie" not in r.lower()
-                ]
-                result.score  = min(result.score, 0.20)
-                result.status = ModerationStatus.PUBLISHED.value
-                result.processing_time_ms = round((time.time() - t0) * 1000, 2)
-                return result
+        # CONDITION DURCIE : le texte doit prôner une ACTION éco concrète
+        # (nettoyage, recyclage, plantation...) ET pas seulement contenir un
+        # mot générique ("beau", "ville", "pays") — trop de faux positifs.
+        # INTERDIT ici : image classée "eco" par le CNN (ce n'est pas vraiment
+        # du "contenu pollution + sensibilisation" = CAS 2).
+        if (
+            cnn_img_decision == "off_topic"   # image clairement hors-sujet
+            and text_promotes_action           # texte avec ACTION éco concrète (pas juste conseil)
+            and is_safe_text
+            and is_safe_image
+        ):
+            result.reasons = [
+                r for r in result.reasons
+                if "sans contexte environnemental" not in r
+                and "hors sujet" not in r.lower()
+                and "sans action eco" not in r.lower()
+                and "contenu potentiellement inapproprie" not in r.lower()
+            ]
+            result.score  = min(result.score, 0.20)
+            result.status = ModerationStatus.PUBLISHED.value
+            result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+            return result
 
         # ══════════════════════════════════════════════════════════════════════
         # CAS 3 : Image off_topic SANS texte éco → PENDING_REVIEW (admin)
@@ -503,6 +717,33 @@ class EcoCNNModerator(AIModerator):
         # Ex PUBLIÉ   : nature + "magnifique !"       → neutre
         # Ex PENDING  : nature + "achetez chez nous" → commercial détecté
         if cnn_img_decision == "eco" and not text_is_eco_relevant and not has_greeting:
+            # ── GARDE 4a : Seuil eco dynamique selon presence de texte ────────
+            # Texte vide (< 5 chars) : eco_img >= 0.80 requis (tres strict).
+            # ResNet18 confond frequemment : piece Bitcoin (doree) = soleil/nature,
+            # ballon de foot (bleu/blanc) = ciel/eau, etc.
+            # Texte court/neutre      : eco_img >= 0.65 requis (strict).
+            _text_is_empty = len((text or "").strip()) < 5
+            _required_eco_conf = 0.80 if _text_is_empty else 0.65
+
+            if eco_img < _required_eco_conf:
+                result.score  = max(result.score, 0.45)
+                result.status = ModerationStatus.PENDING_REVIEW.value
+                if _text_is_empty:
+                    low_conf_reason = (
+                        "Publication sans texte et image ambigue : "
+                        "confiance eco insuffisante ({:.0f}% < 80%) "
+                        "validation admin requise".format(eco_img * 100)
+                    )
+                else:
+                    low_conf_reason = (
+                        "Image sans contexte environnemental clair : "
+                        "confiance IA insuffisante (eco={:.0f}%) validation admin requise".format(eco_img * 100)
+                    )
+                if low_conf_reason not in result.reasons:
+                    result.reasons.append(low_conf_reason)
+                result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+                return result
+
             anti_env_score = result.text_analysis.get("categories", {}).get(
                 "anti_environmental", {}
             ).get("score", 0.0)
@@ -524,13 +765,15 @@ class EcoCNNModerator(AIModerator):
 
             # ── Décision ─────────────────────────────────────────────────────
             # Publier SEULEMENT si : texte neutre + pas commercial + CNN pas off_topic
+            # ET texte non vide (une image seule, meme bien classee, doit etre validee)
             if (
-                is_safe_text
+                not _text_is_empty              # texte absent = toujours admin
+                and is_safe_text
                 and is_safe_image
                 and anti_env_score < 0.35
                 and profanity_sc < 0.30
-                and not is_commercial        # pas de spam/pub commerciale
-                and not text_cnn_is_offtopic # CNN texte ne crie pas "off_topic"
+                and not is_commercial           # pas de spam/pub commerciale
+                and not text_cnn_is_offtopic    # CNN texte ne crie pas "off_topic"
             ):
                 result.reasons = [
                     r for r in result.reasons

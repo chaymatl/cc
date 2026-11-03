@@ -40,7 +40,7 @@ class SectionAdvantages extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button — masqué sur web
+              // Back button - masqué sur web
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(

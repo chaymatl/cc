@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:async';
@@ -161,7 +162,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
     );
   }
 
-  /// Petit avatar circulaire avec initiale — pas de réseau, pas de CORS
+  /// Petit avatar circulaire avec initiale - pas de réseau, pas de CORS
   Widget _miniAvatar(String initial, Color color) {
     return Container(
       width: 32, height: 32,
@@ -219,9 +220,9 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
     );
   }
 
-  // ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  // ----------------------------------------------------------------------
   // 2. SECTION HUB - Pinterest-style masonry cards
-  // ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  // ----------------------------------------------------------------------
   Widget _buildSectionHub() {
     final sections = [
       _SectionCard(
@@ -559,7 +560,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
       width: double.infinity,
       child: Stack(
         children: [
-          // Fond degrade anime natif — remplace les URLs Unsplash bloquees
+          // Fond degrade anime natif - remplace les URLs Unsplash bloquees
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _floatingController,
@@ -1383,7 +1384,7 @@ class _WebMarketingLandingScreenState extends State<WebMarketingLandingScreen> w
           ),
           const SizedBox(height: 16),
           Text(
-            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 10 éco-points offerts. ðŸŽ',
+            'Inscrivez-vous gratuitement en 30 secondes.\nBonus de bienvenue : 10 éco-points offerts. ðÅ¸Å½Â',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: Colors.white.withOpacity(0.85),
@@ -1501,7 +1502,7 @@ class _WavePainter extends CustomPainter {
 
 class _ContinuousKenBurns extends StatefulWidget {
   final List<String> imageUrls;
-  const _ContinuousKenBurns({super.key, required this.imageUrls});
+  const _ContinuousKenBurns({required this.imageUrls});
 
   @override
   State<_ContinuousKenBurns> createState() => _ContinuousKenBurnsState();

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 // lib/services/groups_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,7 +14,7 @@ class GroupsService {
           'Authorization': 'Bearer ${AuthState.authToken}',
       };
 
-  // ── Citoyens ────────────────────────────────────────────────────────────────
+  // -- Citoyens ----------------------------------------------------------------
 
   static Future<List<dynamic>> searchCitizens({String q = ''}) async {
     try {
@@ -26,7 +27,7 @@ class GroupsService {
     return [];
   }
 
-  // ── Groupes ─────────────────────────────────────────────────────────────────
+  // -- Groupes -----------------------------------------------------------------
 
   static Future<List<dynamic>> getMyGroups() async {
     try {

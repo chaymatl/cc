@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+// ignore_for_file: avoid_dynamic_calls, unused_element
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
@@ -7,19 +8,19 @@ import '../../services/l10n_service.dart';
 import '../../core/firebase/firebase_admin_stats_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════
-// ONGLET ANALYTICS ADMIN — Architecture hybride Firebase + FastAPI
+// ONGLET ANALYTICS ADMIN - Architecture hybride Firebase + FastAPI
 //
 // Sources de données :
-//   ðŸ”¥ Firebase RTDB (push temps réel, pas de polling) :
-//       Section 1 — KPIs Vue d'ensemble   → /admin_stats/
-//       Section 2 — Scans QR              → /admin_stats/ + /leaderboard/
-//       Section 3 — Utilisateurs          → /admin_stats/ + /leaderboard/
-//       Section 7 — Poubelles             → /poubelles/
+//   📥 Firebase RTDB (push temps réel, pas de polling) :
+//       Section 1 - KPIs Vue d'ensemble   -> /admin_stats/
+//       Section 2 - Scans QR              -> /admin_stats/ + /leaderboard/
+//       Section 3 - Utilisateurs          -> /admin_stats/ + /leaderboard/
+//       Section 7 - Poubelles             -> /poubelles/
 //
-//   ðŸŒ FastAPI HTTP (polling 30s via _CoordinateurRefresh) :
-//       Section 4 — Formation & Quiz      → /admin/analytics/education
-//       Section 5 — Modération            → /admin/analytics/community
-//       Section 6 — Centres de tri        → /admin/analytics/centers/*
+//   🌐 FastAPI HTTP (polling 30s via _CoordinateurRefresh) :
+//       Section 4 - Formation & Quiz      -> /admin/analytics/education
+//       Section 5 - Modération            -> /admin/analytics/community
+//       Section 6 - Centres de tri        -> /admin/analytics/centers/*
 // ═══════════════════════════════════════════════════════════════════
 
 // ── Coordinateur de rafraîchissement global ──────────────────────────────────
@@ -151,28 +152,28 @@ class _AdminAnalyticsTabState extends State<AdminAnalyticsTab> {
           ),
           const SizedBox(height: 20),
 
-          // ── SECTION 1 : VUE D'ENSEMBLE KPIs ðŸ”¥ Firebase RTDB ────────
+          // ── SECTION 1 : VUE D'ENSEMBLE KPIs 📥 Firebase RTDB ────────
           const SectionDivider(label: 'VUE D\'ENSEMBLE GLOBAL'),
           const _SectionDashboardFirebase(),
           const SizedBox(height: 4),
 
-          // ── SECTION 2 : SCANS QR ðŸ”¥ Firebase RTDB ───────────────────
-          const SectionDivider(label: 'ACTIVITÉ — SCANS QR'),
+          // ── SECTION 2 : SCANS QR 📥 Firebase RTDB ───────────────────
+          const SectionDivider(label: 'ACTIVITÉ - SCANS QR'),
           _SectionScansFirebase(coordinateur: _CoordinateurRefresh()),
           const SizedBox(height: 4),
 
           // ── SECTIONS DÉPLACÉES ────────────────────────────────────────
-          // Section Utilisateurs  → onglet 'Utilisateurs' (UserManagementScreen)
-          // Section Éducation     → onglet 'Contenu' (_EducationKpiBanner)
-          // Section Modération    → onglet 'Modération' (_ModerationKpiBanner)
+          // Section Utilisateurs  -> onglet 'Utilisateurs' (UserManagementScreen)
+          // Section Éducation     -> onglet 'Contenu' (_EducationKpiBanner)
+          // Section Modération    -> onglet 'Modération' (_ModerationKpiBanner)
 
-          // ── SECTION 6 : CENTRES DE TRI ðŸŒ FastAPI ────────────────────
+          // ── SECTION 6 : CENTRES DE TRI 🌐 FastAPI ────────────────────
           const SectionDivider(label: 'CENTRES DE TRI & COLLECTE'),
           _SectionCentres(coordinateur: _CoordinateurRefresh()),
           const SizedBox(height: 4),
 
-          // ── SECTION 7 : POUBELLES INTELLIGENTES ðŸ”¥ Firebase RTDB ─────
-          const SectionDivider(label: 'POUBELLES INTELLIGENTES — TEMPS RÉEL'),
+          // ── SECTION 7 : POUBELLES INTELLIGENTES 📥 Firebase RTDB ─────
+          const SectionDivider(label: 'POUBELLES INTELLIGENTES - TEMPS RÉEL'),
           const _SectionPoubelles(),
           const SizedBox(height: 4),
 
@@ -291,7 +292,7 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 1 — DASHBOARD KPI ðŸ”¥ Firebase RTDB /admin_stats/
+// SECTION 1 - DASHBOARD KPI 📥 Firebase RTDB /admin_stats/
 // Données poussées par le backend après chaque scan QR.
 // StreamBuilder = zéro polling, mise à jour instantanée.
 // ═══════════════════════════════════════════════════════════════════
@@ -311,14 +312,14 @@ class _SectionDashboardFirebase extends StatelessWidget {
         // Badge Firebase live
         final lastUpdStr = s.lastUpdated != null
             ? _formatAgo(s.lastUpdated!)
-            : 'En attente…';
+            : 'En attente...';
 
         return SectionCard(
           titre: L10n.tr('admin_kpi_overview'),
           icone: Icons.dashboard_rounded,
           couleur: AppTheme.primaryGreen,
           chargement: isLoading,
-          onActualiser: () {},  // pas de polling — Firebase push
+          onActualiser: () {},  // pas de polling - Firebase push
           lastUpdated: s.lastUpdated,
           cacheAge: 0,
           filtres: [
@@ -343,7 +344,7 @@ class _SectionDashboardFirebase extends StatelessWidget {
           contenu: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
             // ── Vue synthétique : chiffres clés transversaux ────────────
-            // Collectes (collecteurs) — indicateur unique ici
+            // Collectes (collecteurs) - indicateur unique ici
             LayoutBuilder(builder: (_, c) {
               final w = (c.maxWidth - 12) / 2;
               return Column(children: [
@@ -381,7 +382,7 @@ class _SectionDashboardFirebase extends StatelessWidget {
             const SizedBox(height: 20),
 
             // ── Alertes globales (cross-domain) ────────────────────────
-            Text('⚠ï¸ Alertes en attente', style: GoogleFonts.inter(
+            Text('! Alertes en attente', style: GoogleFonts.inter(
               fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.textMuted)),
             const SizedBox(height: 10),
             Row(children: [
@@ -406,7 +407,7 @@ class _SectionDashboardFirebase extends StatelessWidget {
 
             const SizedBox(height: 6),
             Text(
-              'Détails → onglets Utilisateurs · Scans · Centres · Modération',
+              'Détails -> onglets Utilisateurs · Scans · Centres · Modération',
               style: GoogleFonts.inter(fontSize: 9, color: AppTheme.textMuted, fontStyle: FontStyle.italic),
             ),
           ]),
@@ -425,7 +426,7 @@ String _formatAgo(DateTime dt) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 2 — SCANS QR ðŸ”¥ Firebase RTDB /admin_stats/ + courbe FastAPI
+// SECTION 2 - SCANS QR 📥 Firebase RTDB /admin_stats/ + courbe FastAPI
 // KPIs en temps réel via Firebase, courbe de tendance via FastAPI.
 // ═══════════════════════════════════════════════════════════════════
 
@@ -480,7 +481,7 @@ class _EtatScansFirebase extends State<_SectionScansFirebase> {
                 ? s.scansWeek
                 : s.totalScans;
 
-        final lastUpdStr = s.lastUpdated != null ? _formatAgo(s.lastUpdated!) : '…';
+        final lastUpdStr = s.lastUpdated != null ? _formatAgo(s.lastUpdated!) : '...';
 
         return SectionCard(
           titre: 'Scans QR / Smart Bins',
@@ -563,7 +564,7 @@ class _EtatScansFirebase extends State<_SectionScansFirebase> {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 4 — ÉDUCATION (GET /admin/analytics/education)
+// SECTION 4 - ÉDUCATION (GET /admin/analytics/education)
 // ═══════════════════════════════════════════════════════════════════
 
 class _SectionEducation extends StatefulWidget {
@@ -682,7 +683,7 @@ class _EtatEducation extends State<_SectionEducation> {
                 child: Center(child: Text('${e.key + 1}', style: GoogleFonts.outfit(
                   fontSize: 11, fontWeight: FontWeight.w900, color: Colors.teal)))),
               const SizedBox(width: 10),
-              Expanded(child: Text('${e.value['title'] ?? '—'}', style: GoogleFonts.inter(
+              Expanded(child: Text('${e.value['title'] ?? '-'}', style: GoogleFonts.inter(
                 fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.deepSlate),
                 overflow: TextOverflow.ellipsis)),
               Text('${e.value['submissions']} tentatives', style: GoogleFonts.outfit(
@@ -701,7 +702,7 @@ class _EtatEducation extends State<_SectionEducation> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 5 — MODÉRATION (GET /admin/analytics/community)
+// SECTION 5 - MODÉRATION (GET /admin/analytics/community)
 // ═══════════════════════════════════════════════════════════════════
 
 class _SectionModeration extends StatefulWidget {
@@ -844,7 +845,7 @@ class _EtatModeration extends State<_SectionModeration> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 6 — CENTRES DE TRI (API REST — source de vérité)
+// SECTION 6 - CENTRES DE TRI (API REST - source de vérité)
 // ===================================================================
 // Appel direct /admin/analytics/centers depuis PostgreSQL,
 // toujours synchronisé avec l'onglet Points de Tri.

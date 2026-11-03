@@ -1,7 +1,7 @@
 /// lib/models/bin_model.dart
 ///
 /// Modèle de données pour une poubelle intelligente lue depuis
-/// Firebase Realtime Database — nœud : /poubelles/{bin_id}
+/// Firebase Realtime Database - nœud : /poubelles/{bin_id}
 ///
 /// LECTURE SEULE côté Flutter. Seul le backend FastAPI (Admin SDK)
 /// écrit dans ce nœud via update_bin_status().

@@ -77,7 +77,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      _snack('Mot de passe mis à jour avec succès ✓', isError: false);
+      _snack('Mot de passe mis à jour avec succès ', isError: false);
       Navigator.pop(context);
     } else {
       String msg = result['message'] ?? 'Erreur lors de la mise à jour';

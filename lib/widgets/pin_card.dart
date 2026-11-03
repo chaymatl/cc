@@ -32,7 +32,7 @@ class PinCard extends StatefulWidget {
 }
 
 class _PinCardState extends State<PinCard> with SingleTickerProviderStateMixin {
-  // Sur mobile il n'y a pas de hover — toujours false
+  // Sur mobile il n'y a pas de hover - toujours false
   static const bool _isHovered = false;
   late AnimationController _hoverController;
   late Animation<double> _scaleAnim;

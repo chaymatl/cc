@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
     // ── Priorité 1 : session déjà restaurée par main() avant runApp ──────────
     // _restoreSessionIfAvailable() dans main() a déjà peuplé AuthState avant
-    // que le widget soit construit → pas besoin d'un appel réseau supplémentaire.
+    // que le widget soit construit -> pas besoin d'un appel réseau supplémentaire.
     if (AuthState.isLoggedIn) {
       // Attendre au moins 1.2s pour l'animation
       final elapsed = stopwatch.elapsedMilliseconds;

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -57,7 +58,7 @@ class ProfileTabState extends State<ProfileTab> {
   }
 
   /// Méthode publique appelée par le shell quand on arrive sur cet onglet.
-  /// Fetch SQL → mais garde le max entre SQL et la valeur Firebase en mémoire
+  /// Fetch SQL -> mais garde le max entre SQL et la valeur Firebase en mémoire
   /// pour éviter que le profil affiche une valeur périmée.
   Future<void> refreshScore() async {
     if (!AuthState.hasValidToken) return;
@@ -554,8 +555,8 @@ class ProfileTabState extends State<ProfileTab> {
                       backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
                       backgroundImage: NetworkImage(_currentAvatarUrl),
                       onBackgroundImageError: (_, __) {},
-                      child: (AuthState.currentUser?.avatarUrl?.isNotEmpty == true)
-                          ? null  // photo réelle → pas d'initiale par-dessus
+                      child: ((AuthState.currentUser?.avatarUrl ?? '').isNotEmpty)
+                          ? null  // photo réelle -> pas d'initiale par-dessus
                           : Text(
                               (user?.name != null && user!.name.trim().isNotEmpty
                                   ? user.name.trim()[0]
@@ -786,7 +787,7 @@ class ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  // ── Bouton QR pour le collecteur ─────────────────────────────────────────────
+  // -- Bouton QR pour le collecteur ---------------------------------------------
   Widget _buildCollectorQrButton(BuildContext context) {
     return GestureDetector(
       onTap: () => _showQrBadge(context, isCollector: true),
@@ -850,7 +851,7 @@ class ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  // ── Dialog QR partagé (citoyen + collecteur) ─────────────────────────────────
+  // -- Dialog QR partagé (citoyen + collecteur) ---------------------------------
   void _showQrBadge(BuildContext context, {bool isCollector = false}) {
     final qrData = AuthState.currentUser?.qrCode ?? '';
     final qrColor  = isCollector ? AppTheme.primaryGreen : AppTheme.primaryGreen;
@@ -895,7 +896,7 @@ class ProfileTabState extends State<ProfileTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Icône en tête ──
+                  // -- Icône en tête --
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -910,7 +911,7 @@ class ProfileTabState extends State<ProfileTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Titre ──
+                  // -- Titre --
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -922,7 +923,7 @@ class ProfileTabState extends State<ProfileTab> {
                   ),
                   const SizedBox(height: 6),
 
-                  // ── Sous-titre ──
+                  // -- Sous-titre --
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
@@ -934,7 +935,7 @@ class ProfileTabState extends State<ProfileTab> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── QR Code ──
+                  // -- QR Code --
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -983,7 +984,7 @@ class ProfileTabState extends State<ProfileTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Identifiant tronqué ──
+                  // -- Identifiant tronqué --
                   if (qrData.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1014,7 +1015,7 @@ class ProfileTabState extends State<ProfileTab> {
 
                   const SizedBox(height: 28),
 
-                  // ── Bouton fermer ──
+                  // -- Bouton fermer --
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

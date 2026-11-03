@@ -1,6 +1,6 @@
 // lib/core/cache_service.dart
-// Service de cache local avec TTL — mode hors-ligne automatique
-// Utilise SharedPreferences (déjà installé) → zéro dépendance supplémentaire
+// Service de cache local avec TTL - mode hors-ligne automatique
+// Utilise SharedPreferences (déjà installé) -> zéro dépendance supplémentaire
 //
 // Usage :
 //   final posts = await CacheService.getOrFetch(
@@ -62,7 +62,7 @@ class CacheService {
 
   // ── API publique ─────────────────────────────────────────────────────────
 
-  /// Lit le cache puis appelle [fetcher]. Si [fetcher] échoue → renvoie le cache.
+  /// Lit le cache puis appelle [fetcher]. Si [fetcher] échoue -> renvoie le cache.
   /// [ttl] : durée de validité avant de refetcher
   static Future<CacheResult<T>> getOrFetch<T>({
     required String key,
@@ -74,9 +74,9 @@ class CacheService {
     final cached = await _readCache<T>(key, deserializer: deserializer);
     final age    = await _cacheAge(key);
 
-    // 2. Données fraîches en cache → pas besoin de fetcher
+    // 2. Données fraîches en cache -> pas besoin de fetcher
     if (cached != null && age != null && age < ttl) {
-      developer.log('[Cache] HIT fresh — $key (${age.inSeconds}s)', name: 'CacheService');
+      developer.log('[Cache] HIT fresh - $key (${age.inSeconds}s)', name: 'CacheService');
       return CacheResult(data: cached, status: CacheStatus.fresh, cachedAt: DateTime.now().subtract(age));
     }
 
@@ -85,18 +85,18 @@ class CacheService {
       final fresh = await fetcher();
       if (fresh != null) {
         await _writeCache(key, fresh);
-        developer.log('[Cache] MISS → fetched — $key', name: 'CacheService');
+        developer.log('[Cache] MISS -> fetched - $key', name: 'CacheService');
         return CacheResult(data: fresh, status: CacheStatus.fresh, cachedAt: DateTime.now());
       }
-      // Fetcher a répondu null → fallback cache
+      // Fetcher a répondu null -> fallback cache
       if (cached != null) {
-        developer.log('[Cache] NULL response → fallback stale — $key', name: 'CacheService');
+        developer.log('[Cache] NULL response -> fallback stale - $key', name: 'CacheService');
         return CacheResult(data: cached, status: CacheStatus.stale);
       }
       return const CacheResult(status: CacheStatus.offline);
     } catch (e) {
-      // Erreur réseau → fallback cache
-      developer.log('[Cache] OFFLINE → fallback — $key ($e)', name: 'CacheService');
+      // Erreur réseau -> fallback cache
+      developer.log('[Cache] OFFLINE -> fallback - $key ($e)', name: 'CacheService');
       if (cached != null) {
         return CacheResult(data: cached, status: CacheStatus.offline,
             cachedAt: age != null ? DateTime.now().subtract(age) : null);
@@ -117,7 +117,7 @@ class CacheService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('$_prefix$key');
     await prefs.remove('$_tsPrefx$key');
-    developer.log('[Cache] INVALIDATED — $key', name: 'CacheService');
+    developer.log('[Cache] INVALIDATED - $key', name: 'CacheService');
   }
 
   /// Vide tout le cache de l'application.
@@ -150,7 +150,7 @@ class CacheService {
       await prefs.setString('$_prefix$key', encoded);
       await prefs.setString('$_tsPrefx$key', DateTime.now().toIso8601String());
     } catch (e) {
-      developer.log('[Cache] WRITE error — $key: $e', name: 'CacheService');
+      developer.log('[Cache] WRITE error - $key: $e', name: 'CacheService');
     }
   }
 
@@ -168,7 +168,7 @@ class CacheService {
       developer.log('[Cache] Type mismatch for $key: got ${decoded.runtimeType}, expected $T', name: 'CacheService');
       return null;
     } catch (e) {
-      developer.log('[Cache] READ error — $key: $e', name: 'CacheService');
+      developer.log('[Cache] READ error - $key: $e', name: 'CacheService');
       return null;
     }
   }

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -15,9 +16,9 @@ import '../screens/client/post_detail_screen.dart';
 import '../screens/messaging/messaging_screen.dart';
 import '../models/user_model.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Canal de notification Android — Général (likes, commentaires, collectes)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+// Canal de notification Android - Général (likes, commentaires, collectes)
+// -----------------------------------------------------------------------------
 const AndroidNotificationChannel _kChannel = AndroidNotificationChannel(
   'ecorewind_notifications',
   'EcoRewind Notifications',
@@ -27,11 +28,11 @@ const AndroidNotificationChannel _kChannel = AndroidNotificationChannel(
   enableVibration: true,
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Canal de notification Android — Messages (sonnerie + vibration forte)
+// -----------------------------------------------------------------------------
+// Canal de notification Android - Messages (sonnerie + vibration forte)
 // Un canal séparé permet à l'utilisateur de gérer le son des messages
 // indépendamment des autres notifications dans les paramètres du téléphone.
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const AndroidNotificationChannel _kMessagesChannel = AndroidNotificationChannel(
   'ecorewind_messages',
   'Messages EcoRewind',
@@ -39,22 +40,22 @@ const AndroidNotificationChannel _kMessagesChannel = AndroidNotificationChannel(
   importance: Importance.max,
   playSound: true,
   enableVibration: true,
-  // Vibration : pause 0ms → vibre 400ms → pause 200ms → vibre 400ms
+  // Vibration : pause 0ms -> vibre 400ms -> pause 200ms -> vibre 400ms
   vibrationPattern: null, // défini dans AndroidNotificationDetails
 );
 
 final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Handler de fond (doit être top-level ET annoté @pragma)
 // Affiche la notification système même quand l'app est FERMÉE.
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialiser les plugins nécessaires dans l'isolate de fond
   const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@drawable/ic_stat_ecorewind');
   const InitializationSettings initSettings =
       InitializationSettings(android: androidSettings);
   await _flutterLocalNotificationsPlugin.initialize(initSettings);
@@ -89,8 +90,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         channelDescription: channel.description,
         importance: Importance.max,
         priority: Priority.max,
-        icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF2E7D32),
+        icon: '@drawable/ic_stat_ecorewind',   // icône monochrome EcoRewind
+        color: const Color(0xFF00C896),          // vert EcoRewind
         playSound: true,
         enableVibration: true,
         visibility: NotificationVisibility.public,
@@ -114,9 +115,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM-BG] Notification affichée ($type) : $title');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FcmService — service singleton de gestion complète des push notifications
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+// FcmService - service singleton de gestion complète des push notifications
+// -----------------------------------------------------------------------------
 class FcmService {
   static final FcmService _instance = FcmService._internal();
   factory FcmService() => _instance;
@@ -125,14 +126,14 @@ class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   bool _initialized = false;
 
-  // ── StreamSubscriptions — stockées pour pouvoir les annuler au logout ──────
+  // -- StreamSubscriptions - stockées pour pouvoir les annuler au logout ------
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
   StreamSubscription<DatabaseEvent>? _rtdbMsgSub; // Fallback RTDB (Huawei/EMUI)
-  String? _rtdbListenPath; // nœud écouté actuellement
+  String? _rtdbListenPath; // nÅ"ud écouté actuellement
 
-  /// Annule tous les listeners FCM — appeler au logout pour éviter les fuites.
+  /// Annule tous les listeners FCM - appeler au logout pour éviter les fuites.
   static void cancelListeners() {
     final svc = FcmService();
     svc._tokenRefreshSub?.cancel();
@@ -147,8 +148,8 @@ class FcmService {
     debugPrint('[FCM] Listeners annulés (logout)');
   }
 
-  // ── Listener RTDB : notifications de messages (fallback Huawei/EMUI) ──────
-  /// Démarre l'écoute du nœud /notifications/{userId}/new_message dans RTDB.
+  // -- Listener RTDB : notifications de messages (fallback Huawei/EMUI) ------
+  /// Démarre l'écoute du nÅ"ud /notifications/{userId}/new_message dans RTDB.
   /// Déclenche une notification locale à chaque nouveau message.
   /// Compatible Huawei EMUI sans Google Play Services.
   static Future<void> startRtdbMessageListener(String userId) async {
@@ -159,55 +160,69 @@ class FcmService {
     svc._rtdbListenPath = path;
     try {
       final ref = FirebaseDatabase.instance.ref(path);
-      svc._rtdbMsgSub = ref.onValue.listen((DatabaseEvent event) async {
-        final data = event.snapshot.value;
-        if (data == null) return;
-        final map = Map<String, dynamic>.from(data as Map);
-        final senderName = map['sender_name'] as String? ?? 'Nouveau message';
-        final preview = map['preview'] as String? ?? '';
-        final type = map['type'] as String? ?? 'message';
-        final senderId = int.tryParse(map['sender_id']?.toString() ?? '0') ?? 0;
-        final groupId = map['group_id'];
-        final groupName = map['group_name'] as String?;
-        final ts = map['ts'] as String? ?? '';
+      svc._rtdbMsgSub = ref.onValue.listen(
+        (DatabaseEvent event) async {
+          final data = event.snapshot.value;
+          if (data == null) return;
+          final map = Map<String, dynamic>.from(data as Map);
+          final senderName = map['sender_name'] as String? ?? 'Nouveau message';
+          final preview = map['preview'] as String? ?? '';
+          final type = map['type'] as String? ?? 'message';
+          final senderId = int.tryParse(map['sender_id']?.toString() ?? '0') ?? 0;
+          final groupId = map['group_id'];
+          final groupName = map['group_name'] as String?;
+          final ts = map['ts'] as String? ?? '';
 
-        // Éviter les doublons (comparer timestamp)
-        final prefs = await SharedPreferences.getInstance();
-        final lastTs = prefs.getString('rtdb_last_msg_ts_$userId') ?? '';
-        if (ts == lastTs || ts.isEmpty) return;
-        await prefs.setString('rtdb_last_msg_ts_$userId', ts);
+          // Éviter les doublons (comparer timestamp)
+          final prefs = await SharedPreferences.getInstance();
+          final lastTs = prefs.getString('rtdb_last_msg_ts_$userId') ?? '';
+          if (ts == lastTs || ts.isEmpty) return;
+          await prefs.setString('rtdb_last_msg_ts_$userId', ts);
 
-        // Afficher la notification locale
-        final notifId = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
-        final payload = jsonEncode({
-          'type': type,
-          'sender_id': senderId.toString(),
-          'sender_name': senderName,
-          'partner_id': senderId.toString(),
-          if (groupId != null) 'group_id': groupId.toString(),
-          if (groupName != null) 'group_name': groupName,
-        });
-        await _flutterLocalNotificationsPlugin.show(
-          notifId,
-          senderName,
-          preview.isNotEmpty ? preview : 'Nouveau message',
-          FcmService()._buildMessageNotifDetails(title: senderName, body: preview, senderName: senderName),
-          payload: payload,
-        );
-        debugPrint('[RTDB-MSG] Notification affichée: $senderName → $preview');
-      });
+          // Afficher la notification locale
+          final notifId = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
+          final payload = jsonEncode({
+            'type': type,
+            'sender_id': senderId.toString(),
+            'sender_name': senderName,
+            'partner_id': senderId.toString(),
+            if (groupId != null) 'group_id': groupId.toString(),
+            if (groupName != null) 'group_name': groupName,
+          });
+          await _flutterLocalNotificationsPlugin.show(
+            notifId,
+            senderName,
+            preview.isNotEmpty ? preview : 'Nouveau message',
+            FcmService()._buildMessageNotifDetails(
+                title: senderName, body: preview, senderName: senderName),
+            payload: payload,
+          );
+          debugPrint('[RTDB-MSG] Notification affichée: $senderName -> $preview');
+        },
+        // -- Gestion des erreurs Firebase RTDB (ex: permission-denied) ------
+        // IMPORTANT : sans onError, l'exception remonte dans la zone Dart
+        // et provoque un crash non géré (Unhandled Exception).
+        onError: (Object err) {
+          debugPrint('[RTDB-MSG] ! Écoute interrompue (permission refusée ou réseau) : $err');
+          // Réinitialiser le chemin pour permettre une reprise à la prochaine connexion
+          svc._rtdbListenPath = null;
+          svc._rtdbMsgSub = null;
+        },
+        cancelOnError: true, // stopper le stream proprement dès la 1ère erreur
+      );
       debugPrint('[RTDB-MSG] Écoute démarrée sur $path');
     } catch (e) {
       debugPrint('[RTDB-MSG] Erreur écoute: $e');
+      svc._rtdbListenPath = null;
     }
   }
 
-  // ── Initialiser FCM — appeler une seule fois depuis main.dart ────────────
+  // -- Initialiser FCM - appeler une seule fois depuis main.dart ------------
   static Future<void> initialize({BuildContext? context}) async {
     await FcmService()._init(context: context);
   }
 
-  // ── Appeler après chaque connexion réussie ───────────────────────────────
+  // -- Appeler après chaque connexion réussie -------------------------------
   // 1. Enregistre le token FCM auprès du backend
   // 2. Affiche toutes les notifications non lues dans la barre système Android
   static bool _loginInProgress = false; // mutex anti-double-appel
@@ -215,7 +230,7 @@ class FcmService {
   static Future<void> onUserLoggedIn() async {
     // Évite les appels simultanés (session restore + login manuel)
     if (_loginInProgress) {
-      debugPrint('[FCM] onUserLoggedIn() déjà en cours — appel ignoré.');
+      debugPrint('[FCM] onUserLoggedIn() déjà en cours - appel ignoré.');
       return;
     }
     _loginInProgress = true;
@@ -242,15 +257,15 @@ class FcmService {
         final jwt = AuthState.authToken;
         if (jwt != null) {
           await FcmService()._sendTokenToBackend(token);
-          debugPrint('[FCM] ✅ Token FCM enregistré sur le backend après login.');
+          debugPrint('[FCM]   Token FCM enregistré sur le backend après login.');
         } else {
-          // Session fallback (JWT expiré) — sauvegarder le token localement.
+          // Session fallback (JWT expiré) - sauvegarder le token localement.
           // Il sera envoyé dès que l'utilisateur se reconnecte avec un vrai JWT.
-          debugPrint('[FCM] ⚠️ JWT absent en session fallback — token FCM sauvegardé localement, envoi différé à la prochaine connexion.');
+          debugPrint('[FCM] ! JWT absent en session fallback - token FCM sauvegardé localement, envoi différé à la prochaine connexion.');
           await prefs.setString('fcm_pending_token', token);
         }
       } else {
-        debugPrint('[FCM] ⚠️ Token FCM indisponible après 5 tentatives.');
+        debugPrint('[FCM] ! Token FCM indisponible après 5 tentatives.');
       }
 
       // Étape 2 : afficher les notifications manquées (seulement si JWT valide)
@@ -262,7 +277,7 @@ class FcmService {
     }
   }
 
-  // ── Rétro-compatibilité ───────────────────────────────────────────────────
+  // -- Rétro-compatibilité ---------------------------------------------------
   static Future<void> sendTokenToBackend() => onUserLoggedIn();
 
   /// Envoie le token FCM sauvegardé pendant une session fallback (JWT expiré).
@@ -275,20 +290,20 @@ class FcmService {
         debugPrint('[FCM] Envoi du token FCM en attente (session fallback précédente)...');
         await FcmService()._sendTokenToBackend(pendingToken);
         await prefs.remove('fcm_pending_token');
-        debugPrint('[FCM] ✅ Token FCM en attente envoyé avec succès.');
+        debugPrint('[FCM]   Token FCM en attente envoyé avec succès.');
       }
     } catch (e) {
       debugPrint('[FCM] Erreur sendPendingFcmToken: $e');
     }
   }
 
-  // ── Affiche uniquement les notifications reçues APRÈS la dernière déconnexion ──
+  // -- Affiche uniquement les notifications reçues APRÈS la dernière déconnexion --
   //
   // Logique :
-  //  • Lit le timestamp de déconnexion sauvegardé par clearTokens().
-  //  • Ne montre que les notifications dont created_at > last_logout_time.
-  //  • Mise à jour du timestamp après chaque affichage pour le prochain login.
-  //  • Première connexion (pas de timestamp) : aucune notification affichée
+  //  * Lit le timestamp de déconnexion sauvegardé par clearTokens().
+  //  * Ne montre que les notifications dont created_at > last_logout_time.
+  //  * Mise à jour du timestamp après chaque affichage pour le prochain login.
+  //  * Première connexion (pas de timestamp) : aucune notification affichée
   //    pour ne pas submerger l'utilisateur.
   Future<void> _showPendingNotifications() async {
     try {
@@ -296,7 +311,7 @@ class FcmService {
       final jwt = AuthState.authToken;
       if (jwt == null) return;
 
-      // ── Lire la borne temporelle (timestamp de la dernière déconnexion) ──
+      // -- Lire la borne temporelle (timestamp de la dernière déconnexion) --
       final lastLogoutStr = prefs.getString('fcm_last_logout_time');
       if (lastLogoutStr == null) {
         // Première connexion : on initialise la borne à maintenant
@@ -305,7 +320,7 @@ class FcmService {
           'fcm_last_logout_time',
           DateTime.now().toUtc().toIso8601String(),
         );
-        debugPrint('[FCM] Première connexion — borne initialisée, aucune notif à afficher.');
+        debugPrint('[FCM] Première connexion - borne initialisée, aucune notif à afficher.');
         return;
       }
 
@@ -314,7 +329,7 @@ class FcmService {
 
       debugPrint('[FCM] Borne de déconnexion : $lastLogoutStr');
 
-      // ── Récupérer les notifications depuis le backend ─────────────────────
+      // -- Récupérer les notifications depuis le backend ---------------------
       final uri = Uri.parse('${ApiConstants.baseUrl}/notifications?skip=0&limit=50');
       final response = await http.get(
         uri,
@@ -325,7 +340,7 @@ class FcmService {
 
       final List<dynamic> allNotifs = jsonDecode(utf8.decode(response.bodyBytes));
 
-      // ── Filtrer : non lues ET créées APRÈS la dernière déconnexion ─────────
+      // -- Filtrer : non lues ET créées APRÈS la dernière déconnexion ---------
       final toShow = allNotifs.where((n) {
         // Doit être non lue
         final isUnread = n['is_read'] == false || n['is_read'] == null;
@@ -369,7 +384,7 @@ class FcmService {
         // Décalage progressif entre les notifications (max 5 affichées rapidement)
         if (i > 0) await Future.delayed(const Duration(milliseconds: 400));
 
-        // Payload de navigation — interne, jamais affiché
+        // Payload de navigation - interne, jamais affiché
         final navPayload = jsonEncode({
           'type': type,
           if (postId != null) 'post_id': postId,
@@ -385,7 +400,7 @@ class FcmService {
           payload: navPayload,
         );
 
-        // ── Mettre à jour la borne IMMÉDIATEMENT après chaque affichage ──────
+        // -- Mettre à jour la borne IMMÉDIATEMENT après chaque affichage ------
         // Garantit que cette notification ne sera plus affichée même en cas de crash.
         final notifTime = DateTime.tryParse(notif['created_at'] ?? '');
         if (notifTime != null) {
@@ -408,14 +423,14 @@ class FcmService {
         DateTime.now().toUtc().toIso8601String(),
       );
 
-      debugPrint('[FCM] ✅ ${toShow.length} notification(s) affichée(s).');
+      debugPrint('[FCM]   ${toShow.length} notification(s) affichée(s).');
     } catch (e) {
       debugPrint('[FCM] Erreur _showPendingNotifications: $e');
     }
 
   }
 
-  // ── Construit les NotificationDetails (affichage pur—aucun JSON technique) ──
+  // -- Construit les NotificationDetails (affichage pur-aucun JSON technique) --
   // Le payload de navigation n'est JAMAIS inclus dans le texte visible.
   NotificationDetails _buildNotifDetails({String body = ''}) {
     return NotificationDetails(
@@ -425,13 +440,13 @@ class FcmService {
         channelDescription: _kChannel.description,
         importance: Importance.max,
         priority: Priority.max,
-        icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF2E7D32),
+        icon: '@drawable/ic_stat_ecorewind',   // icône monochrome EcoRewind
+        color: const Color(0xFF00C896),          // vert EcoRewind
         playSound: true,
         enableVibration: true,
         visibility: NotificationVisibility.public,
         vibrationPattern: Int64List.fromList([0, 300, 150, 300]),
-        // BigTextStyleInformation affiche le texte lisible — jamais le payload JSON
+        // BigTextStyleInformation affiche le texte lisible - jamais le payload JSON
         styleInformation: body.isNotEmpty
             ? BigTextStyleInformation(body)
             : const DefaultStyleInformation(false, false),
@@ -461,8 +476,8 @@ class FcmService {
         channelDescription: _kMessagesChannel.description,
         importance: Importance.max,
         priority: Priority.max,
-        icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF0288D1), // bleu pour les messages
+        icon: '@drawable/ic_stat_ecorewind',   // icône monochrome EcoRewind
+        color: const Color(0xFF00C896),          // vert EcoRewind (messages)
         playSound: true,
         enableVibration: true,
         visibility: NotificationVisibility.public,
@@ -506,7 +521,7 @@ class FcmService {
         // Sur Android 8.x (EMUI), requestPermission() peut retourner "denied"
         // même si flutter_local_notifications peut quand même afficher via les canaux Android.
         // On NE retourne PAS ici pour continuer l'initialisation complète.
-        debugPrint('[FCM] ⚠️ Permission FCM refusée par l\'OS — init continue (canaux Android toujours actifs).');
+        debugPrint('[FCM] ! Permission FCM refusée par l\'OS - init continue (canaux Android toujours actifs).');
       } else {
         debugPrint('[FCM] Permission: ${settings.authorizationStatus}');
       }
@@ -520,7 +535,7 @@ class FcmService {
 
       // 3. Initialiser flutter_local_notifications
       const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('@drawable/ic_stat_ecorewind');
       const DarwinInitializationSettings iosSettings =
           DarwinInitializationSettings(
         requestAlertPermission: false,
@@ -557,7 +572,7 @@ class FcmService {
       // 4b. Demander la permission Android explicitement via flutter_local_notifications
       // (nécessaire sur certains Huawei EMUI même si Firebase dit "denied")
       final granted = await androidPlugin?.requestNotificationsPermission();
-      debugPrint('[FCM] Permission Android notifications : ${granted == true ? "✅ accordée" : "⚠️ non accordée (paramètres système requis)"}');
+      debugPrint('[FCM] Permission Android notifications : ${granted == true ? "  accordée" : "! non accordée (paramètres système requis)"}');
 
       // 5. (Handler de fond enregistré dans main.dart AVANT Firebase.initializeApp)
 
@@ -591,13 +606,13 @@ class FcmService {
         _navigateFromRemoteMessage(initialMessage);
       }
 
-      debugPrint('[FCM] ✅ Service FCM initialisé');
+      debugPrint('[FCM]   Service FCM initialisé');
     } catch (e) {
       debugPrint('[FCM] Erreur init: $e');
     }
   }
 
-  // ── Récupère le token et l'envoie au backend (avec retry différé) ──────────
+  // -- Récupère le token et l'envoie au backend (avec retry différé) ----------
   // Le token FCM est prêt dès le démarrage, mais le JWT peut ne pas encore
   // être disponible si la session est en cours de restauration.
   // On réessaie jusqu'à 3 fois avec un délai croissant.
@@ -605,7 +620,7 @@ class FcmService {
     try {
       final token = await _messaging.getToken();
       if (token == null) {
-        debugPrint('[FCM] Token null — Firebase pas encore prêt');
+        debugPrint('[FCM] Token null - Firebase pas encore prêt');
         return;
       }
       debugPrint('[FCM] Token: ${token.substring(0, 20)}...');
@@ -616,14 +631,14 @@ class FcmService {
       final jwt = AuthState.authToken;
 
       if (jwt == null) {
-        // JWT pas encore disponible → réessayer après 3s puis 6s
-        debugPrint('[FCM] JWT absent au démarrage → retry dans 3s');
+        // JWT pas encore disponible -> réessayer après 3s puis 6s
+        debugPrint('[FCM] JWT absent au démarrage -> retry dans 3s');
         _scheduleTokenRetry(token);
         return;
       }
 
       if (lastSentToken == token) {
-        // Token identique et déjà envoyé → pas besoin de renvoyer
+        // Token identique et déjà envoyé -> pas besoin de renvoyer
         debugPrint('[FCM] Token inchangé, pas d\'envoi nécessaire');
         return;
       }
@@ -634,19 +649,19 @@ class FcmService {
     }
   }
 
-  // ── Retry différé pour envoyer le token quand le JWT est disponible ────────
+  // -- Retry différé pour envoyer le token quand le JWT est disponible --------
   void _scheduleTokenRetry(String token) {
     Future.delayed(const Duration(seconds: 3), () async {
       final jwt = AuthState.authToken;
       if (jwt != null) {
-        debugPrint('[FCM] Retry token (3s) — JWT disponible');
+        debugPrint('[FCM] Retry token (3s) - JWT disponible');
         await _sendTokenToBackend(token);
       } else {
         // Deuxième retry après 6s supplémentaires
         Future.delayed(const Duration(seconds: 6), () async {
           final jwt2 = AuthState.authToken;
           if (jwt2 != null) {
-            debugPrint('[FCM] Retry token (9s) — JWT disponible');
+            debugPrint('[FCM] Retry token (9s) - JWT disponible');
             await _sendTokenToBackend(token);
           } else {
             debugPrint('[FCM] Token non envoyé après 2 retries (utilisateur non connecté)');
@@ -657,13 +672,13 @@ class FcmService {
   }
 
 
-  // ── Envoie le token au backend FastAPI ───────────────────────────────────
+  // -- Envoie le token au backend FastAPI -----------------------------------
   Future<void> _sendTokenToBackend(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jwt = AuthState.authToken;
       if (jwt == null) {
-        debugPrint('[FCM] Pas de JWT → token non envoyé (non connecté)');
+        debugPrint('[FCM] Pas de JWT -> token non envoyé (non connecté)');
         return;
       }
       final response = await http.put(
@@ -687,7 +702,7 @@ class FcmService {
     }
   }
 
-  // ── Affiche la notification en FOREGROUND (app ouverte) ──────────────────
+  // -- Affiche la notification en FOREGROUND (app ouverte) ------------------
   void _handleForegroundMessage(RemoteMessage message) async {
     final title = message.notification?.title ?? 'EcoRewind';
     final body = message.notification?.body ?? '';
@@ -700,7 +715,7 @@ class FcmService {
     // ID unique basé sur le timestamp (Huawei EMUI ignore les IDs identiques)
     final notifId = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
 
-    // Afficher la notification système — avec gestion d'erreur explicite
+    // Afficher la notification système - avec gestion d'erreur explicite
     try {
       await _flutterLocalNotificationsPlugin.show(
         notifId,
@@ -711,15 +726,15 @@ class FcmService {
             : _buildNotifDetails(body: body),
         payload: navPayload,
       );
-      debugPrint('[FCM-FG] ✅ Notification système affichée : $title (id=$notifId, type=$type)');
+      debugPrint('[FCM-FG]   Notification système affichée : $title (id=$notifId, type=$type)');
     } catch (e, stack) {
       // Sur Huawei EMUI, show() peut échouer si la permission est révoquée
       // ou si le canal est bloqué dans les paramètres du téléphone.
-      debugPrint('[FCM-FG] ❌ Erreur affichage notification système : $e');
+      debugPrint('[FCM-FG]  Erreur affichage notification système : $e');
       debugPrint('[FCM-FG] Stack: $stack');
     }
 
-    // Ajouter au cache in-app (badge + écran notifications) — toujours
+    // Ajouter au cache in-app (badge + écran notifications) - toujours
     NotificationService().addNotification(
       title: title,
       body: body,
@@ -733,12 +748,12 @@ class FcmService {
     }
   }
 
-  // ── Navigation intelligente depuis un RemoteMessage ──────────────────────
+  // -- Navigation intelligente depuis un RemoteMessage ----------------------
   void _navigateFromRemoteMessage(RemoteMessage message) {
     _navigateFromPayload({...message.data, 'type': message.data['type'] ?? 'info'});
   }
 
-  // ── Navigation intelligente depuis un payload (tap local ou FCM) ─────────
+  // -- Navigation intelligente depuis un payload (tap local ou FCM) ---------
   void _navigateFromPayload(Map<String, dynamic> data) {
     final postIdRaw       = data['post_id'];
     final assignmentIdRaw = data['assignment_id'];
@@ -747,12 +762,12 @@ class FcmService {
     final partnerName     = data['sender_name'] as String? ?? 'Message';
     final groupIdRaw      = data['group_id'];
     final groupName       = data['group_name'] as String? ?? 'Groupe';
-    debugPrint('[FCM] Navigation → type=$type, partner=$partnerIdRaw');
+    debugPrint('[FCM] Navigation -> type=$type, partner=$partnerIdRaw');
 
     final context = navigatorKey.currentContext;
     if (context == null) return;
 
-    // ── Message direct → ouvrir la conversation ───────────────────────────
+    // -- Message direct -> ouvrir la conversation ---------------------------
     if (type == 'message') {
       final partnerId = int.tryParse(partnerIdRaw?.toString() ?? '');
       if (partnerId != null) {
@@ -766,7 +781,7 @@ class FcmService {
       }
     }
 
-    // ── Message de groupe → ouvrir la conversation groupe ─────────────────
+    // -- Message de groupe -> ouvrir la conversation groupe -----------------
     if (type == 'group_message') {
       final groupId = int.tryParse(groupIdRaw?.toString() ?? '');
       if (groupId != null) {
@@ -780,7 +795,7 @@ class FcmService {
       }
     }
 
-    // ── Notification de mission (assignment) → Carte mission ─────────────
+    // -- Notification de mission (assignment) -> Carte mission -------------
     if (type == 'assignment' || type == 'collector_assignment') {
       final assignmentId = int.tryParse(assignmentIdRaw?.toString() ?? '');
       if (assignmentId != null && assignmentId > 0) {
@@ -795,7 +810,7 @@ class FcmService {
       return;
     }
 
-    // Types liés à l'intercommunalité → écran Notifications
+    // Types liés à l'intercommunalité -> écran Notifications
     const intercommunalityTypes = {
       'intercommunality_message',
       'intercommunality_group_message',
@@ -819,7 +834,7 @@ class FcmService {
   }
 
 
-  // ── Ouvre directement la publication depuis l'API ────────────────────────
+  // -- Ouvre directement la publication depuis l'API ------------------------
   Future<void> _openPost(BuildContext context, int postId) async {
     try {
       final post = await AuthService().fetchSinglePost(postId);
@@ -846,7 +861,7 @@ class FcmService {
   }
 }
 
-// ── Handler de tap en arrière-plan (doit être top-level) ─────────────────────
+// -- Handler de tap en arrière-plan (doit être top-level) ---------------------
 @pragma('vm:entry-point')
 void _onBackgroundNotificationTap(NotificationResponse response) {
   // Le navigatorKey n'est pas encore disponible dans ce contexte.

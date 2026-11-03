@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 // lib/screens/educator/manage_groups_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,7 +36,7 @@ class _ManageGroupsScreenState extends State<ManageGroupsScreen> {
     if (mounted) setState(() { _groups = data; _loading = false; });
   }
 
-  // ── Créer / Modifier un groupe ─────────────────────────────────────────────
+  // -- Créer / Modifier un groupe ---------------------------------------------
 
   Future<void> _showGroupDialog({Map<String, dynamic>? existing}) async {
     final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
@@ -138,7 +139,7 @@ class _ManageGroupsScreenState extends State<ManageGroupsScreen> {
     );
   }
 
-  // ── Ouvrir le détail du groupe avec ses membres ────────────────────────────
+  // -- Ouvrir le détail du groupe avec ses membres ----------------------------
 
   Future<void> _openGroupDetail(Map<String, dynamic> group) async {
     await Navigator.push(context, MaterialPageRoute(
@@ -147,7 +148,7 @@ class _ManageGroupsScreenState extends State<ManageGroupsScreen> {
     _load(); // refresh après retour
   }
 
-  // ── Supprimer un groupe ────────────────────────────────────────────────────
+  // -- Supprimer un groupe ----------------------------------------------------
 
   Future<void> _deleteGroup(Map<String, dynamic> group) async {
     final confirm = await showDialog<bool>(
@@ -236,7 +237,7 @@ class _ManageGroupsScreenState extends State<ManageGroupsScreen> {
   );
 }
 
-// ── Carte groupe ──────────────────────────────────────────────────────────────
+// -- Carte groupe --------------------------------------------------------------
 
 class _GroupCard extends StatelessWidget {
   final Map<String, dynamic> group;
@@ -320,7 +321,7 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-// ── Détail d'un groupe (membres) ──────────────────────────────────────────────
+// -- Détail d'un groupe (membres) ----------------------------------------------
 
 class _GroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -408,7 +409,7 @@ class _GroupDetailScreenState extends State<_GroupDetailScreen> {
         ),
       ),
       body: Column(children: [
-        // ── Barre de recherche ─────────────────────────────────────────
+        // -- Barre de recherche -----------------------------------------
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
@@ -432,7 +433,7 @@ class _GroupDetailScreenState extends State<_GroupDetailScreen> {
           ),
         ),
 
-        // ── Membres actuels chips ──────────────────────────────────────
+        // -- Membres actuels chips --------------------------------------
         if (_members.isNotEmpty)
           Container(
             height: 42,
@@ -456,7 +457,7 @@ class _GroupDetailScreenState extends State<_GroupDetailScreen> {
             ),
           ),
 
-        // ── Liste tous les citoyens ────────────────────────────────────
+        // -- Liste tous les citoyens ------------------------------------
         Expanded(
           child: _loadingCitizens
               ? const Center(child: CircularProgressIndicator(color: _kGreen))
@@ -496,7 +497,7 @@ class _GroupDetailScreenState extends State<_GroupDetailScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: _kGreen.withOpacity(0.4)),
                                 ),
-                                child: Text('Membre ✓',
+                                child: Text('Membre -',
                                   style: GoogleFonts.inter(color: _kGreen, fontSize: 12, fontWeight: FontWeight.w600)),
                               )
                             : OutlinedButton(
@@ -521,7 +522,7 @@ class _GroupDetailScreenState extends State<_GroupDetailScreen> {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
+// -- Empty state ---------------------------------------------------------------
 
 class _EmptyGroups extends StatelessWidget {
   final VoidCallback onCreate;
@@ -560,7 +561,7 @@ class _EmptyGroups extends StatelessWidget {
   );
 }
 
-// ── Utilitaire couleur hex ────────────────────────────────────────────────────
+// -- Utilitaire couleur hex ----------------------------------------------------
 
 Color _hexColor(String hex) {
   final h = hex.replaceAll('#', '');

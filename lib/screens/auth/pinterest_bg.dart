@@ -12,7 +12,7 @@ class _PinterestBackgroundState extends State<PinterestBackground>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
-  // Images illustratives des fonctionnalites — descendent en boucle
+  // Images illustratives des fonctionnalites - descendent en boucle
   static const List<String> _images = [
     'assets/images/card_impact.png',
     'assets/images/card_rewards.png',

@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+// ignore_for_file: avoid_dynamic_calls
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -222,7 +223,7 @@ class AuthService {
 
 
       // Déclencher la boîte de dialogue de connexion Facebook avec timeout.
-      // loginBehavior: webOnly → force le WebView interne au lieu de Chrome Custom Tab.
+      // loginBehavior: webOnly -> force le WebView interne au lieu de Chrome Custom Tab.
       // Chrome Custom Tab cause une annulation immédiate sur Huawei EMUI quand
       // le clavier de l'app principale s'ouvre en arrière-plan.
       final LoginResult loginResult = await FacebookAuth.instance.login(
@@ -317,7 +318,7 @@ class AuthService {
         await _saveToken(data['access_token']);
         // Connexion Firebase pour que les Security Rules reconnaissent l'utilisateur
         await _signInToFirebase(data['firebase_token']);
-        developer.log('[FB-AUTH] ✅ Connexion Facebook réussie pour ${data['email']}', name: 'FacebookAuth');
+        developer.log('[FB-AUTH]  Connexion Facebook réussie pour ${data['email']}', name: 'FacebookAuth');
         return {
           'success': true,
           'token': data['access_token'],
@@ -329,7 +330,7 @@ class AuthService {
       } else {
         final errorData = json.decode(utf8.decode(response.bodyBytes));
         final detail = errorData['detail'] ?? 'Erreur du serveur Facebook Auth';
-        developer.log('[FB-AUTH] ❌ Erreur backend (${response.statusCode}): $detail', name: 'FacebookAuth');
+        developer.log('[FB-AUTH]  Erreur backend (${response.statusCode}): $detail', name: 'FacebookAuth');
         return {
           'success': false,
           'message': detail,
@@ -457,7 +458,7 @@ class AuthService {
   }
 
   // ===========================================
-  // FIREBASE AUTH — CUSTOM TOKEN
+  // FIREBASE AUTH - CUSTOM TOKEN
   // ===========================================
 
   /// Connecte l'utilisateur à Firebase via un Custom Token généré par FastAPI.
@@ -474,7 +475,7 @@ class AuthService {
   Future<void> _signInToFirebase(String? firebaseToken) async {
     if (firebaseToken == null || firebaseToken.isEmpty) {
       developer.log(
-        '[Firebase] Custom token absent — scores temps réel désactivés',
+        '[Firebase] Custom token absent - scores temps réel désactivés',
         name: 'AuthService',
       );
       return;
@@ -482,22 +483,22 @@ class AuthService {
     try {
       await FirebaseAuth.instance.signInWithCustomToken(firebaseToken);
       developer.log(
-        '[Firebase] ✅ signInWithCustomToken réussi — uid: ${FirebaseAuth.instance.currentUser?.uid}',
+        '[Firebase]  signInWithCustomToken réussi - uid: ${FirebaseAuth.instance.currentUser?.uid}',
         name: 'AuthService',
       );
     } catch (e) {
       developer.log(
-        '[Firebase] ⚠ï¸ signInWithCustomToken échoué (mode dégradé) : $e',
+        '[Firebase] ! signInWithCustomToken échoué (mode dégradé) : $e',
         name: 'AuthService',
       );
-      // On ne throw pas — l'app continue sans temps réel Firebase
+      // On ne throw pas - l'app continue sans temps réel Firebase
     }
   }
 
   // ===========================================
-  // STOCKAGE DU TOKEN — Android Keystore / iOS Keychain
-  // jwt_token + refresh_token → flutter_secure_storage (chiffré matériel)
-  // Données FCM non-sensibles → SharedPreferences (pas de clés secrètes)
+  // STOCKAGE DU TOKEN - Android Keystore / iOS Keychain
+  // jwt_token + refresh_token -> flutter_secure_storage (chiffré matériel)
+  // Données FCM non-sensibles -> SharedPreferences (pas de clés secrètes)
   // ===========================================
 
   /// Instance unique FlutterSecureStorage avec options robustes
@@ -521,14 +522,14 @@ class AuthService {
       if (oldJwt != null) {
         await _secureStorage.write(key: _kJwt, value: oldJwt);
         await prefs.remove(_kJwt);
-        developer.log('[SecureStorage] jwt_token migré depuis SharedPreferences → Keystore', name: 'AuthService');
+        developer.log('[SecureStorage] jwt_token migré depuis SharedPreferences -> Keystore', name: 'AuthService');
       }
       // Migrer refresh_token
       final oldRefresh = prefs.getString(_kRefresh);
       if (oldRefresh != null) {
         await _secureStorage.write(key: _kRefresh, value: oldRefresh);
         await prefs.remove(_kRefresh);
-        developer.log('[SecureStorage] refresh_token migré depuis SharedPreferences → Keystore', name: 'AuthService');
+        developer.log('[SecureStorage] refresh_token migré depuis SharedPreferences -> Keystore', name: 'AuthService');
       }
     } catch (e) {
       developer.log('[SecureStorage] Migration ignorée : $e', name: 'AuthService');
@@ -626,7 +627,7 @@ class AuthService {
 
     var response = await _http.get(Uri.parse(url), headers: headers).timeout(_kTimeout);
 
-    // Si 401 → tenter un refresh puis re-essayer
+    // Si 401 -> tenter un refresh puis re-essayer
     if (response.statusCode == 401 && token != null) {
       final refreshed = await refreshAccessToken();
       if (refreshed) {
@@ -658,9 +659,9 @@ class AuthService {
     // ── Déconnexion Firebase ──────────────────────────────────────────────────
     try {
       await FirebaseAuth.instance.signOut();
-      developer.log('[Firebase] ✅ Déconnexion Firebase réussie', name: 'AuthService');
+      developer.log('[Firebase]  Déconnexion Firebase réussie', name: 'AuthService');
     } catch (e) {
-      developer.log('[Firebase] ⚠ï¸ Erreur déconnexion Firebase : $e', name: 'AuthService');
+      developer.log('[Firebase] ! Erreur déconnexion Firebase : $e', name: 'AuthService');
     }
   }
 
@@ -680,7 +681,7 @@ class AuthService {
           'user': data,
         };
       } else if (response.statusCode == 401) {
-        // Token expiré ou invalide — NE PAS supprimer les tokens localement
+        // Token expiré ou invalide - NE PAS supprimer les tokens localement
         // (le refresh a déjà été tenté par authenticatedGet)
         // Retourner l'erreur sans déconnecter l'utilisateur
         return {'success': false, 'message': 'Session expirée'};
@@ -726,7 +727,7 @@ class AuthService {
     }
   }
 
-  /// Alias — loads all posts (first page, large limit)
+  /// Alias - loads all posts (first page, large limit)
   @Deprecated('Use fetchPosts(skip, limit) for pagination instead')
   Future<List<dynamic>> fetchAllPosts() => fetchPosts(skip: 0, limit: 50);
 
@@ -940,7 +941,7 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
 
-        // Cas spécial : IA a signalé le contenu → envoyé en attente admin
+        // Cas spécial : IA a signalé le contenu -> envoyé en attente admin
         if (data['ai_flagged'] == true) {
           return {
             'success': true,
@@ -1469,7 +1470,7 @@ class AuthService {
   }
 
   /// Récupère les points de collecte depuis l'API
-  /// Endpoint public — aucun token nécessaire, aucun risque de déconnexion.
+  /// Endpoint public - aucun token nécessaire, aucun risque de déconnexion.
   Future<List<Map<String, dynamic>>> fetchCollectionPoints({String? type, String? search}) async {
     try {
       final params = <String, String>{};
@@ -1480,7 +1481,7 @@ class AuthService {
           .replace(queryParameters: params.isNotEmpty ? params : null);
 
       // Appel sans Authorization : /collection-points est public
-      // → jamais de 401, jamais de risque de déconnexion
+      // -> jamais de 401, jamais de risque de déconnexion
       final response = await _http.get(uri).timeout(const Duration(seconds: 10)).timeout(_kTimeout);
 
       if (response.statusCode == 200) {
@@ -1768,7 +1769,7 @@ class AuthService {
   // QUIZ AUTOMATIQUE (Gemini AI)
   // ===========================================
 
-  /// Upload un PDF de quiz → Gemini extrait les questions et le corrigé
+  /// Upload un PDF de quiz -> Gemini extrait les questions et le corrigé
   Future<Map<String, dynamic>> createQuizFromPdf(dynamic xFile, {String? title, String? description}) async {
     try {
       final token = await _getToken();
@@ -2050,6 +2051,34 @@ class AuthService {
       return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
     } catch (e) {
       developer.log('uploadEducatorVideo error: $e', name: 'AuthService');
+      return {'success': false, 'message': 'Erreur réseau : $e'};
+    }
+  }
+
+  /// Publie une vidéo via lien YouTube (sans upload de fichier)
+  Future<Map<String, dynamic>> publishYoutubeVideo({
+    required String youtubeUrl,
+    required String title,
+    String? description,
+    String? duration,
+    int? categoryId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non connecté'};
+      final uri = Uri.parse('$baseUrl/educator-videos/upload');
+      final request = http.MultipartRequest('POST', uri)..headers['Authorization'] = 'Bearer $token';
+      request.fields['youtube_url'] = youtubeUrl;
+      request.fields['title'] = title;
+      if (description != null && description.isNotEmpty) request.fields['description'] = description;
+      if (duration != null && duration.isNotEmpty) request.fields['duration'] = duration;
+      if (categoryId != null) request.fields['category_id'] = categoryId.toString();
+      final resp = await request.send();
+      final data = json.decode(await resp.stream.bytesToString());
+      if (resp.statusCode == 200) return {'success': true, ...data};
+      return {'success': false, 'message': data['detail'] ?? 'Erreur serveur'};
+    } catch (e) {
+      developer.log('publishYoutubeVideo error: $e', name: 'AuthService');
       return {'success': false, 'message': 'Erreur réseau : $e'};
     }
   }

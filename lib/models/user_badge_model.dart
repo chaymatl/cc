@@ -30,7 +30,7 @@ class UserBadge {
     required this.uniqueQrCode,
   });
 
-  /// QR code data — uses the unique backend-generated token
+  /// QR code data - uses the unique backend-generated token
   String get qrCodeData {
     return uniqueQrCode;
   }
