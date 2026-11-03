@@ -315,6 +315,7 @@ class AIModerator:
         self._clip_model      = None
         self._clip_processor  = None
         self._nli_classifier  = None
+        self._resnet_classifier = None
         self._ml_ready        = False
         if AI_ENABLED and not rules_only:
             self._load_models()
@@ -340,12 +341,20 @@ class AIModerator:
         except Exception as e:
             print(f"[AI] [ERR] Error loading NudeNet: {e}")
 
-        # -- Layer 3: CLIP -- DEPRECATED (removed to reduce dependencies) -----
-        # The original CLIP model was large (~2.4 GB) and caused long startup times.
-        # It has been removed in favor of a lightweight ResNet18 classifier.
+        # -- Layer 3: ResNet18 eco-relevance classifier (remplace CLIP) ----------
         self._clip_model = None
         self._clip_processor = None
-        print("[AI] [SKIP]  CLIP removed -- using ResNet18 custom model.")
+        try:
+            import sys as _sys, os as _os
+            _bdir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+            if _bdir not in _sys.path:
+                _sys.path.insert(0, _bdir)
+            from moderation_ai.image_resnet_model import ImageResNetClassifier
+            self._resnet_classifier = ImageResNetClassifier()
+            print("[AI] [OK] ResNet18 eco-classifier loaded (eco/nsfw/off_topic)")
+        except Exception as _e:
+            self._resnet_classifier = None
+            print(f"[AI] [WARN]  ResNet18 non disponible: {_e}")
         # -- Layer 4: XLM-RoBERTa -- DEPRECATED (removed to reduce dependencies) --
         # The XLM-RoBERTa model was large (~1.1 GB). It has been replaced by a
         # custom TextCNN model that is orders of magnitude smaller and faster.
@@ -458,12 +467,28 @@ class AIModerator:
             except Exception as e:
                 print(f"[AI] [WARN]  NudeNet error: {e}")
 
-        # -- CLIP semantic classification --------------------------------------
-        # CLIP functionality has been removed to reduce package size and startup latency.
-        # The ResNet18 model provides fast eco-relevance classification.
-        clip_penalty = 0.0
-        # No CLIP processing; keep existing NSFW score as the primary image metric.
-        results["score"] = round(min(1.0, max(nudenet_score, clip_penalty)), 3)
+        # -- ResNet18 eco-relevance classification ----------------------------
+        # Classifie l'image en 3 classes : eco | nsfw | off_topic
+        # Permet de detecter les images hors-sujet (voitures, sport, etc.)
+        resnet_offtopic = 0.0
+        resnet_eco      = 0.0
+        if self._resnet_classifier is not None:
+            try:
+                probs = self._resnet_classifier.predict(image_path)
+                resnet_eco      = float(probs.get("eco", 0.0))
+                resnet_offtopic = float(probs.get("off_topic", 0.0))
+                resnet_nsfw     = float(probs.get("nsfw", 0.0))
+                results["resnet"] = {
+                    "eco": round(resnet_eco, 3),
+                    "off_topic": round(resnet_offtopic, 3),
+                    "nsfw": round(resnet_nsfw, 3),
+                }
+                print(f"[AI] [ResNet18] eco={resnet_eco:.2f} off_topic={resnet_offtopic:.2f} nsfw={resnet_nsfw:.2f}")
+            except Exception as e:
+                print(f"[AI] [WARN]  ResNet18 inference error: {e}")
+        results["score"]           = round(min(1.0, max(nudenet_score, 0.0)), 3)
+        results["resnet_eco"]      = round(resnet_eco, 3)
+        results["resnet_offtopic"] = round(resnet_offtopic, 3)
         results["processing_time_ms"] = round((time.time() - start) * 1000, 2)
         return results
 
@@ -507,6 +532,8 @@ class AIModerator:
         has_image       = bool(image_local_path and os.path.exists(image_local_path))
         clip_analysis   = image_analysis.get("clip_analysis", {})
         clip_offtopic   = clip_analysis.get("offtopic_prob", 0.0)
+        resnet_eco      = image_analysis.get("resnet_eco", 0.0)
+        resnet_offtopic = image_analysis.get("resnet_offtopic", 0.0)
         text_stripped   = (text or "").strip()
 
         relevance_penalty = 0.0
@@ -550,15 +577,27 @@ class AIModerator:
         # Case 3: Image avec texte éco -> PAS de pénalité image
         # Documenter la pollution avec un message encourageant est un acte éco valide
         if has_image and eco_count == 0 and off_topic_count == 0:
-            # Image sans texte eco: faire confiance a NudeNet.
-            # Si NudeNet confirme image propre (score < 0.10), on reduit la penalite
-            # pour laisser passer les photos de nature, forets, montagnes, etc.
-            if image_score < 0.10:
-                relevance_penalty += 0.18  # En dessous du SAFE_THRESHOLD -> auto-publie
-            else:
+            # Image sans texte eco : utiliser ResNet18 pour distinguer eco / hors-sujet.
+            # resnet_eco > 0.50  -> probablement une image eco -> faible penalite
+            # resnet_offtopic > 0.40 -> hors-sujet confirme  -> review obligatoire
+            if image_score >= 0.10:
+                # NudeNet detecte contenu sensible -> penalite moderee
                 relevance_penalty += 0.25
-                if "Image sans contexte environnemental detecte" not in result.reasons:
-                    result.reasons.append("Image sans contexte environnemental detecte")
+                if "Image potentiellement inappropriee" not in result.reasons:
+                    result.reasons.append("Image potentiellement inappropriee")
+            elif resnet_offtopic > 0.40:
+                # ResNet18 confirme : image hors-sujet (voiture, sport, dessin anime...)
+                relevance_penalty += 0.35  # -> pending_review
+                if "Image hors sujet detectee par IA" not in result.reasons:
+                    result.reasons.append("Image hors sujet detectee par IA")
+            elif resnet_eco > 0.50:
+                # ResNet18 confirme : image eco (nature, foret, recyclage...)
+                relevance_penalty += 0.10  # -> auto-publie
+            else:
+                # Incertain : mettre en review par precaution
+                relevance_penalty += 0.32  # -> pending_review
+                if "Image non classifiee - verification requise" not in result.reasons:
+                    result.reasons.append("Image non classifiee - verification requise")
         elif has_image and eco_count > 0:
             # Texte éco présent : l'image (même de pollution) est valide
             # Le texte contextualise et encourage → aucune pénalité image
