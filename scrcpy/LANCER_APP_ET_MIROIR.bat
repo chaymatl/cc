@@ -12,7 +12,7 @@ set "FLUTTER=C:\flutter\bin\flutter.bat"
 echo.
 echo =====================================================
 echo   ECOREWIND - LANCEMENT COMPLET
-echo   Backend + Tunnel ADB + Flutter + Miroir
+echo   Backend local + Flutter + Miroir
 echo =====================================================
 echo.
 
@@ -27,6 +27,10 @@ if not exist "%SCRCPY%" (
 )
 if not exist "%FLUTTER%" (
     echo  [ERREUR] Flutter introuvable : %FLUTTER%
+    pause & exit /b 1
+)
+if not exist "%VENV_PY%" (
+    echo  [ERREUR] Python venv introuvable : %VENV_PY%
     pause & exit /b 1
 )
 echo  [OK] Tous les outils trouves.
@@ -52,35 +56,20 @@ if "!DEVICE!"=="" (
 echo  [OK] Telephone : !DEVICE!
 echo.
 
-REM === Etape 2 : Backend ===
-echo [2/5] Verification du backend...
+REM === Etape 2 : Backend LOCAL ===
+echo [2/5] Verification du backend local...
 set "PORT_ACTIF=0"
 netstat -ano > "%TEMP%\netstat8000.txt" 2>&1
 findstr ":8000 " "%TEMP%\netstat8000.txt" | findstr "LISTEN" > "%TEMP%\port8000.txt" 2>&1
 for %%f in ("%TEMP%\port8000.txt") do if %%~zf gtr 0 set "PORT_ACTIF=1"
 
 if !PORT_ACTIF!==1 (
-    echo  [OK] Backend deja actif sur port 8000 - aucune action.
+    echo  [OK] Backend deja actif sur port 8000.
 ) else (
-    echo  Port 8000 libre - Tentative demarrage Docker...
+    echo  Demarrage backend local sur 127.0.0.1:8000...
+    start "Backend EcoRewind" cmd /k "cd /d %PROJECT%\backend && .\venv\Scripts\python.exe run_local.py"
 
-    REM Essayer de demarrer les containers Docker
-    docker start ecorewind_api ecorewind_postgres >nul 2>&1
-    if not errorlevel 1 (
-        echo  [OK] Containers Docker demarres.
-        timeout /t 4 /nobreak >nul
-    ) else (
-        REM Docker indisponible ou containers inexistants - fallback local
-        echo  Docker indisponible - Demarrage backend local sur 127.0.0.1...
-        if not exist "%VENV_PY%" (
-            echo  [ERREUR] Python venv introuvable : %VENV_PY%
-            pause & exit /b 1
-        )
-        start "Backend EcoRewind" cmd /k "cd /d %PROJECT%\backend && .\venv\Scripts\python.exe run_local.py"
-    )
-
-    REM Attente backend pret (max 30s)
-    echo  Attente backend pret (max 30s)...
+    echo  Attente du demarrage (max 30s)...
     set "READY=0"
     for /L %%i in (1,1,10) do (
         if !READY!==0 (

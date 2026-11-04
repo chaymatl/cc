@@ -1,13 +1,19 @@
 @echo off
 chcp 65001 >nul
-title EcoRewind - Restauration Base de Donnees
+title EcoRewind - Restauration Base de Donnees (locale)
 
 set "BACKUP_DIR=C:\Users\lenovo\Desktop\EcoRewind\backups"
 set "LATEST_FILE=%BACKUP_DIR%\ecorewind_LATEST.sql"
+set "PSQL=C:\Program Files\PostgreSQL\15\bin\psql.exe"
+set "PGHOST=localhost"
+set "PGPORT=5432"
+set "PGUSER=postgres"
+set "PGDATABASE=ecorewind"
 
 echo.
 echo =====================================================
 echo   ECOREWIND - RESTAURATION BASE DE DONNEES
+echo   PostgreSQL local : %PGHOST%:%PGPORT%/%PGDATABASE%
 echo   ATTENTION : Ecrase les donnees actuelles !
 echo =====================================================
 echo.
@@ -46,9 +52,10 @@ if /i not "%CONFIRM%"=="oui" (
 
 echo.
 echo Restauration en cours...
-docker exec -i ecorewind_postgres psql -U postgres -d ecorewind < "%RESTORE_FILE%"
+"%PSQL%" -h %PGHOST% -p %PGPORT% -U %PGUSER% -d %PGDATABASE% -f "%RESTORE_FILE%"
 if errorlevel 1 (
     echo [ERREUR] Restauration echouee.
+    echo Verifiez que PostgreSQL local tourne sur le port %PGPORT%.
     pause
     exit /b 1
 )
