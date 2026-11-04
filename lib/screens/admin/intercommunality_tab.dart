@@ -156,11 +156,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (!mounted) return;
     setState(() => _loadingInstructions = true);
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/instructions'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/instructions',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -174,11 +171,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (!mounted) return;
     setState(() => _loadingPoints = true);
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/collection-points'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/collection-points',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -195,11 +189,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Future<void> _loadPointsSilent() async {
     if (!mounted) return;
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/collection-points'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/collection-points',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -215,11 +206,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (!mounted) return;
     setState(() => _loadingActors = true);
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/actors'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/actors',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -231,11 +219,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   Future<void> _loadCustomGroups() async {
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/custom-groups'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/custom-groups',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -248,11 +233,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (!mounted) return;
     setState(() => _loadingReplies = true);
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/notifications?unread_only=false'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/notifications?unread_only=false',
       );
       if (res.statusCode == 200 && mounted) {
         final data = json.decode(res.body) as List;
@@ -269,12 +251,11 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     if (!mounted) return;
     setState(() => _loadingPilotage = true);
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
+      final auth = AuthService();
       final results = await Future.wait([
-        http.get(Uri.parse('${AuthService.baseUrl}/intercommunality/zones'), headers: _headers(jwt)),
-        http.get(Uri.parse('${AuthService.baseUrl}/intercommunality/assignments'), headers: _headers(jwt)),
-        http.get(Uri.parse('${AuthService.baseUrl}/intercommunality/actors?role=collector'), headers: _headers(jwt)),
+        auth.authenticatedGet('${AuthService.baseUrl}/intercommunality/zones'),
+        auth.authenticatedGet('${AuthService.baseUrl}/intercommunality/assignments'),
+        auth.authenticatedGet('${AuthService.baseUrl}/intercommunality/actors?role=collector'),
       ]);
       if (!mounted) return;
       if (results[0].statusCode == 200) {
@@ -292,11 +273,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   Future<void> _loadDashboard() async {
     try {
-      final jwt = await _jwt();
-      if (jwt == null) return;
-      final res = await http.get(
-        Uri.parse('${AuthService.baseUrl}/intercommunality/dashboard'),
-        headers: _headers(jwt),
+      final res = await AuthService().authenticatedGet(
+        '${AuthService.baseUrl}/intercommunality/dashboard',
       );
       if (res.statusCode == 200 && mounted) {
         setState(() => _dashboard = json.decode(res.body) as Map<String, dynamic>);
@@ -448,12 +426,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C3EB8)),
             onPressed: () async {
-              final jwt = await _jwt();
-              if (jwt == null) return;
-              await http.post(
-                Uri.parse('${AuthService.baseUrl}/intercommunality/actors/${actor['id']}/notify'),
-                headers: _headers(jwt),
-                body: json.encode({'title': titleCtrl.text.trim(), 'message': msgCtrl.text.trim()}),
+              await AuthService().authenticatedPost(
+                '${AuthService.baseUrl}/intercommunality/actors/${actor['id']}/notify',
+                body: {'title': titleCtrl.text.trim(), 'message': msgCtrl.text.trim()},
               );
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
@@ -468,33 +443,24 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   }
 
   Future<void> _verifyPoint(int id, bool verified) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
-    await http.put(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/collection-points/$id/verify?verified=$verified'),
-      headers: _headers(jwt),
+    await AuthService().authenticatedPut(
+      '${AuthService.baseUrl}/intercommunality/collection-points/$id/verify?verified=$verified',
     );
     _loadPoints();
   }
 
   Future<void> _deleteInstruction(int id) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
-    await http.delete(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/instructions/$id'),
-      headers: _headers(jwt),
+    await AuthService().authenticatedDelete(
+      '${AuthService.baseUrl}/intercommunality/instructions/$id',
     );
     _loadInstructions();
   }
 
   Future<void> _markReplyRead(Map<String, dynamic> reply) async {
     if (reply['is_read'] == true) return;
-    final jwt = await _jwt();
-    if (jwt == null) return;
     final id = reply['id'];
-    await http.put(
-      Uri.parse('${AuthService.baseUrl}/notifications/$id/read'),
-      headers: _headers(jwt),
+    await AuthService().authenticatedPut(
+      '${AuthService.baseUrl}/notifications/$id/read',
     );
     setState(() => reply['is_read'] = true);
     _loadReplies();
@@ -509,8 +475,6 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     String? message,
     required String priority,
   }) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
     final bodyData = {
       if (zoneId != null) 'zone_id': zoneId,
       // Mode multi-centres
@@ -524,10 +488,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       'mission_message': message,
       'priority': priority,
     };
-    final res = await http.post(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/assignments'),
-      headers: _headers(jwt),
-      body: json.encode(bodyData),
+    final res = await AuthService().authenticatedPost(
+      '${AuthService.baseUrl}/intercommunality/assignments',
+      body: bodyData,
     );
     if (res.statusCode == 201 && mounted) {
       final body = json.decode(utf8.decode(res.bodyBytes));
@@ -555,22 +518,16 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   }
 
   Future<void> _deleteAssignment(int id) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
-    await http.delete(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/assignments/$id'),
-      headers: _headers(jwt),
+    await AuthService().authenticatedDelete(
+      '${AuthService.baseUrl}/intercommunality/assignments/$id',
     );
     _loadPilotage();
   }
 
   Future<void> _notifyActors(List<String> roles, String title, String msg) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
     final queryParams = '${roles.map((r) => 'roles=$r').join('&')}&title=${Uri.encodeQueryComponent(title)}&message=${Uri.encodeQueryComponent(msg)}';
-    final res = await http.post(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/actors/notify?$queryParams'),
-      headers: _headers(jwt),
+    final res = await AuthService().authenticatedPost(
+      '${AuthService.baseUrl}/intercommunality/actors/notify?$queryParams',
     );
     if (res.statusCode == 200 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('  Notification envoyée aux rôles sélectionnés'), backgroundColor: Colors.green));
@@ -578,19 +535,16 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   }
 
   Future<void> _createZone(String name, String territory, String description, Color color, {List<int> pointIds = const []}) async {
-    final jwt = await _jwt();
-    if (jwt == null) return;
     final colorHex = '#${color.value.toRadixString(16).substring(2, 8)}';
-    await http.post(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/zones'),
-      headers: _headers(jwt),
-      body: json.encode({
+    await AuthService().authenticatedPost(
+      '${AuthService.baseUrl}/intercommunality/zones',
+      body: {
         'name': name,
         'territory': territory,
         'description': description.isEmpty ? null : description,
         'color_hex': colorHex,
         if (pointIds.isNotEmpty) 'collection_point_ids': pointIds,
-      }),
+      },
     );
     _loadPilotage();
   }
@@ -691,11 +645,8 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
     if (confirmed != true) return;
 
-    final jwt = await _jwt();
-    if (jwt == null) return;
-    final res = await http.delete(
-      Uri.parse('${AuthService.baseUrl}/intercommunality/zones/$id'),
-      headers: _headers(jwt),
+    final res = await AuthService().authenticatedDelete(
+      '${AuthService.baseUrl}/intercommunality/zones/$id',
     );
     if (mounted) {
       if (res.statusCode == 200 || res.statusCode == 204) {
