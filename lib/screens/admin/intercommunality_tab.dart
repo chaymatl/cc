@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/auth_service.dart';
 import '../../services/l10n_service.dart';
 import '../../theme/app_theme.dart';
@@ -1887,6 +1888,15 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         onPressed: _showAddInstructionDialog,
       );
     }
+    if (_tabCtrl.index == 1) {
+      fab = FloatingActionButton.extended(
+        heroTag: 'fab_intercommunality_point',
+        backgroundColor: const Color(0xFF1A6B3C),
+        icon: const Icon(Icons.add_location_alt_rounded, color: Colors.white),
+        label: Text('Nouveau point', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w700)),
+        onPressed: _showAddCollectionPointDialog,
+      );
+    }
     if (_tabCtrl.index == 2 && _showGroups) {
       fab = FloatingActionButton.extended(
         heroTag: 'fab_intercommunality_groupe',
@@ -1962,6 +1972,83 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     return null;
   }
 
+
+  // =====================================================================
+  // Ajout d'un point de collecte avec carte interactive + recherche
+  // =====================================================================
+
+  Future<void> _saveCollectionPoint({
+    required String name,
+    required double lat,
+    required double lng,
+    required String address,
+    required String types,
+    required String hours,
+    required String status,
+  }) async {
+    final jwt = await _jwt();
+    if (jwt == null) return;
+    final body = {
+      'name': name,
+      'lat': lat.toString(),
+      'lng': lng.toString(),
+      'address': address,
+      'types': types,
+      'hours': hours,
+      'status': status,
+      'is_verified': true,
+    };
+    final res = await http.post(
+      Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
+      headers: {..._headers(jwt), 'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      await _loadPoints();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Point "$name" ajoute avec succes !'),
+            backgroundColor: const Color(0xFF16A34A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur ${res.statusCode} : ${res.body}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddCollectionPointDialog() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _AddCollectionPointPage(
+          onSave: (name, lat, lng, address, types, hours, status) async {
+            await _saveCollectionPoint(
+              name: name,
+              lat: lat,
+              lng: lng,
+              address: address,
+              types: types,
+              hours: hours,
+              status: status,
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Future<void> _showAddInstructionDialog() async {
     final territoryCtrl = TextEditingController();
@@ -2916,6 +3003,662 @@ class _TabHeaderDelegate extends SliverPersistentHeaderDelegate {
 // -----------------------------------------------------------------------------
 // Page plein-écran : création d'une zone avec carte OSM intégrée
 // -----------------------------------------------------------------------------
+// =======================================================================
+// Page plein ecran : Ajouter un point de collecte avec recherche
+// =======================================================================
+class _AddCollectionPointPage extends StatefulWidget {
+  final Future<void> Function(
+    String name,
+    double lat,
+    double lng,
+    String address,
+    String types,
+    String hours,
+    String status,
+  ) onSave;
+
+  const _AddCollectionPointPage({required this.onSave});
+
+  @override
+  State<_AddCollectionPointPage> createState() => _AddCollectionPointPageState();
+}
+
+class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
+  final MapController _mapCtrl = MapController();
+  LatLng _selectedLoc = const LatLng(36.8065, 10.1815);
+  String _selectedAddress = '';
+  bool _isReverseGeocoding = false;
+  bool _isSearching = false;
+  bool _searchNoResults = false;
+  List<dynamic> _searchResults = [];
+  Timer? _debounce;
+  bool _isSaving = false;
+
+  final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _hoursCtrl = TextEditingController();
+  final TextEditingController _typesCtrl = TextEditingController();
+  String _status = 'disponible';
+
+  static const List<String> _statusOptions = ['disponible', 'sature', 'maintenance'];
+  static const List<String> _wasteOptions = [
+    'Plastique', 'Verre', 'Papier / Carton', 'Metal',
+    'Organique', 'Electronique', 'Dangereux', 'Autre'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchLocation();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchCtrl.dispose();
+    _nameCtrl.dispose();
+    _hoursCtrl.dispose();
+    _typesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+        if (perm == LocationPermission.denied) return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (!mounted) return;
+      final loc = LatLng(pos.latitude, pos.longitude);
+      setState(() => _selectedLoc = loc);
+      _mapCtrl.move(loc, 15);
+      _reverseGeocode(loc);
+    } catch (_) {}
+  }
+
+  Future<void> _reverseGeocode(LatLng loc) async {
+    if (_isReverseGeocoding) return;
+    if (mounted) setState(() => _isReverseGeocoding = true);
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json'
+        '&lat=${loc.latitude}&lon=${loc.longitude}&zoom=17&addressdetails=1&accept-language=fr',
+      );
+      final res = await http.get(uri, headers: {'User-Agent': 'EcoRewindApp/1.0'});
+      if (res.statusCode == 200 && mounted) {
+        final data = json.decode(res.body);
+        final addr = data['address'] as Map<String, dynamic>? ?? {};
+        final parts = [
+          addr['road'] ?? addr['pedestrian'] ?? addr['quarter'],
+          addr['suburb'] ?? addr['neighbourhood'],
+          addr['city'] ?? addr['town'] ?? addr['village'],
+        ].whereType<String>().where((s) => s.isNotEmpty).toList();
+        final label = parts.isNotEmpty
+            ? parts.join(', ')
+            : (data['display_name']?.toString() ?? '');
+        if (mounted) setState(() => _selectedAddress = label);
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isReverseGeocoding = false);
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    if (query.isEmpty) {
+      setState(() { _searchResults = []; _searchNoResults = false; });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      if (query.length >= 2) _searchLocation(query);
+    });
+  }
+
+  Future<void> _searchLocation(String query) async {
+    if (!mounted) return;
+    setState(() { _isSearching = true; _searchNoResults = false; });
+    final trimmed = query.trim();
+    List<dynamic> results = [];
+
+    // Etape 1 : Photon (komoot) - rapide, sans rate-limit
+    try {
+      final uri = Uri.parse(
+        'https://photon.komoot.io/api/'
+        '?q=${Uri.encodeComponent(trimmed)}'
+        '&lang=fr&limit=8&lat=33.8&lon=9.5',
+      );
+      final resp = await http
+          .get(uri, headers: {'User-Agent': 'EcoRewindApp/1.0'})
+          .timeout(const Duration(seconds: 10));
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final geojson = json.decode(resp.body) as Map<String, dynamic>;
+        final features = geojson['features'] as List<dynamic>? ?? [];
+        final tn = features.where((f) {
+          final p = f['properties'] as Map<String, dynamic>? ?? {};
+          return p['country_code']?.toString().toLowerCase() == 'tn';
+        }).toList();
+        final toConvert = tn.isNotEmpty ? tn : features;
+        results = toConvert.map((f) {
+          final props = f['properties'] as Map<String, dynamic>? ?? {};
+          final coords = (f['geometry']['coordinates'] as List<dynamic>);
+          final parts = [
+            props['name'], props['street'],
+            props['city'] ?? props['town'] ?? props['village'],
+            props['state'], props['country'],
+          ].whereType<String>().where((s) => s.isNotEmpty).toList();
+          return {
+            'lat': coords[1].toString(),
+            'lon': coords[0].toString(),
+            'display_name': parts.join(', '),
+            'address': {
+              'road': props['street'],
+              'city': props['city'] ?? props['town'] ?? props['village'],
+              'state': props['state'],
+              'amenity': props['name'],
+            },
+          };
+        }).toList();
+      }
+    } catch (_) {}
+
+    // Etape 2 : Nominatim fallback (Tunisie)
+    if (results.isEmpty && mounted) {
+      try {
+        final uri = Uri.parse(
+          'https://nominatim.openstreetmap.org/search?format=json'
+          '&q=${Uri.encodeComponent(trimmed)}&limit=8'
+          '&addressdetails=1&accept-language=fr&countrycodes=tn',
+        );
+        final resp = await http
+            .get(uri, headers: {'User-Agent': 'EcoRewindApp/1.0 contact@ecorewind.app'})
+            .timeout(const Duration(seconds: 10));
+        if (!mounted) return;
+        if (resp.statusCode == 200) results = json.decode(resp.body);
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+        _searchNoResults = results.isEmpty;
+      });
+    }
+  }
+
+  void _selectResult(dynamic result) {
+    final lat = double.parse(result['lat']);
+    final lon = double.parse(result['lon']);
+    final loc = LatLng(lat, lon);
+    final addr = result['address'] as Map<String, dynamic>? ?? {};
+    final shortName = addr['amenity'] ?? addr['road'] ??
+        result['display_name']?.toString().split(',').first.trim() ?? '';
+    final parts = [
+      addr['road'] ?? addr['pedestrian'],
+      addr['suburb'] ?? addr['neighbourhood'],
+      addr['city'] ?? addr['town'] ?? addr['village'],
+    ].whereType<String>().where((s) => s.isNotEmpty).toList();
+    final readable = parts.isNotEmpty
+        ? parts.join(', ')
+        : result['display_name']?.toString() ?? '';
+
+    setState(() {
+      _selectedLoc = loc;
+      _selectedAddress = readable;
+      _searchResults = [];
+      _searchCtrl.clear();
+      if (_nameCtrl.text.isEmpty && shortName.isNotEmpty) {
+        _nameCtrl.text = shortName;
+      }
+    });
+    _mapCtrl.move(loc, 16);
+    FocusScope.of(context).unfocus();
+  }
+
+  void _onMapTap(TapPosition tp, LatLng point) {
+    setState(() {
+      _selectedLoc = point;
+      _selectedAddress = '';
+    });
+    _reverseGeocode(point);
+  }
+
+  Future<void> _submit() async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer un nom'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    setState(() => _isSaving = true);
+    await widget.onSave(
+      _nameCtrl.text.trim(),
+      _selectedLoc.latitude,
+      _selectedLoc.longitude,
+      _selectedAddress,
+      _typesCtrl.text.trim(),
+      _hoursCtrl.text.trim(),
+      _status,
+    );
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenH = MediaQuery.of(context).size.height;
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Color(0xFF1E293B)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Nouveau point de collecte',
+          style: GoogleFonts.outfit(
+            color: const Color(0xFF1E293B),
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: _isSaving ? null : _submit,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A6B3C)))
+                : const Icon(Icons.check_rounded, color: Color(0xFF1A6B3C)),
+            label: Text(
+              'Creer',
+              style: GoogleFonts.outfit(
+                color: _isSaving ? Colors.grey : const Color(0xFF1A6B3C),
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // ---- CARTE ----
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapCtrl,
+              options: MapOptions(
+                initialCenter: _selectedLoc,
+                initialZoom: 13,
+                minZoom: 3,
+                maxZoom: 19,
+                onTap: _onMapTap,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                  userAgentPackageName: 'com.example.eco_rewind',
+                  tileProvider: CancellableNetworkTileProvider(),
+                  errorTileCallback: (tile, error, stackTrace) {},
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _selectedLoc,
+                      width: 56,
+                      height: 56,
+                      alignment: Alignment.topCenter,
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        color: Color(0xFF1A6B3C),
+                        size: 48,
+                        shadows: [Shadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3))],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ---- BARRE DE RECHERCHE (haut) ----
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Champ recherche
+                Material(
+                  borderRadius: BorderRadius.circular(16),
+                  elevation: 4,
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher une adresse, quartier, ville...',
+                      hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
+                      prefixIcon: _isSearching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A6B3C)),
+                              ),
+                            )
+                          : const Icon(Icons.search_rounded, color: Color(0xFF1A6B3C)),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() { _searchResults = []; _searchNoResults = false; });
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ),
+
+                // Resultats de recherche
+                if (_searchResults.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
+                    ),
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, indent: 48),
+                      itemBuilder: (ctx, i) {
+                        final r = _searchResults[i];
+                        final display = r['display_name']?.toString() ?? '';
+                        return ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.place_rounded, color: Color(0xFF1A6B3C), size: 20),
+                          title: Text(
+                            display,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          onTap: () => _selectResult(r),
+                        );
+                      },
+                    ),
+                  ),
+
+                if (_searchNoResults && _searchCtrl.text.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                    ),
+                    child: Text(
+                      'Aucun resultat. Essayez un autre terme.',
+                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // ---- CHIP ADRESSE + COORDS (milieu-bas de carte) ----
+          Positioned(
+            bottom: screenH * 0.38 + 8,
+            left: 12,
+            right: 12,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isReverseGeocoding)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.94),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const SizedBox(width: 10, height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF1A6B3C))),
+                      const SizedBox(width: 8),
+                      Text('Localisation en cours...', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
+                    ]),
+                  )
+                else if (_selectedAddress.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.94),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: const Color(0xFF1A6B3C).withOpacity(0.3)),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.place_rounded, size: 13, color: Color(0xFF1A6B3C)),
+                      const SizedBox(width: 6),
+                      Flexible(child: Text(
+                        _selectedAddress,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                      )),
+                    ]),
+                  ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: const Color(0xFF1A6B3C).withOpacity(0.4)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.gps_fixed_rounded, size: 11, color: Color(0xFF1A6B3C)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_selectedLoc.latitude.toStringAsFixed(5)},  ${_selectedLoc.longitude.toStringAsFixed(5)}',
+                      style: GoogleFonts.robotoMono(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
+          ),
+
+          // ---- BOUTON MA POSITION ----
+          Positioned(
+            right: 12,
+            bottom: screenH * 0.38 + 60,
+            child: FloatingActionButton.small(
+              heroTag: 'fab_my_loc_add_point',
+              backgroundColor: Colors.white,
+              elevation: 4,
+              onPressed: _fetchLocation,
+              child: const Icon(Icons.my_location_rounded, color: Color(0xFF1A6B3C), size: 20),
+            ),
+          ),
+
+          // ---- FEUILLE BASSE : FORMULAIRE ----
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: screenH * 0.38,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -4))],
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  20, 16, 20,
+                  MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Handle
+                    Center(child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    )),
+                    const SizedBox(height: 14),
+
+                    // Nom
+                    TextField(
+                      controller: _nameCtrl,
+                      style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1E293B)),
+                      decoration: InputDecoration(
+                        hintText: 'Nom du point (ex: Point Recyclage Manouba)',
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.edit_note_rounded, color: Color(0xFF1A6B3C)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Types de dechets
+                    Autocomplete<String>(
+                      optionsBuilder: (tv) {
+                        if (tv.text.isEmpty) return const Iterable<String>.empty();
+                        return _wasteOptions.where((o) => o.toLowerCase().contains(tv.text.toLowerCase()));
+                      },
+                      onSelected: (sel) {
+                        final existing = _typesCtrl.text.trim();
+                        final parts = existing.isEmpty ? <String>[] : existing.split(',').map((s) => s.trim()).toList();
+                        if (!parts.contains(sel)) parts.add(sel);
+                        _typesCtrl.text = parts.join(', ');
+                      },
+                      fieldViewBuilder: (ctx, ctrl, fn, onSubmit) => TextField(
+                        controller: _typesCtrl,
+                        focusNode: fn,
+                        style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E293B)),
+                        decoration: InputDecoration(
+                          hintText: 'Types de dechets (ex: Plastique, Verre)',
+                          hintStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.recycling_rounded, color: Color(0xFF1A6B3C)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Horaires + Statut en ligne
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _hoursCtrl,
+                            style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E293B)),
+                            decoration: InputDecoration(
+                              hintText: 'Horaires (ex: 8h-18h)',
+                              hintStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
+                              prefixIcon: const Icon(Icons.access_time_rounded, color: Color(0xFF1A6B3C), size: 18),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _status,
+                            isExpanded: true,
+                            dropdownColor: Colors.white,
+                            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E293B)),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.info_outline_rounded, color: Color(0xFF1A6B3C), size: 18),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                              isDense: true,
+                            ),
+                            items: _statusOptions.map((s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s[0].toUpperCase() + s.substring(1),
+                                style: GoogleFonts.inter(fontSize: 12),
+                              ),
+                            )).toList(),
+                            onChanged: (v) { if (v != null) setState(() => _status = v); },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Bouton Creer
+                    ElevatedButton.icon(
+                      onPressed: _isSaving ? null : _submit,
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.add_location_alt_rounded, color: Colors.white),
+                      label: Text(
+                        _isSaving ? 'Creation...' : 'Creer le point de collecte',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 15),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A6B3C),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CreateZoneMapPage extends StatefulWidget {
   final List<Map<String, dynamic>> points;
   const _CreateZoneMapPage({required this.points});

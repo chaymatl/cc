@@ -7,6 +7,7 @@ set ADB=%SCRCPY_DIR%\adb.exe
 set SCRCPY=%SCRCPY_DIR%\scrcpy.exe
 set APK=%~dp0build\app\outputs\flutter-apk\app-debug.apk
 set PACKAGE=com.example.eco_rewind
+set BACKEND_DIR=%~dp0backend
 
 echo.
 echo  ============================================================
@@ -14,46 +15,75 @@ echo    EcoRewind - Lancement App Android + Miroir scrcpy
 echo  ============================================================
 echo.
 
-:: ── 1. Vérifier qu'un téléphone est connecté ──────────────────────────────
-echo [1/5] Vérification du téléphone connecté...
+:: =================================================================
+:: ETAPE 1 : Verifier telephone USB
+:: =================================================================
+echo [1/5] Verification du telephone connecte...
 "%ADB%" devices | findstr /v "List of devices" | findstr "device" >nul
 if errorlevel 1 (
     echo.
-    echo  ╔══════════════════════════════════════════════════════╗
-    echo  ║  ERREUR : Aucun téléphone détecté !                  ║
-    echo  ║                                                       ║
-    echo  ║  Vérifiez que :                                       ║
-    echo  ║   1. Le câble USB est bien branché                    ║
-    echo  ║   2. Le débogage USB est activé                       ║
-    echo  ║   3. Vous avez accepté "Autoriser le débogage USB"    ║
-    echo  ╚══════════════════════════════════════════════════════╝
+    echo  !! ERREUR : Aucun telephone detecte !
+    echo.
+    echo     Verifiez que :
+    echo       1. Le cable USB est bien branche
+    echo       2. Le debogage USB est active sur le telephone
+    echo       3. Vous avez accepte "Autoriser le debogage USB"
     echo.
     pause
     exit /b 1
 )
-echo     OK - Téléphone détecté.
+echo     OK - Telephone detecte.
 
-:: ── 1b. ADB Reverse : tunneliser le port 8000 vers le PC ─────────────────
+:: =================================================================
+:: ETAPE 1b : Tunnel ADB
+:: =================================================================
 echo.
 echo [1b] Configuration du tunnel USB (adb reverse)...
 "%ADB%" reverse tcp:8000 tcp:8000
-echo     OK - Tunnel actif : telephone:127.0.0.1:8000 → PC:8000
+echo     OK - Tunnel actif : telephone->127.0.0.1:8000
 
-:: ── 2. Démarrer le backend FastAPI ────────────────────────────────────────
+:: =================================================================
+:: ETAPE 2 : Verifier backend (NE PAS relancer si deja actif)
+:: =================================================================
 echo.
-echo [2/5] Démarrage du backend FastAPI...
-start "EcoRewind Backend" cmd /k "cd /d "%~dp0backend" && python -m uvicorn main:app --reload --reload-exclude uploads --host 0.0.0.0 --port 8000"
-timeout /t 3 /nobreak >nul
-echo     OK - Backend démarré sur port 8000.
+echo [2/5] Verification du backend...
 
-:: ── 3. Installer l'APK sur le téléphone ──────────────────────────────────
+:: Methode robuste : verifier directement si port 8000 ecoute
+netstat -ano | findstr "0.0.0.0:8000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo     OK - Port 8000 actif ^(Docker ou autre^).
+    goto backend_ok
+)
+netstat -ano | findstr "[::]:8000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo     OK - Port 8000 actif ^(IPv6^).
+    goto backend_ok
+)
+netstat -ano | findstr "127.0.0.1:8000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo     OK - Port 8000 actif ^(loopback^).
+    goto backend_ok
+)
+
+:: Port 8000 libre -> demarrer backend local sur 127.0.0.1 UNIQUEMENT
+echo     Port 8000 libre - Demarrage backend local sur 127.0.0.1:8000...
+start "EcoRewind Backend" cmd /k "cd /d "%BACKEND_DIR%" && .\venv\Scripts\python.exe run_local.py"
+timeout /t 5 /nobreak >nul
+echo     OK - Backend local demarre ^(127.0.0.1 = pas d'erreur Windows^).
+
+:backend_ok
+
+:: =================================================================
+:: ETAPE 3 : Installer l'APK
+:: =================================================================
 echo.
-echo [3/5] Installation de l'APK sur le téléphone...
+echo [3/5] Installation de l'APK sur le telephone...
 if not exist "%APK%" (
-    echo     APK introuvable. Construction en cours...
+    echo     APK introuvable - Construction en cours...
+    cd /d "%~dp0"
     call flutter build apk --debug
     if errorlevel 1 (
-        echo  ERREUR: Impossible de builder l'APK. Vérifiez Flutter.
+        echo  ERREUR: Build Flutter echoue.
         pause
         exit /b 1
     )
@@ -61,26 +91,30 @@ if not exist "%APK%" (
 "%ADB%" install -r "%APK%"
 if errorlevel 1 (
     echo.
-    echo  ERREUR: Installation de l'APK échouée.
-    echo  Essayez de désinstaller l'app manuellement sur le téléphone.
+    echo  ERREUR: Installation APK echouee.
+    echo  Desinstallez l'app sur le telephone puis relancez.
     pause
     exit /b 1
 )
-echo     OK - APK installé.
+echo     OK - APK installe.
 
-:: ── 4. Lancer l'application sur le téléphone ─────────────────────────────
+:: =================================================================
+:: ETAPE 4 : Lancer l'app
+:: =================================================================
 echo.
 echo [4/5] Lancement de l'application...
 "%ADB%" shell monkey -p %PACKAGE% -c android.intent.category.LAUNCHER 1 >nul 2>&1
 timeout /t 2 /nobreak >nul
-echo     OK - Application lancée.
+echo     OK - Application lancee.
 
-:: ── 5. Lancer scrcpy (miroir de l'écran) ─────────────────────────────────
+:: =================================================================
+:: ETAPE 5 : Miroir scrcpy
+:: =================================================================
 echo.
 echo [5/5] Ouverture du miroir scrcpy...
 echo.
 echo  ============================================================
-echo    Miroir actif - Fermez cette fenêtre pour arrêter
+echo    Miroir actif - Fermez cette fenetre pour arreter
 echo  ============================================================
 echo.
 "%SCRCPY%" --window-title "EcoRewind - Miroir" --stay-awake --turn-screen-off --max-fps 60 --video-bit-rate 8M
