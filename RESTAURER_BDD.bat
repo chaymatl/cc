@@ -1,19 +1,15 @@
 @echo off
 chcp 65001 >nul
-title EcoRewind - Restauration Base de Donnees (locale)
+title EcoRewind - Restauration Base de Donnees
 
 set "BACKUP_DIR=C:\Users\lenovo\Desktop\EcoRewind\backups"
 set "LATEST_FILE=%BACKUP_DIR%\ecorewind_LATEST.sql"
 set "PSQL=C:\Program Files\PostgreSQL\15\bin\psql.exe"
-set "PGHOST=localhost"
-set "PGPORT=5432"
-set "PGUSER=postgres"
-set "PGDATABASE=ecorewind"
+set "PGPASSWORD=postgres"
 
 echo.
 echo =====================================================
 echo   ECOREWIND - RESTAURATION BASE DE DONNEES
-echo   PostgreSQL local : %PGHOST%:%PGPORT%/%PGDATABASE%
 echo   ATTENTION : Ecrase les donnees actuelles !
 echo =====================================================
 echo.
@@ -31,19 +27,14 @@ dir /b /o-d "%BACKUP_DIR%\ecorewind_*.sql" 2>nul
 echo.
 echo Par defaut : ecorewind_LATEST.sql
 echo.
-set /p CHOIX="Appuyez sur ENTREE pour restaurer LATEST, ou tapez le nom d'un autre fichier : "
-if "%CHOIX%"=="" set "CHOIX=%LATEST_FILE%"
-if not exist "%BACKUP_DIR%\%CHOIX%" (
-    if exist "%CHOIX%" set "RESTORE_FILE=%CHOIX%"
-) else (
-    set "RESTORE_FILE=%BACKUP_DIR%\%CHOIX%"
-)
-if "%RESTORE_FILE%"=="" set "RESTORE_FILE=%LATEST_FILE%"
+set /p CHOIX="Appuyez sur ENTREE pour LATEST, ou tapez un nom de fichier : "
+if "%CHOIX%"=="" set "RESTORE_FILE=%LATEST_FILE%"
+if not "%CHOIX%"=="" set "RESTORE_FILE=%BACKUP_DIR%\%CHOIX%"
 
 echo.
-echo Fichier a restaurer : %RESTORE_FILE%
+echo Fichier : %RESTORE_FILE%
 echo.
-set /p CONFIRM="Confirmer la restauration ? (oui/non) : "
+set /p CONFIRM="Confirmer ? (oui/non) : "
 if /i not "%CONFIRM%"=="oui" (
     echo Restauration annulee.
     pause
@@ -52,14 +43,13 @@ if /i not "%CONFIRM%"=="oui" (
 
 echo.
 echo Restauration en cours...
-"%PSQL%" -h %PGHOST% -p %PGPORT% -U %PGUSER% -d %PGDATABASE% -f "%RESTORE_FILE%"
+"%PSQL%" -h localhost -p 5432 -U postgres -d ecorewind -f "%RESTORE_FILE%"
 if errorlevel 1 (
     echo [ERREUR] Restauration echouee.
-    echo Verifiez que PostgreSQL local tourne sur le port %PGPORT%.
     pause
     exit /b 1
 )
 
 echo.
-echo [OK] Restauration terminee avec succes !
+echo [OK] Restauration terminee !
 pause
