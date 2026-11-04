@@ -2,7 +2,8 @@
 setlocal enabledelayedexpansion
 title EcoRewind - Lancement Complet
 
-set "ADB=C:\Users\lenovo\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+REM ADB inclus dans scrcpy (toujours present)
+set "ADB=%~dp0scrcpy-win64-v3.3.4\adb.exe"
 set "SCRCPY=%~dp0scrcpy-win64-v3.3.4\scrcpy.exe"
 set "PROJECT=C:\Users\lenovo\Desktop\EcoRewind"
 set "VENV_PY=%PROJECT%\backend\venv\Scripts\python.exe"
@@ -13,6 +14,22 @@ echo =====================================================
 echo   ECOREWIND - LANCEMENT COMPLET
 echo   Backend + Tunnel ADB + Flutter + Miroir
 echo =====================================================
+echo.
+
+REM === Verification fichiers critiques ===
+if not exist "%ADB%" (
+    echo  [ERREUR] ADB introuvable : %ADB%
+    pause & exit /b 1
+)
+if not exist "%SCRCPY%" (
+    echo  [ERREUR] scrcpy introuvable : %SCRCPY%
+    pause & exit /b 1
+)
+if not exist "%FLUTTER%" (
+    echo  [ERREUR] Flutter introuvable : %FLUTTER%
+    pause & exit /b 1
+)
+echo  [OK] Tous les outils trouves.
 echo.
 
 REM === Etape 1 : Telephone ===
@@ -26,8 +43,8 @@ for /f "skip=1 tokens=1" %%d in (%TEMP%\ecorewind_devs.txt) do (
 )
 if "!DEVICE!"=="" (
     echo.
-    echo  [!] Aucun telephone detecte.
-    echo      Branchez le telephone + activez debogage USB
+    echo  [ERREUR] Aucun telephone detecte.
+    echo  Branchez le telephone + activez debogage USB
     echo.
     pause
     exit /b 1
@@ -38,16 +55,20 @@ echo.
 REM === Etape 2 : Backend ===
 echo [2/5] Verification du backend...
 set "PORT_ACTIF=0"
-for /f "tokens=5" %%p in ('netstat -ano 2^>nul ^| findstr ":8000 " ^| findstr "LISTEN"') do (
-    set "PORT_ACTIF=1"
-)
+netstat -ano > "%TEMP%\netstat8000.txt" 2>&1
+findstr ":8000 " "%TEMP%\netstat8000.txt" | findstr "LISTEN" > "%TEMP%\port8000.txt" 2>&1
+for %%f in ("%TEMP%\port8000.txt") do if %%~zf gtr 0 set "PORT_ACTIF=1"
+
 if !PORT_ACTIF!==1 (
     echo  [OK] Backend deja actif sur port 8000 - aucune action.
 ) else (
     echo  Port 8000 libre - Demarrage backend local sur 127.0.0.1...
-    echo  [NOTE] On utilise 127.0.0.1 pour eviter l'erreur Windows Errno 13.
+    if not exist "%VENV_PY%" (
+        echo  [ERREUR] Python venv introuvable : %VENV_PY%
+        pause & exit /b 1
+    )
     start "Backend EcoRewind" cmd /k "cd /d %PROJECT%\backend && .\venv\Scripts\python.exe run_local.py"
-    echo  Attente du demarrage (max 30s)...
+    echo  Attente du demarrage...
     set "READY=0"
     for /L %%i in (1,1,10) do (
         if !READY!==0 (
@@ -57,7 +78,7 @@ if !PORT_ACTIF!==1 (
         )
     )
     if !READY!==0 (
-        echo  Appuyez sur une touche quand le backend est pret.
+        echo  Backend pas encore pret. Appuyez sur une touche pour continuer.
         pause >nul
     ) else (
         echo  [OK] Backend demarre sur 127.0.0.1:8000
@@ -67,7 +88,7 @@ echo.
 
 REM === Etape 3 : Tunnel ===
 echo [3/5] Activation tunnel USB...
-"%ADB%" -s !DEVICE! reverse tcp:8000 tcp:8000 >nul 2>&1
+"%ADB%" -s !DEVICE! reverse tcp:8000 tcp:8000
 echo  [OK] Tunnel actif
 echo.
 
@@ -79,7 +100,7 @@ timeout /t 5 /nobreak >nul
 echo.
 
 REM === Etape 5 : Miroir ===
-echo [5/5] Lancement du miroir...
+echo [5/5] Lancement du miroir scrcpy...
 echo.
 echo =====================================================
 echo   TOUT EST LANCE !
