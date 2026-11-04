@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.8
--- Dumped by pg_dump version 15.8
+\restrict 3ROVmGebBHV57sMdW5dipzjcDKKcLLjYfaaXd6obcctGA3uChBwlcvV095AIns9
+
+-- Dumped from database version 16.15
+-- Dumped by pg_dump version 16.15
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -21,7 +23,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: alembic_version; Type: TABLE; Schema: public; Owner: postgres
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.alembic_version (
@@ -29,10 +31,8 @@ CREATE TABLE public.alembic_version (
 );
 
 
-ALTER TABLE public.alembic_version OWNER TO postgres;
-
 --
--- Name: bin_scans; Type: TABLE; Schema: public; Owner: postgres
+-- Name: bin_scans; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.bin_scans (
@@ -51,10 +51,8 @@ CREATE TABLE public.bin_scans (
 );
 
 
-ALTER TABLE public.bin_scans OWNER TO postgres;
-
 --
--- Name: bin_scans_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: bin_scans_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.bin_scans_id_seq
@@ -66,17 +64,15 @@ CREATE SEQUENCE public.bin_scans_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.bin_scans_id_seq OWNER TO postgres;
-
 --
--- Name: bin_scans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: bin_scans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.bin_scans_id_seq OWNED BY public.bin_scans.id;
 
 
 --
--- Name: center_proposals; Type: TABLE; Schema: public; Owner: postgres
+-- Name: center_proposals; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.center_proposals (
@@ -94,10 +90,8 @@ CREATE TABLE public.center_proposals (
 );
 
 
-ALTER TABLE public.center_proposals OWNER TO postgres;
-
 --
--- Name: center_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: center_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.center_proposals_id_seq
@@ -109,17 +103,15 @@ CREATE SEQUENCE public.center_proposals_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.center_proposals_id_seq OWNER TO postgres;
-
 --
--- Name: center_proposals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: center_proposals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.center_proposals_id_seq OWNED BY public.center_proposals.id;
 
 
 --
--- Name: citizen_groups; Type: TABLE; Schema: public; Owner: postgres
+-- Name: citizen_groups; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.citizen_groups (
@@ -132,10 +124,8 @@ CREATE TABLE public.citizen_groups (
 );
 
 
-ALTER TABLE public.citizen_groups OWNER TO postgres;
-
 --
--- Name: citizen_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: citizen_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.citizen_groups_id_seq
@@ -147,17 +137,15 @@ CREATE SEQUENCE public.citizen_groups_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.citizen_groups_id_seq OWNER TO postgres;
-
 --
--- Name: citizen_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: citizen_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.citizen_groups_id_seq OWNED BY public.citizen_groups.id;
 
 
 --
--- Name: citizen_reports; Type: TABLE; Schema: public; Owner: postgres
+-- Name: citizen_reports; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.citizen_reports (
@@ -176,10 +164,8 @@ CREATE TABLE public.citizen_reports (
 );
 
 
-ALTER TABLE public.citizen_reports OWNER TO postgres;
-
 --
--- Name: citizen_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: citizen_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.citizen_reports_id_seq
@@ -191,17 +177,15 @@ CREATE SEQUENCE public.citizen_reports_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.citizen_reports_id_seq OWNER TO postgres;
-
 --
--- Name: citizen_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: citizen_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.citizen_reports_id_seq OWNED BY public.citizen_reports.id;
 
 
 --
--- Name: collection_points; Type: TABLE; Schema: public; Owner: postgres
+-- Name: collection_points; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.collection_points (
@@ -219,10 +203,8 @@ CREATE TABLE public.collection_points (
 );
 
 
-ALTER TABLE public.collection_points OWNER TO postgres;
-
 --
--- Name: collection_points_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: collection_points_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.collection_points_id_seq
@@ -234,17 +216,15 @@ CREATE SEQUENCE public.collection_points_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.collection_points_id_seq OWNER TO postgres;
-
 --
--- Name: collection_points_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: collection_points_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.collection_points_id_seq OWNED BY public.collection_points.id;
 
 
 --
--- Name: collection_routes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: collection_routes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.collection_routes (
@@ -261,10 +241,8 @@ CREATE TABLE public.collection_routes (
 );
 
 
-ALTER TABLE public.collection_routes OWNER TO postgres;
-
 --
--- Name: collection_routes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: collection_routes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.collection_routes_id_seq
@@ -276,17 +254,15 @@ CREATE SEQUENCE public.collection_routes_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.collection_routes_id_seq OWNER TO postgres;
-
 --
--- Name: collection_routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: collection_routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.collection_routes_id_seq OWNED BY public.collection_routes.id;
 
 
 --
--- Name: collector_logs; Type: TABLE; Schema: public; Owner: postgres
+-- Name: collector_logs; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.collector_logs (
@@ -301,10 +277,8 @@ CREATE TABLE public.collector_logs (
 );
 
 
-ALTER TABLE public.collector_logs OWNER TO postgres;
-
 --
--- Name: collector_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: collector_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.collector_logs_id_seq
@@ -316,17 +290,15 @@ CREATE SEQUENCE public.collector_logs_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.collector_logs_id_seq OWNER TO postgres;
-
 --
--- Name: collector_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: collector_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.collector_logs_id_seq OWNED BY public.collector_logs.id;
 
 
 --
--- Name: collector_zone_assignments; Type: TABLE; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.collector_zone_assignments (
@@ -348,10 +320,8 @@ CREATE TABLE public.collector_zone_assignments (
 );
 
 
-ALTER TABLE public.collector_zone_assignments OWNER TO postgres;
-
 --
--- Name: collector_zone_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.collector_zone_assignments_id_seq
@@ -363,17 +333,15 @@ CREATE SEQUENCE public.collector_zone_assignments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.collector_zone_assignments_id_seq OWNER TO postgres;
-
 --
--- Name: collector_zone_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.collector_zone_assignments_id_seq OWNED BY public.collector_zone_assignments.id;
 
 
 --
--- Name: collector_zones; Type: TABLE; Schema: public; Owner: postgres
+-- Name: collector_zones; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.collector_zones (
@@ -388,10 +356,8 @@ CREATE TABLE public.collector_zones (
 );
 
 
-ALTER TABLE public.collector_zones OWNER TO postgres;
-
 --
--- Name: collector_zones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: collector_zones_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.collector_zones_id_seq
@@ -403,17 +369,15 @@ CREATE SEQUENCE public.collector_zones_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.collector_zones_id_seq OWNER TO postgres;
-
 --
--- Name: collector_zones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: collector_zones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.collector_zones_id_seq OWNED BY public.collector_zones.id;
 
 
 --
--- Name: comments; Type: TABLE; Schema: public; Owner: postgres
+-- Name: comments; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.comments (
@@ -428,10 +392,8 @@ CREATE TABLE public.comments (
 );
 
 
-ALTER TABLE public.comments OWNER TO postgres;
-
 --
--- Name: comments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: comments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.comments_id_seq
@@ -443,17 +405,15 @@ CREATE SEQUENCE public.comments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.comments_id_seq OWNER TO postgres;
-
 --
--- Name: comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.comments_id_seq OWNED BY public.comments.id;
 
 
 --
--- Name: custom_actor_groups; Type: TABLE; Schema: public; Owner: postgres
+-- Name: custom_actor_groups; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.custom_actor_groups (
@@ -466,10 +426,8 @@ CREATE TABLE public.custom_actor_groups (
 );
 
 
-ALTER TABLE public.custom_actor_groups OWNER TO postgres;
-
 --
--- Name: custom_actor_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: custom_actor_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.custom_actor_groups_id_seq
@@ -481,17 +439,15 @@ CREATE SEQUENCE public.custom_actor_groups_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.custom_actor_groups_id_seq OWNER TO postgres;
-
 --
--- Name: custom_actor_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: custom_actor_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.custom_actor_groups_id_seq OWNED BY public.custom_actor_groups.id;
 
 
 --
--- Name: educator_videos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: educator_videos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.educator_videos (
@@ -508,10 +464,8 @@ CREATE TABLE public.educator_videos (
 );
 
 
-ALTER TABLE public.educator_videos OWNER TO postgres;
-
 --
--- Name: educator_videos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: educator_videos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.educator_videos_id_seq
@@ -523,17 +477,15 @@ CREATE SEQUENCE public.educator_videos_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.educator_videos_id_seq OWNER TO postgres;
-
 --
--- Name: educator_videos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: educator_videos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.educator_videos_id_seq OWNED BY public.educator_videos.id;
 
 
 --
--- Name: group_members; Type: TABLE; Schema: public; Owner: postgres
+-- Name: group_members; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.group_members (
@@ -544,10 +496,8 @@ CREATE TABLE public.group_members (
 );
 
 
-ALTER TABLE public.group_members OWNER TO postgres;
-
 --
--- Name: group_members_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: group_members_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.group_members_id_seq
@@ -559,17 +509,15 @@ CREATE SEQUENCE public.group_members_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.group_members_id_seq OWNER TO postgres;
-
 --
--- Name: group_members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: group_members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.group_members_id_seq OWNED BY public.group_members.id;
 
 
 --
--- Name: likes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: likes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.likes (
@@ -580,10 +528,8 @@ CREATE TABLE public.likes (
 );
 
 
-ALTER TABLE public.likes OWNER TO postgres;
-
 --
--- Name: likes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: likes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.likes_id_seq
@@ -595,17 +541,15 @@ CREATE SEQUENCE public.likes_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.likes_id_seq OWNER TO postgres;
-
 --
--- Name: likes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: likes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.likes_id_seq OWNED BY public.likes.id;
 
 
 --
--- Name: local_instructions; Type: TABLE; Schema: public; Owner: postgres
+-- Name: local_instructions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.local_instructions (
@@ -622,10 +566,8 @@ CREATE TABLE public.local_instructions (
 );
 
 
-ALTER TABLE public.local_instructions OWNER TO postgres;
-
 --
--- Name: local_instructions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: local_instructions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.local_instructions_id_seq
@@ -637,17 +579,15 @@ CREATE SEQUENCE public.local_instructions_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.local_instructions_id_seq OWNER TO postgres;
-
 --
--- Name: local_instructions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: local_instructions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.local_instructions_id_seq OWNED BY public.local_instructions.id;
 
 
 --
--- Name: meeting_participants; Type: TABLE; Schema: public; Owner: postgres
+-- Name: meeting_participants; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.meeting_participants (
@@ -659,10 +599,8 @@ CREATE TABLE public.meeting_participants (
 );
 
 
-ALTER TABLE public.meeting_participants OWNER TO postgres;
-
 --
--- Name: meeting_participants_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: meeting_participants_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.meeting_participants_id_seq
@@ -674,17 +612,15 @@ CREATE SEQUENCE public.meeting_participants_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.meeting_participants_id_seq OWNER TO postgres;
-
 --
--- Name: meeting_participants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: meeting_participants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.meeting_participants_id_seq OWNED BY public.meeting_participants.id;
 
 
 --
--- Name: meetings; Type: TABLE; Schema: public; Owner: postgres
+-- Name: meetings; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.meetings (
@@ -703,10 +639,8 @@ CREATE TABLE public.meetings (
 );
 
 
-ALTER TABLE public.meetings OWNER TO postgres;
-
 --
--- Name: meetings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: meetings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.meetings_id_seq
@@ -718,17 +652,15 @@ CREATE SEQUENCE public.meetings_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.meetings_id_seq OWNER TO postgres;
-
 --
--- Name: meetings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: meetings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.meetings_id_seq OWNED BY public.meetings.id;
 
 
 --
--- Name: message_group_recipients; Type: TABLE; Schema: public; Owner: postgres
+-- Name: message_group_recipients; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.message_group_recipients (
@@ -739,10 +671,8 @@ CREATE TABLE public.message_group_recipients (
 );
 
 
-ALTER TABLE public.message_group_recipients OWNER TO postgres;
-
 --
--- Name: message_group_recipients_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: message_group_recipients_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.message_group_recipients_id_seq
@@ -754,17 +684,15 @@ CREATE SEQUENCE public.message_group_recipients_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.message_group_recipients_id_seq OWNER TO postgres;
-
 --
--- Name: message_group_recipients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: message_group_recipients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.message_group_recipients_id_seq OWNED BY public.message_group_recipients.id;
 
 
 --
--- Name: messages; Type: TABLE; Schema: public; Owner: postgres
+-- Name: messages; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.messages (
@@ -781,10 +709,8 @@ CREATE TABLE public.messages (
 );
 
 
-ALTER TABLE public.messages OWNER TO postgres;
-
 --
--- Name: messages_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: messages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.messages_id_seq
@@ -796,17 +722,15 @@ CREATE SEQUENCE public.messages_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.messages_id_seq OWNER TO postgres;
-
 --
--- Name: messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.messages_id_seq OWNED BY public.messages.id;
 
 
 --
--- Name: notifications; Type: TABLE; Schema: public; Owner: postgres
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.notifications (
@@ -825,10 +749,8 @@ CREATE TABLE public.notifications (
 );
 
 
-ALTER TABLE public.notifications OWNER TO postgres;
-
 --
--- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.notifications_id_seq
@@ -840,17 +762,15 @@ CREATE SEQUENCE public.notifications_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.notifications_id_seq OWNER TO postgres;
-
 --
--- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
--- Name: otp_codes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: otp_codes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.otp_codes (
@@ -864,10 +784,8 @@ CREATE TABLE public.otp_codes (
 );
 
 
-ALTER TABLE public.otp_codes OWNER TO postgres;
-
 --
--- Name: otp_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: otp_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.otp_codes_id_seq
@@ -879,17 +797,15 @@ CREATE SEQUENCE public.otp_codes_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.otp_codes_id_seq OWNER TO postgres;
-
 --
--- Name: otp_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: otp_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.otp_codes_id_seq OWNED BY public.otp_codes.id;
 
 
 --
--- Name: posts; Type: TABLE; Schema: public; Owner: postgres
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.posts (
@@ -910,10 +826,8 @@ CREATE TABLE public.posts (
 );
 
 
-ALTER TABLE public.posts OWNER TO postgres;
-
 --
--- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.posts_id_seq
@@ -925,17 +839,15 @@ CREATE SEQUENCE public.posts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.posts_id_seq OWNER TO postgres;
-
 --
--- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
 
 
 --
--- Name: quiz_submissions; Type: TABLE; Schema: public; Owner: postgres
+-- Name: quiz_submissions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.quiz_submissions (
@@ -953,10 +865,8 @@ CREATE TABLE public.quiz_submissions (
 );
 
 
-ALTER TABLE public.quiz_submissions OWNER TO postgres;
-
 --
--- Name: quiz_submissions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: quiz_submissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.quiz_submissions_id_seq
@@ -968,17 +878,15 @@ CREATE SEQUENCE public.quiz_submissions_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.quiz_submissions_id_seq OWNER TO postgres;
-
 --
--- Name: quiz_submissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: quiz_submissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.quiz_submissions_id_seq OWNED BY public.quiz_submissions.id;
 
 
 --
--- Name: quizzes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: quizzes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.quizzes (
@@ -996,10 +904,8 @@ CREATE TABLE public.quizzes (
 );
 
 
-ALTER TABLE public.quizzes OWNER TO postgres;
-
 --
--- Name: quizzes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: quizzes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.quizzes_id_seq
@@ -1011,17 +917,15 @@ CREATE SEQUENCE public.quizzes_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.quizzes_id_seq OWNER TO postgres;
-
 --
--- Name: quizzes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: quizzes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.quizzes_id_seq OWNED BY public.quizzes.id;
 
 
 --
--- Name: saved_posts; Type: TABLE; Schema: public; Owner: postgres
+-- Name: saved_posts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.saved_posts (
@@ -1032,10 +936,8 @@ CREATE TABLE public.saved_posts (
 );
 
 
-ALTER TABLE public.saved_posts OWNER TO postgres;
-
 --
--- Name: saved_posts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: saved_posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.saved_posts_id_seq
@@ -1047,17 +949,15 @@ CREATE SEQUENCE public.saved_posts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.saved_posts_id_seq OWNER TO postgres;
-
 --
--- Name: saved_posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: saved_posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.saved_posts_id_seq OWNED BY public.saved_posts.id;
 
 
 --
--- Name: smart_bins; Type: TABLE; Schema: public; Owner: postgres
+-- Name: smart_bins; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.smart_bins (
@@ -1072,10 +972,8 @@ CREATE TABLE public.smart_bins (
 );
 
 
-ALTER TABLE public.smart_bins OWNER TO postgres;
-
 --
--- Name: smart_bins_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: smart_bins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.smart_bins_id_seq
@@ -1087,17 +985,15 @@ CREATE SEQUENCE public.smart_bins_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.smart_bins_id_seq OWNER TO postgres;
-
 --
--- Name: smart_bins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: smart_bins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.smart_bins_id_seq OWNED BY public.smart_bins.id;
 
 
 --
--- Name: testimonials; Type: TABLE; Schema: public; Owner: postgres
+-- Name: testimonials; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.testimonials (
@@ -1113,10 +1009,8 @@ CREATE TABLE public.testimonials (
 );
 
 
-ALTER TABLE public.testimonials OWNER TO postgres;
-
 --
--- Name: testimonials_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: testimonials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.testimonials_id_seq
@@ -1128,17 +1022,15 @@ CREATE SEQUENCE public.testimonials_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.testimonials_id_seq OWNER TO postgres;
-
 --
--- Name: testimonials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: testimonials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.testimonials_id_seq OWNED BY public.testimonials.id;
 
 
 --
--- Name: user_rewards; Type: TABLE; Schema: public; Owner: postgres
+-- Name: user_rewards; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.user_rewards (
@@ -1154,10 +1046,8 @@ CREATE TABLE public.user_rewards (
 );
 
 
-ALTER TABLE public.user_rewards OWNER TO postgres;
-
 --
--- Name: user_rewards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: user_rewards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.user_rewards_id_seq
@@ -1169,17 +1059,15 @@ CREATE SEQUENCE public.user_rewards_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.user_rewards_id_seq OWNER TO postgres;
-
 --
--- Name: user_rewards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: user_rewards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.user_rewards_id_seq OWNED BY public.user_rewards.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: postgres
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users (
@@ -1204,10 +1092,8 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO postgres;
-
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -1219,17 +1105,15 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.users_id_seq OWNER TO postgres;
-
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: video_categories; Type: TABLE; Schema: public; Owner: postgres
+-- Name: video_categories; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.video_categories (
@@ -1242,10 +1126,8 @@ CREATE TABLE public.video_categories (
 );
 
 
-ALTER TABLE public.video_categories OWNER TO postgres;
-
 --
--- Name: video_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: video_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.video_categories_id_seq
@@ -1257,227 +1139,225 @@ CREATE SEQUENCE public.video_categories_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.video_categories_id_seq OWNER TO postgres;
-
 --
--- Name: video_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: video_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.video_categories_id_seq OWNED BY public.video_categories.id;
 
 
 --
--- Name: bin_scans id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: bin_scans id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bin_scans ALTER COLUMN id SET DEFAULT nextval('public.bin_scans_id_seq'::regclass);
 
 
 --
--- Name: center_proposals id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: center_proposals id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.center_proposals ALTER COLUMN id SET DEFAULT nextval('public.center_proposals_id_seq'::regclass);
 
 
 --
--- Name: citizen_groups id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: citizen_groups id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_groups ALTER COLUMN id SET DEFAULT nextval('public.citizen_groups_id_seq'::regclass);
 
 
 --
--- Name: citizen_reports id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: citizen_reports id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_reports ALTER COLUMN id SET DEFAULT nextval('public.citizen_reports_id_seq'::regclass);
 
 
 --
--- Name: collection_points id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: collection_points id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collection_points ALTER COLUMN id SET DEFAULT nextval('public.collection_points_id_seq'::regclass);
 
 
 --
--- Name: collection_routes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: collection_routes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collection_routes ALTER COLUMN id SET DEFAULT nextval('public.collection_routes_id_seq'::regclass);
 
 
 --
--- Name: collector_logs id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: collector_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_logs ALTER COLUMN id SET DEFAULT nextval('public.collector_logs_id_seq'::regclass);
 
 
 --
--- Name: collector_zone_assignments id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments ALTER COLUMN id SET DEFAULT nextval('public.collector_zone_assignments_id_seq'::regclass);
 
 
 --
--- Name: collector_zones id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: collector_zones id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zones ALTER COLUMN id SET DEFAULT nextval('public.collector_zones_id_seq'::regclass);
 
 
 --
--- Name: comments id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: comments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.comments ALTER COLUMN id SET DEFAULT nextval('public.comments_id_seq'::regclass);
 
 
 --
--- Name: custom_actor_groups id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: custom_actor_groups id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.custom_actor_groups ALTER COLUMN id SET DEFAULT nextval('public.custom_actor_groups_id_seq'::regclass);
 
 
 --
--- Name: educator_videos id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: educator_videos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.educator_videos ALTER COLUMN id SET DEFAULT nextval('public.educator_videos_id_seq'::regclass);
 
 
 --
--- Name: group_members id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: group_members id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_members ALTER COLUMN id SET DEFAULT nextval('public.group_members_id_seq'::regclass);
 
 
 --
--- Name: likes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: likes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.likes ALTER COLUMN id SET DEFAULT nextval('public.likes_id_seq'::regclass);
 
 
 --
--- Name: local_instructions id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: local_instructions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.local_instructions ALTER COLUMN id SET DEFAULT nextval('public.local_instructions_id_seq'::regclass);
 
 
 --
--- Name: meeting_participants id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: meeting_participants id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meeting_participants ALTER COLUMN id SET DEFAULT nextval('public.meeting_participants_id_seq'::regclass);
 
 
 --
--- Name: meetings id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: meetings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meetings ALTER COLUMN id SET DEFAULT nextval('public.meetings_id_seq'::regclass);
 
 
 --
--- Name: message_group_recipients id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: message_group_recipients id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_group_recipients ALTER COLUMN id SET DEFAULT nextval('public.message_group_recipients_id_seq'::regclass);
 
 
 --
--- Name: messages id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: messages id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages ALTER COLUMN id SET DEFAULT nextval('public.messages_id_seq'::regclass);
 
 
 --
--- Name: notifications id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
 
 
 --
--- Name: otp_codes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: otp_codes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.otp_codes ALTER COLUMN id SET DEFAULT nextval('public.otp_codes_id_seq'::regclass);
 
 
 --
--- Name: posts id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
 
 
 --
--- Name: quiz_submissions id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: quiz_submissions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quiz_submissions ALTER COLUMN id SET DEFAULT nextval('public.quiz_submissions_id_seq'::regclass);
 
 
 --
--- Name: quizzes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: quizzes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quizzes ALTER COLUMN id SET DEFAULT nextval('public.quizzes_id_seq'::regclass);
 
 
 --
--- Name: saved_posts id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: saved_posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.saved_posts ALTER COLUMN id SET DEFAULT nextval('public.saved_posts_id_seq'::regclass);
 
 
 --
--- Name: smart_bins id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: smart_bins id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.smart_bins ALTER COLUMN id SET DEFAULT nextval('public.smart_bins_id_seq'::regclass);
 
 
 --
--- Name: testimonials id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: testimonials id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.testimonials ALTER COLUMN id SET DEFAULT nextval('public.testimonials_id_seq'::regclass);
 
 
 --
--- Name: user_rewards id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: user_rewards id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_rewards ALTER COLUMN id SET DEFAULT nextval('public.user_rewards_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: video_categories id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: video_categories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.video_categories ALTER COLUMN id SET DEFAULT nextval('public.video_categories_id_seq'::regclass);
 
 
 --
--- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
@@ -1486,7 +1366,7 @@ COPY public.alembic_version (version_num) FROM stdin;
 
 
 --
--- Data for Name: bin_scans; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: bin_scans; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.bin_scans (id, user_id, qr_code, bin_id, waste_type, weight_kg, points_earned, score_before, score_after, firebase_synced, scanned_at, smart_bin_id) FROM stdin;
@@ -1504,7 +1384,7 @@ COPY public.bin_scans (id, user_id, qr_code, bin_id, waste_type, weight_kg, poin
 
 
 --
--- Data for Name: center_proposals; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: center_proposals; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.center_proposals (id, user_id, user_name, name, address, lat, lng, waste_types, description, status, created_at) FROM stdin;
@@ -1520,7 +1400,7 @@ COPY public.center_proposals (id, user_id, user_name, name, address, lat, lng, w
 
 
 --
--- Data for Name: citizen_groups; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: citizen_groups; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.citizen_groups (id, educator_id, name, description, color, created_at) FROM stdin;
@@ -1535,7 +1415,7 @@ COPY public.citizen_groups (id, educator_id, name, description, color, created_a
 
 
 --
--- Data for Name: citizen_reports; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: citizen_reports; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.citizen_reports (id, collection_point_id, user_id, report_type, description, photo_url, status, assigned_to, resolution_note, resolved_at, created_at, updated_at) FROM stdin;
@@ -1543,7 +1423,7 @@ COPY public.citizen_reports (id, collection_point_id, user_id, report_type, desc
 
 
 --
--- Data for Name: collection_points; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: collection_points; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.collection_points (id, name, lat, lng, is_verified, types, address, hours, status, load_level, created_at) FROM stdin;
@@ -1566,7 +1446,7 @@ COPY public.collection_points (id, name, lat, lng, is_verified, types, address, 
 
 
 --
--- Data for Name: collection_routes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: collection_routes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.collection_routes (id, collector_id, date_planned, status, point_ids, notes, total_weight_kg, completed_at, created_at, updated_at) FROM stdin;
@@ -1574,7 +1454,7 @@ COPY public.collection_routes (id, collector_id, date_planned, status, point_ids
 
 
 --
--- Data for Name: collector_logs; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: collector_logs; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.collector_logs (id, collector_id, smart_bin_id, bin_code, bin_type, weight_before_kg, notified, collected_at) FROM stdin;
@@ -1582,7 +1462,7 @@ COPY public.collector_logs (id, collector_id, smart_bin_id, bin_code, bin_type, 
 
 
 --
--- Data for Name: collector_zone_assignments; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: collector_zone_assignments; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.collector_zone_assignments (id, zone_id, collector_id, assigned_by, mission_message, priority, status, due_date, assigned_at, completed_at, collector_notes, collection_point_id, group_id, collection_point_ids, target_label) FROM stdin;
@@ -1603,7 +1483,7 @@ COPY public.collector_zone_assignments (id, zone_id, collector_id, assigned_by, 
 
 
 --
--- Data for Name: collector_zones; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: collector_zones; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.collector_zones (id, name, territory, description, color_hex, created_by, created_at, updated_at) FROM stdin;
@@ -1613,7 +1493,7 @@ COPY public.collector_zones (id, name, territory, description, color_hex, create
 
 
 --
--- Data for Name: comments; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: comments; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.comments (id, post_id, user_id, user_name, user_avatar_url, content, parent_id, created_at) FROM stdin;
@@ -1663,7 +1543,7 @@ COPY public.comments (id, post_id, user_id, user_name, user_avatar_url, content,
 
 
 --
--- Data for Name: custom_actor_groups; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: custom_actor_groups; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.custom_actor_groups (id, name, description, member_ids, created_by, created_at) FROM stdin;
@@ -1672,7 +1552,7 @@ COPY public.custom_actor_groups (id, name, description, member_ids, created_by, 
 
 
 --
--- Data for Name: educator_videos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: educator_videos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.educator_videos (id, educator_id, educator_name, title, description, video_url, thumbnail_url, duration, category_id, created_at) FROM stdin;
@@ -1682,7 +1562,7 @@ COPY public.educator_videos (id, educator_id, educator_name, title, description,
 
 
 --
--- Data for Name: group_members; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: group_members; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.group_members (id, group_id, user_id, added_at) FROM stdin;
@@ -1712,7 +1592,7 @@ COPY public.group_members (id, group_id, user_id, added_at) FROM stdin;
 
 
 --
--- Data for Name: likes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: likes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.likes (id, user_id, post_id, created_at) FROM stdin;
@@ -1747,7 +1627,7 @@ COPY public.likes (id, user_id, post_id, created_at) FROM stdin;
 
 
 --
--- Data for Name: local_instructions; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: local_instructions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.local_instructions (id, territory, city, waste_type, title, instruction, is_active, created_by, created_at, updated_at) FROM stdin;
@@ -1756,7 +1636,7 @@ COPY public.local_instructions (id, territory, city, waste_type, title, instruct
 
 
 --
--- Data for Name: meeting_participants; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: meeting_participants; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.meeting_participants (id, meeting_id, user_id, user_name, status) FROM stdin;
@@ -1843,7 +1723,7 @@ COPY public.meeting_participants (id, meeting_id, user_id, user_name, status) FR
 
 
 --
--- Data for Name: meetings; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: meetings; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.meetings (id, educator_id, educator_name, title, description, meet_link, scheduled_at, duration_minutes, group_name, audience, status, created_at) FROM stdin;
@@ -1859,7 +1739,7 @@ COPY public.meetings (id, educator_id, educator_name, title, description, meet_l
 
 
 --
--- Data for Name: message_group_recipients; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: message_group_recipients; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.message_group_recipients (id, message_id, user_id, is_read) FROM stdin;
@@ -1872,7 +1752,7 @@ COPY public.message_group_recipients (id, message_id, user_id, is_read) FROM std
 
 
 --
--- Data for Name: messages; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: messages; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.messages (id, sender_id, receiver_id, group_id, is_group_broadcast, collector_group_label, content, parent_id, is_read, created_at) FROM stdin;
@@ -1913,7 +1793,7 @@ COPY public.messages (id, sender_id, receiver_id, group_id, is_group_broadcast, 
 
 
 --
--- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.notifications (id, user_id, type, title, body, from_user_name, post_id, comment_id, is_read, created_at, sender_id, source_notification_id) FROM stdin;
@@ -2164,7 +2044,7 @@ COPY public.notifications (id, user_id, type, title, body, from_user_name, post_
 
 
 --
--- Data for Name: otp_codes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: otp_codes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.otp_codes (id, identifier, code, purpose, created_at, expires_at, is_used) FROM stdin;
@@ -2180,7 +2060,7 @@ COPY public.otp_codes (id, identifier, code, purpose, created_at, expires_at, is
 
 
 --
--- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.posts (id, user_id, user_name, user_avatar_url, image_url, description, created_at, likes_count, status, moderation_score, moderation_reason, moderation_details, moderated_at, moderation_model_version) FROM stdin;
@@ -2213,6 +2093,7 @@ COPY public.posts (id, user_id, user_name, user_avatar_url, image_url, descripti
 38	25	Chayma Tlatli		http://localhost:8000/uploads/9d6f107289dc4b5a9077712fef444e53.jpg	hi	2026-04-22 15:30:20.831377	0	pending_review	0.95	AI_FLAGGED:nsfw	{"score": 0.95, "status": "rejected", "reasons": ["Contenu adulte détecté dans l'image", "Texte sans contexte environnemental détecté", "Image sans contexte environnemental détecté"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.384, "off_topic": 0.3627, "toxic": 0.2533, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 70.16, "cnn_probs": {"eco": 0.384, "off_topic": 0.3627, "toxic": 0.2533}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.8303, "severity": "high", "source": "ResNet18-CNN"}, "resnet_image": {"eco": 0.0798, "nsfw": 0.8303, "off_topic": 0.09, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.95, "processing_time_ms": 104.13, "resnet_probs": {"eco": 0.0798, "nsfw": 0.8303, "off_topic": 0.09}, "resnet_decision": "nsfw"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 300.72, "languages_detected": ["unknown"]}	\N	\N
 39	16	Amine T.		http://localhost:8000/uploads/0436e34f751d471c8f5b6c381c116f58.jpg	hi	2026-04-22 19:56:43.9123	0	published	0.2	Contenu potentiellement inapproprié	{"score": 0.2, "status": "published", "reasons": ["Contenu potentiellement inapproprié"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.4029, "off_topic": 0.4675, "toxic": 0.1296, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 186.76, "cnn_probs": {"eco": 0.4029, "off_topic": 0.4675, "toxic": 0.1296}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.9196, "nsfw": 0.0448, "off_topic": 0.0356, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 133.57, "resnet_probs": {"eco": 0.9196, "nsfw": 0.0448, "off_topic": 0.0356}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 523.34, "languages_detected": ["unknown"]}	\N	\N
 40	16	Amine T.		http://localhost:8000/uploads/ac0d2d6a9bc24ab0aa290c67c3a74bba.jpg	protéger le co2 	2026-04-22 19:57:42.511258	0	pending_review	0.45	Contenu potentiellement inapproprié | Contenu hors sujet detecte : image non liee a l'environnement (validation admin requise)	{"score": 0.45, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Contenu hors sujet detecte : image non liee a l'environnement (validation admin requise)"], "text_analysis": {"languages": ["fr"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": ["proteger"], "bonus": 0.05, "count": 1, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.0, "severe_toxicity": 0.001, "obscene": 0.007, "identity_attack": 0.001, "insult": 0.005, "threat": 0.001, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.0, "severe_toxicity": 0.001, "obscene": 0.007, "identity_attack": 0.001, "insult": 0.005, "threat": 0.001, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.0353, "off_topic": 0.8392, "toxic": 0.1255, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.35, "processing_time_ms": 65.94, "cnn_probs": {"eco": 0.0353, "off_topic": 0.8392, "toxic": 0.1255}, "cnn_decision": "off_topic"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.0587, "nsfw": 0.063, "off_topic": 0.8783, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.8783, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 48.56, "resnet_probs": {"eco": 0.0587, "nsfw": 0.063, "off_topic": 0.8783}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 167.0, "languages_detected": ["fr"]}	\N	\N
+60	12	ahmed		http://localhost:8000/uploads/4ae58541ce0841a585fa72987bebf2b2.jpg	hi	2026-05-07 18:53:18.314909	0	pending_review	0.7	Contenu potentiellement inapproprié | Image sans contexte environnemental détecté	{"score": 0.7, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 117.99, "cnn_probs": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.5633, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 110.08, "resnet_probs": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 391.86, "languages_detected": ["unknown"]}	\N	\N
 41	16	Amine T.		http://localhost:8000/uploads/89bd0b406f5a444690399dc9766099f8.jpg	hi	2026-04-22 20:30:59.961643	0	published	0.2	Contenu potentiellement inapproprié	{"score": 0.2, "status": "published", "reasons": ["Contenu potentiellement inapproprié"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.4029, "off_topic": 0.4675, "toxic": 0.1296, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 235.15, "cnn_probs": {"eco": 0.4029, "off_topic": 0.4675, "toxic": 0.1296}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.578, "nsfw": 0.2398, "off_topic": 0.1822, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 183.99, "resnet_probs": {"eco": 0.578, "nsfw": 0.2398, "off_topic": 0.1822}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 709.19, "languages_detected": ["unknown"]}	\N	\N
 42	16	Amine T.		http://localhost:8000/uploads/cd30b39bec9842bb86cf16a10b63426c.jpg	hi	2026-04-23 21:44:00.496041	0	published	0.2	Contenu potentiellement inapproprié	{"score": 0.2, "status": "published", "reasons": ["Contenu potentiellement inapproprié"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.4298, "off_topic": 0.3177, "toxic": 0.2525, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 224.77, "cnn_probs": {"eco": 0.4298, "off_topic": 0.3177, "toxic": 0.2525}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.8431, "nsfw": 0.0417, "off_topic": 0.1152, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 193.23, "resnet_probs": {"eco": 0.8431, "nsfw": 0.0417, "off_topic": 0.1152}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 666.38, "languages_detected": ["unknown"]}	\N	\N
 44	16	Amine T.		http://localhost:8000/uploads/aa95c7f9e56a4cd39169a1b73e7e2f48.jpg	il faut sauvgarder notre envorinnement 	2026-04-23 21:45:26.754238	0	published	0.2	Contenu potentiellement inapproprié	{"score": 0.2, "status": "published", "reasons": ["Contenu potentiellement inapproprié"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.002, "severe_toxicity": 0.0, "obscene": 0.001, "identity_attack": 0.0, "insult": 0.001, "threat": 0.001, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.002, "severe_toxicity": 0.0, "obscene": 0.001, "identity_attack": 0.0, "insult": 0.001, "threat": 0.001, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.9449, "off_topic": 0.0501, "toxic": 0.005, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.001, "processing_time_ms": 149.64, "cnn_probs": {"eco": 0.9449, "off_topic": 0.0501, "toxic": 0.005}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.5751, "nsfw": 0.0729, "off_topic": 0.352, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 101.1, "resnet_probs": {"eco": 0.5751, "nsfw": 0.0729, "off_topic": 0.352}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 387.28, "languages_detected": ["unknown"]}	\N	\N
@@ -2224,7 +2105,6 @@ COPY public.posts (id, user_id, user_name, user_avatar_url, image_url, descripti
 52	12	ahmed		http://localhost:8000/uploads/6fab4af8eb1c47548e4677975e52694c.jpg	hi	2026-04-26 22:56:46.341409	0	pending_review	0.4	Contenu potentiellement inapproprié | Image sans contexte environnemental détecté	{"score": 0.4, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Image positive detectee mais texte sans action eco (validation admin requise)"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.4298, "off_topic": 0.3177, "toxic": 0.2525, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 101.42, "cnn_probs": {"eco": 0.4298, "off_topic": 0.3177, "toxic": 0.2525}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.6416, "nsfw": 0.1852, "off_topic": 0.1733, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 122.84, "resnet_probs": {"eco": 0.6416, "nsfw": 0.1852, "off_topic": 0.1733}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 397.27, "languages_detected": ["unknown"]}	\N	\N
 53	12	ahmed		http://localhost:8000/uploads/59b3c2a35ba14a23902e54fd5aee9f3e.jpg	planter des fleurs pour colorer notre nature	2026-04-27 19:24:07.94194	0	published	0	Contenu potentiellement inapproprié	{"score": 0.0, "status": "published", "reasons": ["Contenu potentiellement inapproprié"], "text_analysis": {"languages": ["fr"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": ["nature", "plante", "fleur"], "bonus": 0.15000000000000002, "count": 3, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.001, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.001, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.9666, "off_topic": 0.0061, "toxic": 0.0272, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 299.85, "cnn_probs": {"eco": 0.9666, "off_topic": 0.0061, "toxic": 0.0272}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.4879, "nsfw": 0.1145, "off_topic": 0.3977, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 192.37, "resnet_probs": {"eco": 0.4879, "nsfw": 0.1145, "off_topic": 0.3977}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 795.17, "languages_detected": ["fr"]}	\N	\N
 54	12	ahmed		http://localhost:8000/uploads/ac43396db03c4d0ba109a36ad2db1d5d.jpg	jeter les saltés partout 	2026-04-27 19:24:55.515357	0	pending_review	0.685	Contenu potentiellement inapproprié | Texte sans contexte environnemental détecté	{"score": 0.685, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Texte sans contexte environnemental détecté", "Image sans contexte environnemental détecté", "Image positive detectee mais texte sans action eco (validation admin requise)"], "text_analysis": {"languages": ["fr"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.212, "severe_toxicity": 0.001, "obscene": 0.016, "identity_attack": 0.002, "insult": 0.046, "threat": 0.044, "sexual_explicit": 0.004, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.212, "severe_toxicity": 0.001, "obscene": 0.016, "identity_attack": 0.002, "insult": 0.046, "threat": 0.044, "sexual_explicit": 0.004, "cnn_text": {"eco": 0.2027, "off_topic": 0.5042, "toxic": 0.2932, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.085, "processing_time_ms": 128.69, "cnn_probs": {"eco": 0.2027, "off_topic": 0.5042, "toxic": 0.2932}, "cnn_decision": "uncertain"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.5751, "nsfw": 0.0729, "off_topic": 0.352, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.0, "processing_time_ms": 129.65, "resnet_probs": {"eco": 0.5751, "nsfw": 0.0729, "off_topic": 0.352}, "resnet_decision": "eco"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 395.33, "languages_detected": ["fr"]}	\N	\N
-60	12	ahmed		http://localhost:8000/uploads/4ae58541ce0841a585fa72987bebf2b2.jpg	hi	2026-05-07 18:53:18.314909	0	pending_review	0.7	Contenu potentiellement inapproprié | Image sans contexte environnemental détecté	{"score": 0.7, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 117.99, "cnn_probs": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.5633, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 110.08, "resnet_probs": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 391.86, "languages_detected": ["unknown"]}	\N	\N
 62	12	ahmed		http://localhost:8000/uploads/53f1665c05d742ebbcb3e247864d1ee4.jpg	hi	2026-05-07 19:49:01.147489	0	pending_review	0.7	Contenu potentiellement inapproprié | Image sans contexte environnemental détecté	{"score": 0.7, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 56.14, "cnn_probs": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.5633, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 52.42, "resnet_probs": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 185.47, "languages_detected": ["unknown"]}	\N	\N
 61	12	ahmed		http://localhost:8000/uploads/e9b40bd620f34f6095a70559c0cbb4ce.jpg	hi	2026-05-07 19:36:03.421622	0	rejected	0.7	Contenu ne respectant pas les règles	{"score": 0.7, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 377.09, "cnn_probs": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.5633, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 223.45, "resnet_probs": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 1044.04, "languages_detected": ["unknown"]}	\N	\N
 59	12	ahmed		http://localhost:8000/uploads/c7a14b0023a143babe18b1a9f6692e86.jpg	hi	2026-05-07 18:45:05.99657	0	rejected	0.7	Contenu ne respectant pas les règles	{"score": 0.7, "status": "pending_review", "reasons": ["Contenu potentiellement inapproprié", "Image sans contexte environnemental détecté", "Salutation avec image hors sujet : publication envoyee a l'administrateur pour validation"], "text_analysis": {"languages": ["unknown"], "ml_used": true, "categories": {"profanity": {"found": [], "score": 0.0, "severity": "none", "description": "Profanity/vulgar language"}, "anti_environmental": {"found": [], "score": 0.0, "severity": "none", "description": "Anti-environmental content"}, "positive_context": {"found": [], "bonus": 0.0, "count": 0, "description": "Positive context bonus"}, "off_topic": {"found": [], "score": 0.0, "severity": "none", "count": 0, "description": "Off-topic / hors sujet"}, "ml_toxicity": {"toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "description": "ML toxicity (Detoxify)"}, "toxicity": 0.001, "severe_toxicity": 0.0, "obscene": 0.0, "identity_attack": 0.0, "insult": 0.0, "threat": 0.0, "sexual_explicit": 0.0, "cnn_text": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954, "description": "Text CNN (EcoTextCNN entraîné sur publications citoyennes)"}}, "rule_score": 0.0, "score": 0.0, "processing_time_ms": 251.62, "cnn_probs": {"eco": 0.844, "off_topic": 0.0606, "toxic": 0.0954}, "cnn_decision": "eco"}, "image_analysis": {"categories": {"nsfw": {"score": 0.0, "severity": "medium"}, "resnet_image": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633, "description": "ResNet18 fine-tuné (eco/off_topic/nsfw)"}, "off_topic_image": {"score": 0.5633, "severity": "medium", "source": "ResNet18-CNN", "description": "Image hors-sujet detectable (en attente validation admin)"}}, "ml_used": true, "detections": [], "clip_analysis": {}, "score": 0.45, "processing_time_ms": 166.84, "resnet_probs": {"eco": 0.2663, "nsfw": 0.1704, "off_topic": 0.5633}, "resnet_decision": "off_topic"}, "ml_available": true, "text_model_used": "Detoxify+XLM-RoBERTa", "image_model_used": "NudeNet", "confidence": 0.95, "processing_time_ms": 664.78, "languages_detected": ["unknown"]}	\N	\N
@@ -2258,7 +2138,7 @@ COPY public.posts (id, user_id, user_name, user_avatar_url, image_url, descripti
 
 
 --
--- Data for Name: quiz_submissions; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: quiz_submissions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.quiz_submissions (id, quiz_id, student_id, student_name, answers_json, score, max_score, feedback_json, ai_graded, submitted_at, graded_at) FROM stdin;
@@ -2274,7 +2154,7 @@ COPY public.quiz_submissions (id, quiz_id, student_id, student_name, answers_jso
 
 
 --
--- Data for Name: quizzes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: quizzes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.quizzes (id, educator_id, title, description, pdf_filename, questions_json, answer_key_json, total_questions, status, error_message, created_at) FROM stdin;
@@ -2285,7 +2165,7 @@ COPY public.quizzes (id, educator_id, title, description, pdf_filename, question
 
 
 --
--- Data for Name: saved_posts; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: saved_posts; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.saved_posts (id, user_id, post_id, saved_at) FROM stdin;
@@ -2309,7 +2189,7 @@ COPY public.saved_posts (id, user_id, post_id, saved_at) FROM stdin;
 
 
 --
--- Data for Name: smart_bins; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: smart_bins; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.smart_bins (id, bin_code, collection_point_id, bin_type, capacity_kg, status, location_note, created_at) FROM stdin;
@@ -2323,7 +2203,7 @@ COPY public.smart_bins (id, bin_code, collection_point_id, bin_type, capacity_kg
 
 
 --
--- Data for Name: testimonials; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: testimonials; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.testimonials (id, user_id, user_name, user_avatar_url, content, rating, is_approved, is_featured, created_at) FROM stdin;
@@ -2338,7 +2218,7 @@ COPY public.testimonials (id, user_id, user_name, user_avatar_url, content, rati
 
 
 --
--- Data for Name: user_rewards; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: user_rewards; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.user_rewards (id, user_id, reward_key, reward_type, label, description, icon, unlocked_at, notified) FROM stdin;
@@ -2349,7 +2229,7 @@ COPY public.user_rewards (id, user_id, reward_key, reward_type, label, descripti
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.users (id, email, full_name, hashed_password, is_active, is_verified, role, google_id, facebook_id, qr_code, reset_token, token_expires, avatar_url, global_score, created_at, fcm_token, mfa_enabled, mfa_secret) FROM stdin;
@@ -2398,7 +2278,7 @@ COPY public.users (id, email, full_name, hashed_password, is_active, is_verified
 
 
 --
--- Data for Name: video_categories; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: video_categories; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.video_categories (id, title, description, cover_image_url, educator_id, created_at) FROM stdin;
@@ -2410,217 +2290,217 @@ COPY public.video_categories (id, title, description, cover_image_url, educator_
 
 
 --
--- Name: bin_scans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: bin_scans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.bin_scans_id_seq', 11, true);
 
 
 --
--- Name: center_proposals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: center_proposals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.center_proposals_id_seq', 8, true);
 
 
 --
--- Name: citizen_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: citizen_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.citizen_groups_id_seq', 7, true);
 
 
 --
--- Name: citizen_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: citizen_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.citizen_reports_id_seq', 1, false);
 
 
 --
--- Name: collection_points_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: collection_points_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.collection_points_id_seq', 19, true);
 
 
 --
--- Name: collection_routes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: collection_routes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.collection_routes_id_seq', 1, false);
 
 
 --
--- Name: collector_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: collector_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.collector_logs_id_seq', 1, false);
 
 
 --
--- Name: collector_zone_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.collector_zone_assignments_id_seq', 13, true);
 
 
 --
--- Name: collector_zones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: collector_zones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.collector_zones_id_seq', 5, true);
 
 
 --
--- Name: comments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: comments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.comments_id_seq', 47, true);
 
 
 --
--- Name: custom_actor_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: custom_actor_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.custom_actor_groups_id_seq', 1, true);
 
 
 --
--- Name: educator_videos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: educator_videos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.educator_videos_id_seq', 6, true);
 
 
 --
--- Name: group_members_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: group_members_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.group_members_id_seq', 22, true);
 
 
 --
--- Name: likes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: likes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.likes_id_seq', 34, true);
 
 
 --
--- Name: local_instructions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: local_instructions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.local_instructions_id_seq', 1, true);
 
 
 --
--- Name: meeting_participants_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: meeting_participants_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.meeting_participants_id_seq', 79, true);
 
 
 --
--- Name: meetings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: meetings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.meetings_id_seq', 8, true);
 
 
 --
--- Name: message_group_recipients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: message_group_recipients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.message_group_recipients_id_seq', 5, true);
 
 
 --
--- Name: messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.messages_id_seq', 33, true);
 
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.notifications_id_seq', 243, true);
 
 
 --
--- Name: otp_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: otp_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.otp_codes_id_seq', 8, true);
 
 
 --
--- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.posts_id_seq', 95, true);
 
 
 --
--- Name: quiz_submissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: quiz_submissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.quiz_submissions_id_seq', 8, true);
 
 
 --
--- Name: quizzes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: quizzes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.quizzes_id_seq', 13, true);
 
 
 --
--- Name: saved_posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: saved_posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.saved_posts_id_seq', 39, true);
 
 
 --
--- Name: smart_bins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: smart_bins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.smart_bins_id_seq', 6, true);
 
 
 --
--- Name: testimonials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: testimonials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.testimonials_id_seq', 7, true);
 
 
 --
--- Name: user_rewards_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: user_rewards_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.user_rewards_id_seq', 3, true);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.users_id_seq', 45, true);
 
 
 --
--- Name: video_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: video_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.video_categories_id_seq', 4, true);
 
 
 --
--- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.alembic_version
@@ -2628,7 +2508,7 @@ ALTER TABLE ONLY public.alembic_version
 
 
 --
--- Name: bin_scans bin_scans_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bin_scans bin_scans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bin_scans
@@ -2636,7 +2516,7 @@ ALTER TABLE ONLY public.bin_scans
 
 
 --
--- Name: center_proposals center_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: center_proposals center_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.center_proposals
@@ -2644,7 +2524,7 @@ ALTER TABLE ONLY public.center_proposals
 
 
 --
--- Name: citizen_groups citizen_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_groups citizen_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_groups
@@ -2652,7 +2532,7 @@ ALTER TABLE ONLY public.citizen_groups
 
 
 --
--- Name: citizen_reports citizen_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_reports citizen_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_reports
@@ -2660,7 +2540,7 @@ ALTER TABLE ONLY public.citizen_reports
 
 
 --
--- Name: collection_points collection_points_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collection_points collection_points_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collection_points
@@ -2668,7 +2548,7 @@ ALTER TABLE ONLY public.collection_points
 
 
 --
--- Name: collection_routes collection_routes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collection_routes collection_routes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collection_routes
@@ -2676,7 +2556,7 @@ ALTER TABLE ONLY public.collection_routes
 
 
 --
--- Name: collector_logs collector_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_logs collector_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_logs
@@ -2684,7 +2564,7 @@ ALTER TABLE ONLY public.collector_logs
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -2692,7 +2572,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zones collector_zones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zones collector_zones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zones
@@ -2700,7 +2580,7 @@ ALTER TABLE ONLY public.collector_zones
 
 
 --
--- Name: comments comments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: comments comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.comments
@@ -2708,7 +2588,7 @@ ALTER TABLE ONLY public.comments
 
 
 --
--- Name: custom_actor_groups custom_actor_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: custom_actor_groups custom_actor_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.custom_actor_groups
@@ -2716,7 +2596,7 @@ ALTER TABLE ONLY public.custom_actor_groups
 
 
 --
--- Name: educator_videos educator_videos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: educator_videos educator_videos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.educator_videos
@@ -2724,7 +2604,7 @@ ALTER TABLE ONLY public.educator_videos
 
 
 --
--- Name: group_members group_members_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: group_members group_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_members
@@ -2732,7 +2612,7 @@ ALTER TABLE ONLY public.group_members
 
 
 --
--- Name: likes likes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: likes likes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.likes
@@ -2740,7 +2620,7 @@ ALTER TABLE ONLY public.likes
 
 
 --
--- Name: local_instructions local_instructions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: local_instructions local_instructions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.local_instructions
@@ -2748,7 +2628,7 @@ ALTER TABLE ONLY public.local_instructions
 
 
 --
--- Name: meeting_participants meeting_participants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: meeting_participants meeting_participants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meeting_participants
@@ -2756,7 +2636,7 @@ ALTER TABLE ONLY public.meeting_participants
 
 
 --
--- Name: meetings meetings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: meetings meetings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meetings
@@ -2764,7 +2644,7 @@ ALTER TABLE ONLY public.meetings
 
 
 --
--- Name: message_group_recipients message_group_recipients_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: message_group_recipients message_group_recipients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_group_recipients
@@ -2772,7 +2652,7 @@ ALTER TABLE ONLY public.message_group_recipients
 
 
 --
--- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages
@@ -2780,7 +2660,7 @@ ALTER TABLE ONLY public.messages
 
 
 --
--- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications
@@ -2788,7 +2668,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: otp_codes otp_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: otp_codes otp_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.otp_codes
@@ -2796,7 +2676,7 @@ ALTER TABLE ONLY public.otp_codes
 
 
 --
--- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts
@@ -2804,7 +2684,7 @@ ALTER TABLE ONLY public.posts
 
 
 --
--- Name: quiz_submissions quiz_submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quiz_submissions quiz_submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quiz_submissions
@@ -2812,7 +2692,7 @@ ALTER TABLE ONLY public.quiz_submissions
 
 
 --
--- Name: quizzes quizzes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quizzes quizzes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quizzes
@@ -2820,7 +2700,7 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
--- Name: saved_posts saved_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: saved_posts saved_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.saved_posts
@@ -2828,7 +2708,7 @@ ALTER TABLE ONLY public.saved_posts
 
 
 --
--- Name: smart_bins smart_bins_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: smart_bins smart_bins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.smart_bins
@@ -2836,7 +2716,7 @@ ALTER TABLE ONLY public.smart_bins
 
 
 --
--- Name: testimonials testimonials_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: testimonials testimonials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.testimonials
@@ -2844,7 +2724,7 @@ ALTER TABLE ONLY public.testimonials
 
 
 --
--- Name: user_rewards uq_user_rewards_user_reward; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_rewards uq_user_rewards_user_reward; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_rewards
@@ -2852,7 +2732,7 @@ ALTER TABLE ONLY public.user_rewards
 
 
 --
--- Name: user_rewards user_rewards_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_rewards user_rewards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_rewards
@@ -2860,7 +2740,7 @@ ALTER TABLE ONLY public.user_rewards
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -2868,7 +2748,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: video_categories video_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: video_categories video_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.video_categories
@@ -2876,700 +2756,700 @@ ALTER TABLE ONLY public.video_categories
 
 
 --
--- Name: ix_bin_scans_firebase_synced; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_firebase_synced; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_firebase_synced ON public.bin_scans USING btree (firebase_synced);
 
 
 --
--- Name: ix_bin_scans_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_id ON public.bin_scans USING btree (id);
 
 
 --
--- Name: ix_bin_scans_points_earned; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_points_earned; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_points_earned ON public.bin_scans USING btree (points_earned);
 
 
 --
--- Name: ix_bin_scans_scanned_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_scanned_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_scanned_at ON public.bin_scans USING btree (scanned_at);
 
 
 --
--- Name: ix_bin_scans_smart_bin_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_smart_bin_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_smart_bin_id ON public.bin_scans USING btree (smart_bin_id);
 
 
 --
--- Name: ix_bin_scans_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_user_id ON public.bin_scans USING btree (user_id);
 
 
 --
--- Name: ix_bin_scans_waste_type; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_bin_scans_waste_type; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_bin_scans_waste_type ON public.bin_scans USING btree (waste_type);
 
 
 --
--- Name: ix_center_proposals_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_center_proposals_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_center_proposals_id ON public.center_proposals USING btree (id);
 
 
 --
--- Name: ix_center_proposals_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_center_proposals_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_center_proposals_status ON public.center_proposals USING btree (status);
 
 
 --
--- Name: ix_center_proposals_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_center_proposals_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_center_proposals_user_id ON public.center_proposals USING btree (user_id);
 
 
 --
--- Name: ix_citizen_groups_educator_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_groups_educator_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_groups_educator_id ON public.citizen_groups USING btree (educator_id);
 
 
 --
--- Name: ix_citizen_groups_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_groups_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_groups_id ON public.citizen_groups USING btree (id);
 
 
 --
--- Name: ix_citizen_reports_assigned_to; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_reports_assigned_to; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_reports_assigned_to ON public.citizen_reports USING btree (assigned_to);
 
 
 --
--- Name: ix_citizen_reports_collection_point_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_reports_collection_point_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_reports_collection_point_id ON public.citizen_reports USING btree (collection_point_id);
 
 
 --
--- Name: ix_citizen_reports_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_reports_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_reports_created_at ON public.citizen_reports USING btree (created_at);
 
 
 --
--- Name: ix_citizen_reports_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_reports_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_reports_status ON public.citizen_reports USING btree (status);
 
 
 --
--- Name: ix_citizen_reports_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_citizen_reports_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_citizen_reports_user_id ON public.citizen_reports USING btree (user_id);
 
 
 --
--- Name: ix_collection_points_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collection_points_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collection_points_id ON public.collection_points USING btree (id);
 
 
 --
--- Name: ix_collection_points_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collection_points_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collection_points_status ON public.collection_points USING btree (status);
 
 
 --
--- Name: ix_collection_routes_collector_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collection_routes_collector_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collection_routes_collector_id ON public.collection_routes USING btree (collector_id);
 
 
 --
--- Name: ix_collection_routes_date_planned; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collection_routes_date_planned; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collection_routes_date_planned ON public.collection_routes USING btree (date_planned);
 
 
 --
--- Name: ix_collection_routes_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collection_routes_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collection_routes_status ON public.collection_routes USING btree (status);
 
 
 --
--- Name: ix_collector_logs_bin_code; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_bin_code; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_bin_code ON public.collector_logs USING btree (bin_code);
 
 
 --
--- Name: ix_collector_logs_collected_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_collected_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_collected_at ON public.collector_logs USING btree (collected_at);
 
 
 --
--- Name: ix_collector_logs_collector_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_collector_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_collector_id ON public.collector_logs USING btree (collector_id);
 
 
 --
--- Name: ix_collector_logs_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_id ON public.collector_logs USING btree (id);
 
 
 --
--- Name: ix_collector_logs_notified; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_notified; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_notified ON public.collector_logs USING btree (notified);
 
 
 --
--- Name: ix_collector_logs_smart_bin_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_logs_smart_bin_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_logs_smart_bin_id ON public.collector_logs USING btree (smart_bin_id);
 
 
 --
--- Name: ix_collector_zone_assignments_assigned_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zone_assignments_assigned_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zone_assignments_assigned_at ON public.collector_zone_assignments USING btree (assigned_at);
 
 
 --
--- Name: ix_collector_zone_assignments_collector_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zone_assignments_collector_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zone_assignments_collector_id ON public.collector_zone_assignments USING btree (collector_id);
 
 
 --
--- Name: ix_collector_zone_assignments_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zone_assignments_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zone_assignments_id ON public.collector_zone_assignments USING btree (id);
 
 
 --
--- Name: ix_collector_zone_assignments_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zone_assignments_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zone_assignments_status ON public.collector_zone_assignments USING btree (status);
 
 
 --
--- Name: ix_collector_zone_assignments_zone_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zone_assignments_zone_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zone_assignments_zone_id ON public.collector_zone_assignments USING btree (zone_id);
 
 
 --
--- Name: ix_collector_zones_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zones_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zones_id ON public.collector_zones USING btree (id);
 
 
 --
--- Name: ix_collector_zones_name; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zones_name; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zones_name ON public.collector_zones USING btree (name);
 
 
 --
--- Name: ix_collector_zones_territory; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_collector_zones_territory; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_collector_zones_territory ON public.collector_zones USING btree (territory);
 
 
 --
--- Name: ix_comments_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_comments_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_comments_id ON public.comments USING btree (id);
 
 
 --
--- Name: ix_custom_actor_groups_created_by; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_custom_actor_groups_created_by; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_custom_actor_groups_created_by ON public.custom_actor_groups USING btree (created_by);
 
 
 --
--- Name: ix_custom_actor_groups_name; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_custom_actor_groups_name; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_custom_actor_groups_name ON public.custom_actor_groups USING btree (name);
 
 
 --
--- Name: ix_educator_videos_category_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_educator_videos_category_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_educator_videos_category_id ON public.educator_videos USING btree (category_id);
 
 
 --
--- Name: ix_educator_videos_educator_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_educator_videos_educator_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_educator_videos_educator_id ON public.educator_videos USING btree (educator_id);
 
 
 --
--- Name: ix_educator_videos_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_educator_videos_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_educator_videos_id ON public.educator_videos USING btree (id);
 
 
 --
--- Name: ix_group_members_group_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_group_members_group_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_group_members_group_id ON public.group_members USING btree (group_id);
 
 
 --
--- Name: ix_group_members_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_group_members_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_group_members_id ON public.group_members USING btree (id);
 
 
 --
--- Name: ix_group_members_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_group_members_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_group_members_user_id ON public.group_members USING btree (user_id);
 
 
 --
--- Name: ix_likes_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_likes_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_likes_id ON public.likes USING btree (id);
 
 
 --
--- Name: ix_local_instructions_city; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_local_instructions_city; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_local_instructions_city ON public.local_instructions USING btree (city);
 
 
 --
--- Name: ix_local_instructions_is_active; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_local_instructions_is_active; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_local_instructions_is_active ON public.local_instructions USING btree (is_active);
 
 
 --
--- Name: ix_local_instructions_territory; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_local_instructions_territory; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_local_instructions_territory ON public.local_instructions USING btree (territory);
 
 
 --
--- Name: ix_meeting_participants_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_meeting_participants_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_meeting_participants_id ON public.meeting_participants USING btree (id);
 
 
 --
--- Name: ix_meeting_participants_meeting_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_meeting_participants_meeting_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_meeting_participants_meeting_id ON public.meeting_participants USING btree (meeting_id);
 
 
 --
--- Name: ix_meeting_participants_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_meeting_participants_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_meeting_participants_user_id ON public.meeting_participants USING btree (user_id);
 
 
 --
--- Name: ix_meetings_educator_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_meetings_educator_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_meetings_educator_id ON public.meetings USING btree (educator_id);
 
 
 --
--- Name: ix_meetings_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_meetings_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_meetings_id ON public.meetings USING btree (id);
 
 
 --
--- Name: ix_messages_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_messages_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_messages_created_at ON public.messages USING btree (created_at);
 
 
 --
--- Name: ix_messages_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_messages_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_messages_id ON public.messages USING btree (id);
 
 
 --
--- Name: ix_messages_receiver_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_messages_receiver_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_messages_receiver_id ON public.messages USING btree (receiver_id);
 
 
 --
--- Name: ix_messages_sender_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_messages_sender_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_messages_sender_id ON public.messages USING btree (sender_id);
 
 
 --
--- Name: ix_messages_sender_receiver; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_messages_sender_receiver; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_messages_sender_receiver ON public.messages USING btree (sender_id, receiver_id);
 
 
 --
--- Name: ix_mgr_message_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_mgr_message_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_mgr_message_id ON public.message_group_recipients USING btree (message_id);
 
 
 --
--- Name: ix_mgr_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_mgr_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_mgr_user_id ON public.message_group_recipients USING btree (user_id);
 
 
 --
--- Name: ix_notifications_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_notifications_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_notifications_id ON public.notifications USING btree (id);
 
 
 --
--- Name: ix_notifications_sender_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_notifications_sender_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_notifications_sender_id ON public.notifications USING btree (sender_id);
 
 
 --
--- Name: ix_notifications_source_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_notifications_source_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_notifications_source_id ON public.notifications USING btree (source_notification_id);
 
 
 --
--- Name: ix_notifications_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_notifications_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_notifications_user_id ON public.notifications USING btree (user_id);
 
 
 --
--- Name: ix_otp_codes_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_otp_codes_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_otp_codes_id ON public.otp_codes USING btree (id);
 
 
 --
--- Name: ix_otp_codes_identifier; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_otp_codes_identifier; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_otp_codes_identifier ON public.otp_codes USING btree (identifier);
 
 
 --
--- Name: ix_posts_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_posts_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_posts_created_at ON public.posts USING btree (created_at);
 
 
 --
--- Name: ix_posts_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_posts_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_posts_id ON public.posts USING btree (id);
 
 
 --
--- Name: ix_posts_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_posts_status; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_posts_status ON public.posts USING btree (status);
 
 
 --
--- Name: ix_quiz_submissions_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quiz_submissions_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quiz_submissions_id ON public.quiz_submissions USING btree (id);
 
 
 --
--- Name: ix_quiz_submissions_quiz_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quiz_submissions_quiz_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quiz_submissions_quiz_id ON public.quiz_submissions USING btree (quiz_id);
 
 
 --
--- Name: ix_quiz_submissions_score; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quiz_submissions_score; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quiz_submissions_score ON public.quiz_submissions USING btree (score);
 
 
 --
--- Name: ix_quiz_submissions_student_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quiz_submissions_student_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quiz_submissions_student_id ON public.quiz_submissions USING btree (student_id);
 
 
 --
--- Name: ix_quiz_submissions_submitted_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quiz_submissions_submitted_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quiz_submissions_submitted_at ON public.quiz_submissions USING btree (submitted_at);
 
 
 --
--- Name: ix_quizzes_educator_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quizzes_educator_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quizzes_educator_id ON public.quizzes USING btree (educator_id);
 
 
 --
--- Name: ix_quizzes_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_quizzes_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_quizzes_id ON public.quizzes USING btree (id);
 
 
 --
--- Name: ix_saved_posts_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_saved_posts_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_saved_posts_id ON public.saved_posts USING btree (id);
 
 
 --
--- Name: ix_smart_bins_bin_code; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_smart_bins_bin_code; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_smart_bins_bin_code ON public.smart_bins USING btree (bin_code);
 
 
 --
--- Name: ix_smart_bins_collection_point_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_smart_bins_collection_point_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_smart_bins_collection_point_id ON public.smart_bins USING btree (collection_point_id);
 
 
 --
--- Name: ix_smart_bins_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_smart_bins_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_smart_bins_id ON public.smart_bins USING btree (id);
 
 
 --
--- Name: ix_testimonials_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_testimonials_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_testimonials_id ON public.testimonials USING btree (id);
 
 
 --
--- Name: ix_testimonials_is_approved; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_testimonials_is_approved; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_testimonials_is_approved ON public.testimonials USING btree (is_approved);
 
 
 --
--- Name: ix_user_rewards_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_user_rewards_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_user_rewards_id ON public.user_rewards USING btree (id);
 
 
 --
--- Name: ix_user_rewards_reward_key; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_user_rewards_reward_key; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_user_rewards_reward_key ON public.user_rewards USING btree (reward_key);
 
 
 --
--- Name: ix_user_rewards_unlocked_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_user_rewards_unlocked_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_user_rewards_unlocked_at ON public.user_rewards USING btree (unlocked_at);
 
 
 --
--- Name: ix_user_rewards_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_user_rewards_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_user_rewards_user_id ON public.user_rewards USING btree (user_id);
 
 
 --
--- Name: ix_users_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_users_created_at ON public.users USING btree (created_at);
 
 
 --
--- Name: ix_users_email; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_email; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_users_email ON public.users USING btree (email);
 
 
 --
--- Name: ix_users_facebook_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_facebook_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_users_facebook_id ON public.users USING btree (facebook_id);
 
 
 --
--- Name: ix_users_global_score; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_global_score; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_users_global_score ON public.users USING btree (global_score);
 
 
 --
--- Name: ix_users_google_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_google_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_users_google_id ON public.users USING btree (google_id);
 
 
 --
--- Name: ix_users_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_users_id ON public.users USING btree (id);
 
 
 --
--- Name: ix_users_is_active; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_is_active; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_users_is_active ON public.users USING btree (is_active);
 
 
 --
--- Name: ix_users_qr_code; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_qr_code; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_users_qr_code ON public.users USING btree (qr_code);
 
 
 --
--- Name: ix_users_reset_token; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_reset_token; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX ix_users_reset_token ON public.users USING btree (reset_token);
 
 
 --
--- Name: ix_users_role; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_users_role; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_users_role ON public.users USING btree (role);
 
 
 --
--- Name: ix_video_categories_educator_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_video_categories_educator_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_video_categories_educator_id ON public.video_categories USING btree (educator_id);
 
 
 --
--- Name: ix_video_categories_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_video_categories_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_video_categories_id ON public.video_categories USING btree (id);
 
 
 --
--- Name: bin_scans bin_scans_smart_bin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bin_scans bin_scans_smart_bin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bin_scans
@@ -3577,7 +3457,7 @@ ALTER TABLE ONLY public.bin_scans
 
 
 --
--- Name: bin_scans bin_scans_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bin_scans bin_scans_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bin_scans
@@ -3585,7 +3465,7 @@ ALTER TABLE ONLY public.bin_scans
 
 
 --
--- Name: center_proposals center_proposals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: center_proposals center_proposals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.center_proposals
@@ -3593,7 +3473,7 @@ ALTER TABLE ONLY public.center_proposals
 
 
 --
--- Name: citizen_groups citizen_groups_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_groups citizen_groups_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_groups
@@ -3601,7 +3481,7 @@ ALTER TABLE ONLY public.citizen_groups
 
 
 --
--- Name: citizen_reports citizen_reports_assigned_to_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_reports citizen_reports_assigned_to_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_reports
@@ -3609,7 +3489,7 @@ ALTER TABLE ONLY public.citizen_reports
 
 
 --
--- Name: citizen_reports citizen_reports_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_reports citizen_reports_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_reports
@@ -3617,7 +3497,7 @@ ALTER TABLE ONLY public.citizen_reports
 
 
 --
--- Name: citizen_reports citizen_reports_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: citizen_reports citizen_reports_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.citizen_reports
@@ -3625,7 +3505,7 @@ ALTER TABLE ONLY public.citizen_reports
 
 
 --
--- Name: collection_routes collection_routes_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collection_routes collection_routes_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collection_routes
@@ -3633,7 +3513,7 @@ ALTER TABLE ONLY public.collection_routes
 
 
 --
--- Name: collector_logs collector_logs_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_logs collector_logs_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_logs
@@ -3641,7 +3521,7 @@ ALTER TABLE ONLY public.collector_logs
 
 
 --
--- Name: collector_logs collector_logs_smart_bin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_logs collector_logs_smart_bin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_logs
@@ -3649,7 +3529,7 @@ ALTER TABLE ONLY public.collector_logs
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -3657,7 +3537,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -3665,7 +3545,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_collector_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -3673,7 +3553,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -3681,7 +3561,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zone_assignments collector_zone_assignments_zone_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zone_assignments collector_zone_assignments_zone_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zone_assignments
@@ -3689,7 +3569,7 @@ ALTER TABLE ONLY public.collector_zone_assignments
 
 
 --
--- Name: collector_zones collector_zones_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: collector_zones collector_zones_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.collector_zones
@@ -3697,7 +3577,7 @@ ALTER TABLE ONLY public.collector_zones
 
 
 --
--- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: comments comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.comments
@@ -3705,7 +3585,7 @@ ALTER TABLE ONLY public.comments
 
 
 --
--- Name: comments comments_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: comments comments_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.comments
@@ -3713,7 +3593,7 @@ ALTER TABLE ONLY public.comments
 
 
 --
--- Name: comments comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: comments comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.comments
@@ -3721,7 +3601,7 @@ ALTER TABLE ONLY public.comments
 
 
 --
--- Name: custom_actor_groups custom_actor_groups_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: custom_actor_groups custom_actor_groups_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.custom_actor_groups
@@ -3729,7 +3609,7 @@ ALTER TABLE ONLY public.custom_actor_groups
 
 
 --
--- Name: educator_videos educator_videos_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: educator_videos educator_videos_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.educator_videos
@@ -3737,7 +3617,7 @@ ALTER TABLE ONLY public.educator_videos
 
 
 --
--- Name: educator_videos educator_videos_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: educator_videos educator_videos_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.educator_videos
@@ -3745,7 +3625,7 @@ ALTER TABLE ONLY public.educator_videos
 
 
 --
--- Name: user_rewards fk_user_rewards_user_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_rewards fk_user_rewards_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_rewards
@@ -3753,7 +3633,7 @@ ALTER TABLE ONLY public.user_rewards
 
 
 --
--- Name: group_members group_members_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: group_members group_members_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_members
@@ -3761,7 +3641,7 @@ ALTER TABLE ONLY public.group_members
 
 
 --
--- Name: group_members group_members_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: group_members group_members_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_members
@@ -3769,7 +3649,7 @@ ALTER TABLE ONLY public.group_members
 
 
 --
--- Name: likes likes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: likes likes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.likes
@@ -3777,7 +3657,7 @@ ALTER TABLE ONLY public.likes
 
 
 --
--- Name: likes likes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: likes likes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.likes
@@ -3785,7 +3665,7 @@ ALTER TABLE ONLY public.likes
 
 
 --
--- Name: local_instructions local_instructions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: local_instructions local_instructions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.local_instructions
@@ -3793,7 +3673,7 @@ ALTER TABLE ONLY public.local_instructions
 
 
 --
--- Name: meeting_participants meeting_participants_meeting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: meeting_participants meeting_participants_meeting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meeting_participants
@@ -3801,7 +3681,7 @@ ALTER TABLE ONLY public.meeting_participants
 
 
 --
--- Name: meeting_participants meeting_participants_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: meeting_participants meeting_participants_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meeting_participants
@@ -3809,7 +3689,7 @@ ALTER TABLE ONLY public.meeting_participants
 
 
 --
--- Name: meetings meetings_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: meetings meetings_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.meetings
@@ -3817,7 +3697,7 @@ ALTER TABLE ONLY public.meetings
 
 
 --
--- Name: message_group_recipients message_group_recipients_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: message_group_recipients message_group_recipients_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_group_recipients
@@ -3825,7 +3705,7 @@ ALTER TABLE ONLY public.message_group_recipients
 
 
 --
--- Name: message_group_recipients message_group_recipients_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: message_group_recipients message_group_recipients_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_group_recipients
@@ -3833,7 +3713,7 @@ ALTER TABLE ONLY public.message_group_recipients
 
 
 --
--- Name: messages messages_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: messages messages_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages
@@ -3841,7 +3721,7 @@ ALTER TABLE ONLY public.messages
 
 
 --
--- Name: messages messages_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: messages messages_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages
@@ -3849,7 +3729,7 @@ ALTER TABLE ONLY public.messages
 
 
 --
--- Name: messages messages_receiver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: messages messages_receiver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages
@@ -3857,7 +3737,7 @@ ALTER TABLE ONLY public.messages
 
 
 --
--- Name: messages messages_sender_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: messages messages_sender_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.messages
@@ -3865,7 +3745,7 @@ ALTER TABLE ONLY public.messages
 
 
 --
--- Name: notifications notifications_sender_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_sender_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications
@@ -3873,7 +3753,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: notifications notifications_source_notification_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_source_notification_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications
@@ -3881,7 +3761,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications
@@ -3889,7 +3769,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: posts posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: posts posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts
@@ -3897,7 +3777,7 @@ ALTER TABLE ONLY public.posts
 
 
 --
--- Name: quiz_submissions quiz_submissions_quiz_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quiz_submissions quiz_submissions_quiz_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quiz_submissions
@@ -3905,7 +3785,7 @@ ALTER TABLE ONLY public.quiz_submissions
 
 
 --
--- Name: quiz_submissions quiz_submissions_student_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quiz_submissions quiz_submissions_student_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quiz_submissions
@@ -3913,7 +3793,7 @@ ALTER TABLE ONLY public.quiz_submissions
 
 
 --
--- Name: quizzes quizzes_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quizzes quizzes_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quizzes
@@ -3921,7 +3801,7 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
--- Name: saved_posts saved_posts_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: saved_posts saved_posts_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.saved_posts
@@ -3929,7 +3809,7 @@ ALTER TABLE ONLY public.saved_posts
 
 
 --
--- Name: saved_posts saved_posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: saved_posts saved_posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.saved_posts
@@ -3937,7 +3817,7 @@ ALTER TABLE ONLY public.saved_posts
 
 
 --
--- Name: smart_bins smart_bins_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: smart_bins smart_bins_collection_point_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.smart_bins
@@ -3945,7 +3825,7 @@ ALTER TABLE ONLY public.smart_bins
 
 
 --
--- Name: testimonials testimonials_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: testimonials testimonials_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.testimonials
@@ -3953,7 +3833,7 @@ ALTER TABLE ONLY public.testimonials
 
 
 --
--- Name: video_categories video_categories_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: video_categories video_categories_educator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.video_categories
@@ -3963,4 +3843,6 @@ ALTER TABLE ONLY public.video_categories
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict 3ROVmGebBHV57sMdW5dipzjcDKKcLLjYfaaXd6obcctGA3uChBwlcvV095AIns9
 
