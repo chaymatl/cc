@@ -62,26 +62,37 @@ for %%f in ("%TEMP%\port8000.txt") do if %%~zf gtr 0 set "PORT_ACTIF=1"
 if !PORT_ACTIF!==1 (
     echo  [OK] Backend deja actif sur port 8000 - aucune action.
 ) else (
-    echo  Port 8000 libre - Demarrage backend local sur 127.0.0.1...
-    if not exist "%VENV_PY%" (
-        echo  [ERREUR] Python venv introuvable : %VENV_PY%
-        pause & exit /b 1
+    echo  Port 8000 libre - Tentative demarrage Docker...
+
+    REM Essayer de demarrer les containers Docker
+    docker start ecorewind_api ecorewind_postgres >nul 2>&1
+    if not errorlevel 1 (
+        echo  [OK] Containers Docker demarres.
+        timeout /t 4 /nobreak >nul
+    ) else (
+        REM Docker indisponible ou containers inexistants - fallback local
+        echo  Docker indisponible - Demarrage backend local sur 127.0.0.1...
+        if not exist "%VENV_PY%" (
+            echo  [ERREUR] Python venv introuvable : %VENV_PY%
+            pause & exit /b 1
+        )
+        start "Backend EcoRewind" cmd /k "cd /d %PROJECT%\backend && .\venv\Scripts\python.exe run_local.py"
     )
-    start "Backend EcoRewind" cmd /k "cd /d %PROJECT%\backend && .\venv\Scripts\python.exe run_local.py"
-    echo  Attente du demarrage...
+
+    REM Attente backend pret (max 30s)
+    echo  Attente backend pret (max 30s)...
     set "READY=0"
     for /L %%i in (1,1,10) do (
         if !READY!==0 (
             timeout /t 3 /nobreak >nul
-            "%VENV_PY%" -c "import urllib.request,sys;urllib.request.urlopen('http://127.0.0.1:8000/docs',timeout=2);sys.exit(0)" >nul 2>&1
+            "%VENV_PY%" -c "import urllib.request,sys;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=2);sys.exit(0)" >nul 2>&1
             if not errorlevel 1 set "READY=1"
         )
     )
     if !READY!==0 (
-        echo  Backend pas encore pret. Appuyez sur une touche pour continuer.
-        pause >nul
+        echo  Backend pas encore pret - continuons quand meme.
     ) else (
-        echo  [OK] Backend demarre sur 127.0.0.1:8000
+        echo  [OK] Backend demarre
     )
 )
 echo.

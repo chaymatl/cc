@@ -1070,24 +1070,33 @@ async def update_zone(
 @router.delete("/zones/{zone_id}", summary="[F5] Supprimer une zone")
 async def delete_zone(
     zone_id: int,
+    force: bool = Query(False, description="Si true, annule les missions actives avant suppression"),
     db: Session = Depends(get_db),
     current_user: db_models.User = Depends(_require_intercommunality),
 ):
     zone = db.query(CollectorZone).filter(CollectorZone.id == zone_id).first()
     if not zone:
         raise HTTPException(status_code=404, detail="Zone introuvable")
-    # Vérifier qu'il n'y a pas d'affectations actives
-    active = db.query(func.count(CollectorZoneAssignment.id)).filter(
+    # Vérifier les affectations actives
+    active_assignments = db.query(CollectorZoneAssignment).filter(
         CollectorZoneAssignment.zone_id == zone_id,
         CollectorZoneAssignment.status.in_(["pending", "in_progress"]),
-    ).scalar() or 0
-    if active > 0:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Impossible de supprimer : {active} affectation(s) active(s) dans cette zone",
-        )
+    ).all()
+    active_count = len(active_assignments)
+    if active_count > 0:
+        if not force:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Impossible de supprimer : {active_count} affectation(s) active(s) dans cette zone",
+            )
+        # force=True : annuler toutes les missions actives avant suppression
+        for assignment in active_assignments:
+            assignment.status = "cancelled"
+        db.flush()
     db.delete(zone)
     db.commit()
+    if active_count > 0:
+        return {"message": f"Zone '{zone.name}' supprimée ({active_count} mission(s) annulée(s))"}
     return {"message": f"Zone '{zone.name}' supprimée"}
 
 

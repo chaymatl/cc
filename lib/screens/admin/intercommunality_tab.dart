@@ -648,34 +648,145 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     final res = await AuthService().authenticatedDelete(
       '${AuthService.baseUrl}/intercommunality/zones/$id',
     );
-    if (mounted) {
-      if (res.statusCode == 200 || res.statusCode == 204) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+    if (!mounted) return;
+
+    if (res.statusCode == 200 || res.statusCode == 204) {
+      // ── Succes ───────────────────────────────────────────────────
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Zone "$name" supprimee.', style: GoogleFonts.outfit(fontWeight: FontWeight.w700))),
+        ]),
+        backgroundColor: const Color(0xFF16A34A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ));
+      _loadPilotage();
+    } else if (res.statusCode == 409) {
+      // ── 409 : missions actives — proposer suppression forcee ─────
+      String detail = 'Cette zone a des missions actives.';
+      try {
+        final body = json.decode(utf8.decode(res.bodyBytes));
+        if (body['detail'] != null) detail = body['detail'];
+      } catch (_) {}
+
+      final forceConfirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          icon: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: Colors.orange.shade50, shape: BoxShape.circle),
+            child: Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 32),
+          ),
+          title: Text('Zone avec missions actives',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 17, color: const Color(0xFF1E293B))),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Text(detail,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 13, color: Colors.orange.shade800, fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(height: 12),
+              Text('Voulez-vous forcer la suppression ?\nLes missions seront annulees automatiquement.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          actions: [
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Text('Annuler', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Text('Forcer', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: Colors.white)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      );
+
+      if (forceConfirmed == true && mounted) {
+        // Suppression forcee : d'abord annuler les missions, puis supprimer
+        final forceRes = await AuthService().authenticatedDelete(
+          '${AuthService.baseUrl}/intercommunality/zones/$id?force=true',
+        );
+        if (!mounted) return;
+        if (forceRes.statusCode == 200 || forceRes.statusCode == 204) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
               const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
               const SizedBox(width: 10),
-              Expanded(child: Text('Zone "$name" supprimee.', style: GoogleFonts.outfit(fontWeight: FontWeight.w700))),
+              Expanded(child: Text('Zone "$name" supprimee (missions annulees).', style: GoogleFonts.outfit(fontWeight: FontWeight.w700))),
             ]),
-            backgroundColor: const Color(0xFF16A34A),
+            backgroundColor: Colors.orange.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur suppression (${res.statusCode})', style: GoogleFonts.outfit()),
+            duration: const Duration(seconds: 4),
+          ));
+          _loadPilotage();
+        } else {
+          String errMsg = 'Erreur lors de la suppression forcee.';
+          try {
+            final b = json.decode(utf8.decode(forceRes.bodyBytes));
+            if (b['detail'] != null) errMsg = b['detail'];
+          } catch (_) {}
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(errMsg, style: GoogleFonts.outfit()),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        );
+          ));
+        }
       }
+    } else {
+      // ── Autre erreur ─────────────────────────────────────────────
+      String errMsg = 'Erreur suppression (${res.statusCode})';
+      try {
+        final b = json.decode(utf8.decode(res.bodyBytes));
+        if (b['detail'] != null) errMsg = b['detail'];
+      } catch (_) {}
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errMsg, style: GoogleFonts.outfit()),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ));
     }
-    _loadPilotage();
   }
 
   // -- BUILD PRINCIPAL ------------------------------------------------------
