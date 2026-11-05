@@ -8,15 +8,6 @@ exit /b
 setlocal enabledelayedexpansion
 title EcoRewind - Lancement Complet
 
-REM === Chemins relatifs ===
-set "DIR=%~dp0"
-set "ADB=%DIR%scrcpy-win64-v3.3.4\adb.exe"
-set "SCRCPY=%DIR%scrcpy-win64-v3.3.4\scrcpy.exe"
-set "PROJECT=%DIR%.."
-set "VENV_PY=%PROJECT%\backend\venv\Scripts\python.exe"
-set "RUN_LOCAL=%PROJECT%\backend\run_local.py"
-set "FLUTTER=C:\flutter\bin\flutter.bat"
-
 echo.
 echo =====================================================
 echo   ECOREWIND - LANCEMENT COMPLET
@@ -24,11 +15,19 @@ echo   Backend local + Flutter + Miroir
 echo =====================================================
 echo.
 
-if not exist "%ADB%"      ( echo [ERREUR] ADB introuvable: %ADB%          & pause & exit /b 1 )
-if not exist "%SCRCPY%"   ( echo [ERREUR] SCRCPY introuvable: %SCRCPY%    & pause & exit /b 1 )
-if not exist "%FLUTTER%"  ( echo [ERREUR] Flutter introuvable: %FLUTTER%  & pause & exit /b 1 )
-if not exist "%VENV_PY%"  ( echo [ERREUR] VENV_PY introuvable: %VENV_PY%  & pause & exit /b 1 )
-if not exist "%RUN_LOCAL%" ( echo [ERREUR] run_local.py introuvable        & pause & exit /b 1 )
+REM === Chemins absolus ===
+set "ADB=%~dp0scrcpy-win64-v3.3.4\adb.exe"
+set "SCRCPY=%~dp0scrcpy-win64-v3.3.4\scrcpy.exe"
+set "BKD=C:\Users\lenovo\Desktop\EcoRewind\backend"
+set "VENV=C:\Users\lenovo\Desktop\EcoRewind\backend\venv\Scripts\python.exe"
+set "FLT=C:\flutter\bin\flutter.bat"
+set "PRJ=C:\Users\lenovo\Desktop\EcoRewind"
+
+if not exist "%ADB%"    ( echo [ERREUR] ADB introuvable      & pause & exit /b 1 )
+if not exist "%SCRCPY%" ( echo [ERREUR] SCRCPY introuvable   & pause & exit /b 1 )
+if not exist "%FLT%"    ( echo [ERREUR] Flutter introuvable  & pause & exit /b 1 )
+if not exist "%VENV%"   ( echo [ERREUR] VENV introuvable     & pause & exit /b 1 )
+if not exist "%BKD%\run_local.py" ( echo [ERREUR] run_local.py manquant & pause & exit /b 1 )
 echo  [OK] Tous les outils trouves.
 echo.
 
@@ -52,27 +51,22 @@ echo.
 
 REM === Etape 2 : Backend LOCAL ===
 echo [2/5] Verification du backend local...
-set "PORT_ACTIF=0"
-netstat -ano > "%TEMP%\netstat8000.txt" 2>nul
-findstr ":8000 " "%TEMP%\netstat8000.txt" | findstr "LISTEN" > "%TEMP%\port8000.txt" 2>nul
-for %%f in ("%TEMP%\port8000.txt") do if %%~zf gtr 0 set "PORT_ACTIF=1"
-
-if !PORT_ACTIF!==1 (
-    echo  [OK] Backend deja actif sur port 8000.
-) else (
+netstat -ano 2>nul | findstr ":8000" | findstr "LISTENING" >nul 2>&1
+if errorlevel 1 (
     echo  Demarrage backend local...
-    start "Backend EcoRewind" cmd /k "cd /d "%PROJECT%\backend" && "%VENV_PY%" "%RUN_LOCAL%""
+    start "Backend EcoRewind" /D "%BKD%" cmd /k "%VENV% run_local.py"
     echo  Attente demarrage (max 30s)...
     set "READY=0"
     for /L %%i in (1,1,10) do (
         if !READY!==0 (
             timeout /t 3 /nobreak >nul
-            netstat -ano > "%TEMP%\ns2.txt" 2>nul
-            findstr ":8000 " "%TEMP%\ns2.txt" | findstr "LISTEN" > "%TEMP%\p2.txt" 2>nul
-            for %%f in ("%TEMP%\p2.txt") do if %%~zf gtr 0 set "READY=1"
+            netstat -ano 2>nul | findstr ":8000" | findstr "LISTENING" >nul 2>&1
+            if not errorlevel 1 set "READY=1"
         )
     )
     if !READY!==0 ( echo  Backend pas encore pret - continuons quand meme. ) else ( echo  [OK] Backend demarre )
+) else (
+    echo  [OK] Backend deja actif sur port 8000.
 )
 echo.
 
@@ -84,7 +78,7 @@ echo.
 
 REM === Etape 4 : Flutter ===
 echo [4/5] Lancement de Flutter...
-start "Flutter EcoRewind" cmd /k "cd /d "%PROJECT%" && "%FLUTTER%" run -d !DEVICE!"
+start "Flutter EcoRewind" /D "%PRJ%" cmd /k "%FLT% run -d !DEVICE!"
 echo  [OK] Flutter lance
 timeout /t 5 /nobreak >nul
 echo.
