@@ -1,8 +1,14 @@
 @echo off
+REM Auto-relance dans cmd /k pour garder la fenetre ouverte
+if "%~1"=="GO" goto :MAIN
+cmd /k "%~f0" GO
+exit /b
+
+:MAIN
 setlocal enabledelayedexpansion
 title EcoRewind - Lancement Complet
 
-REM === Chemins relatifs a partir du dossier du .bat ===
+REM === Chemins relatifs ===
 set "DIR=%~dp0"
 set "ADB=%DIR%scrcpy-win64-v3.3.4\adb.exe"
 set "SCRCPY=%DIR%scrcpy-win64-v3.3.4\scrcpy.exe"
@@ -14,6 +20,7 @@ set "FLUTTER=C:\flutter\bin\flutter.bat"
 echo.
 echo =====================================================
 echo   ECOREWIND - LANCEMENT COMPLET
+echo   Backend local + Flutter + Miroir
 echo =====================================================
 echo.
 
@@ -65,11 +72,7 @@ if !PORT_ACTIF!==1 (
             for %%f in ("%TEMP%\p2.txt") do if %%~zf gtr 0 set "READY=1"
         )
     )
-    if !READY!==0 (
-        echo  Backend pas encore pret - continuons quand meme.
-    ) else (
-        echo  [OK] Backend demarre
-    )
+    if !READY!==0 ( echo  Backend pas encore pret - continuons quand meme. ) else ( echo  [OK] Backend demarre )
 )
 echo.
 
