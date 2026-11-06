@@ -15,7 +15,6 @@ echo   Backend local + Flutter + Miroir
 echo =====================================================
 echo.
 
-REM === Chemins absolus ===
 set "ADB=%~dp0scrcpy-win64-v3.3.4\adb.exe"
 set "SCRCPY=%~dp0scrcpy-win64-v3.3.4\scrcpy.exe"
 set "BKD=C:\Users\lenovo\Desktop\EcoRewind\backend"
@@ -31,7 +30,9 @@ if not exist "%BKD%\run_local.py" ( echo [ERREUR] run_local.py manquant & pause 
 echo  [OK] Tous les outils trouves.
 echo.
 
-REM === Etape 1 : Telephone ===
+REM ============================================================
+REM  ETAPE 1 : Telephone
+REM ============================================================
 echo [1/5] Recherche du telephone USB...
 "%ADB%" start-server >nul 2>&1
 timeout /t 2 /nobreak >nul
@@ -49,41 +50,61 @@ if "!DEVICE!"=="" (
 echo  [OK] Telephone : !DEVICE!
 echo.
 
-REM === Etape 2 : Backend LOCAL ===
+REM ============================================================
+REM  ETAPE 2 : Backend - pas de blocs imbriques, on utilise goto
+REM ============================================================
 echo [2/5] Verification du backend local...
-netstat -ano 2>nul | findstr ":8000" | findstr "LISTENING" >nul 2>&1
-if errorlevel 1 (
-    echo  Demarrage backend local...
-    start "Backend EcoRewind" /D "%BKD%" cmd /k "%VENV% run_local.py"
-    echo  Attente demarrage (max 30s)...
-    set "READY=0"
-    for /L %%i in (1,1,10) do (
-        if !READY!==0 (
-            timeout /t 3 /nobreak >nul
-            netstat -ano 2>nul | findstr ":8000" | findstr "LISTENING" >nul 2>&1
-            if not errorlevel 1 set "READY=1"
-        )
-    )
-    if !READY!==0 ( echo  Backend pas encore pret - continuons quand meme. ) else ( echo  [OK] Backend demarre )
-) else (
-    echo  [OK] Backend deja actif sur port 8000.
-)
+netstat -ano | findstr ":8000" | findstr "LISTENING" >nul
+if not errorlevel 1 goto :BACKEND_OK
+
+REM Port libre - demarrer le backend
+echo  Demarrage backend local...
+start "Backend EcoRewind" /D "%BKD%" cmd /k "%VENV% run_local.py"
+echo  Attente demarrage (max 30s)...
+set "TRIES=0"
+
+:WAIT_BACKEND
+if %TRIES%==10 goto :BACKEND_TIMEOUT
+timeout /t 3 /nobreak >nul
+netstat -ano | findstr ":8000" | findstr "LISTENING" >nul
+if not errorlevel 1 goto :BACKEND_STARTED
+set /a TRIES+=1
+goto :WAIT_BACKEND
+
+:BACKEND_TIMEOUT
+echo  Backend pas encore pret - continuons quand meme.
+goto :STEP3
+
+:BACKEND_STARTED
+echo  [OK] Backend demarre
+goto :STEP3
+
+:BACKEND_OK
+echo  [OK] Backend deja actif sur port 8000.
+
+:STEP3
 echo.
 
-REM === Etape 3 : Tunnel ===
+REM ============================================================
+REM  ETAPE 3 : Tunnel ADB
+REM ============================================================
 echo [3/5] Activation tunnel USB...
 "%ADB%" -s !DEVICE! reverse tcp:8000 tcp:8000
 echo  [OK] Tunnel actif
 echo.
 
-REM === Etape 4 : Flutter ===
+REM ============================================================
+REM  ETAPE 4 : Flutter
+REM ============================================================
 echo [4/5] Lancement de Flutter...
 start "Flutter EcoRewind" /D "%PRJ%" cmd /k "%FLT% run -d !DEVICE!"
 echo  [OK] Flutter lance
 timeout /t 5 /nobreak >nul
 echo.
 
-REM === Etape 5 : Miroir ===
+REM ============================================================
+REM  ETAPE 5 : Miroir scrcpy
+REM ============================================================
 echo [5/5] Lancement du miroir scrcpy...
 echo.
 echo =====================================================

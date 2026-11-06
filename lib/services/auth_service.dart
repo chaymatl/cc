@@ -639,6 +639,57 @@ class AuthService {
     return response;
   }
 
+  /// POST authentifié avec auto-refresh en cas de 401
+  Future<http.Response> authenticatedPost(String url, {Map<String, dynamic>? body}) async {
+    final token = await _getToken();
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+    var response = await _http.post(Uri.parse(url), headers: headers, body: body != null ? json.encode(body) : null).timeout(_kTimeout);
+    if (response.statusCode == 401 && token != null) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newToken = await _getToken();
+        headers['Authorization'] = 'Bearer $newToken';
+        response = await _http.post(Uri.parse(url), headers: headers, body: body != null ? json.encode(body) : null).timeout(_kTimeout);
+      }
+    }
+    return response;
+  }
+
+  /// PUT authentifié avec auto-refresh en cas de 401
+  Future<http.Response> authenticatedPut(String url, {Map<String, dynamic>? body}) async {
+    final token = await _getToken();
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+    var response = await _http.put(Uri.parse(url), headers: headers, body: body != null ? json.encode(body) : null).timeout(_kTimeout);
+    if (response.statusCode == 401 && token != null) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newToken = await _getToken();
+        headers['Authorization'] = 'Bearer $newToken';
+        response = await _http.put(Uri.parse(url), headers: headers, body: body != null ? json.encode(body) : null).timeout(_kTimeout);
+      }
+    }
+    return response;
+  }
+
+  /// DELETE authentifié avec auto-refresh en cas de 401
+  Future<http.Response> authenticatedDelete(String url) async {
+    final token = await _getToken();
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+    var response = await _http.delete(Uri.parse(url), headers: headers).timeout(_kTimeout);
+    if (response.statusCode == 401 && token != null) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newToken = await _getToken();
+        headers['Authorization'] = 'Bearer $newToken';
+        response = await _http.delete(Uri.parse(url), headers: headers).timeout(_kTimeout);
+      }
+    }
+    return response;
+  }
+
   /// Supprime tous les tokens sensibles (déconnexion JWT + Firebase)
   Future<void> clearTokens() async {
     // ── Sauvegarder le timestamp de déconnexion dans SharedPreferences ────────

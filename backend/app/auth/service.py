@@ -19,7 +19,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is required. Set it in backend/.env")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hour
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 heures (evite les deconnexions pendant les sessions de travail)
 REFRESH_TOKEN_EXPIRE_DAYS = 30   # 30 days
 REFRESH_SECRET = SECRET_KEY + "_refresh"  # Separate secret for refresh tokens
 
