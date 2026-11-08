@@ -996,6 +996,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F7FA),
       body: NestedScrollView(
         headerSliverBuilder: (ctx, _) => [
