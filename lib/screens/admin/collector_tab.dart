@@ -30,6 +30,9 @@ class _CollectorTabState extends State<CollectorTab>
   List<Map<String, dynamic>> _alerts = [];
   List<Map<String, dynamic>> _centers = [];
   List<Map<String, dynamic>> _missions = [];
+  List<Map<String, dynamic>> _instructions = [];
+  bool _loadingInstructions = true;
+  bool _showInstructions = true;
   int _unreadCount = 0;
   int _unreadMessages = 0;
   bool _loadingAlerts = true;
@@ -64,7 +67,7 @@ class _CollectorTabState extends State<CollectorTab>
   }
 
   Future<void> _loadAll() async {
-    await Future.wait([_loadAlerts(), _loadCenters(), _loadMissions()]);
+    await Future.wait([_loadAlerts(), _loadCenters(), _loadMissions(), _loadInstructions()]);
   }
 
   Future<void> _loadMissions() async {
@@ -88,6 +91,30 @@ class _CollectorTabState extends State<CollectorTab>
       }
     } catch (_) {
       if (mounted) setState(() => _loadingMissions = false);
+    }
+  }
+
+  Future<void> _loadInstructions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jwt = prefs.getString('jwt_token');
+      if (jwt == null) { if (mounted) setState(() => _loadingInstructions = false); return; }
+      final resp = await http.get(
+        Uri.parse('${AuthService.baseUrl}/intercommunality/instructions?is_active=true'),
+        headers: {'Authorization': 'Bearer $jwt'},
+      );
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final data = json.decode(utf8.decode(resp.bodyBytes)) as List;
+        setState(() {
+          _instructions = data.cast<Map<String, dynamic>>();
+          _loadingInstructions = false;
+        });
+      } else {
+        setState(() => _loadingInstructions = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingInstructions = false);
     }
   }
 
@@ -256,6 +283,10 @@ class _CollectorTabState extends State<CollectorTab>
                 _buildUrgentBanner(satureCenters, maintenanceCenters),
                 const SizedBox(height: 24),
               ],
+
+              // -- Consignes de tri (intercommunalité) -------------------------
+              _buildInstructionsSection(),
+              const SizedBox(height: 24),
 
               // -- Mes Missions (assignées par l'intercommunalité) ----------
               _buildMissionsSection(),
@@ -700,6 +731,145 @@ class _CollectorTabState extends State<CollectorTab>
               style: GoogleFonts.inter(fontSize: 8, color: color, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
         ]),
       ]),
+    );
+  }
+
+  // -- Section Consignes de tri ------------------------------------------------
+  Widget _buildInstructionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // En-tete
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => setState(() => _showInstructions = !_showInstructions),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A6B3C).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.rule_rounded, color: Color(0xFF1A6B3C), size: 16),
+                ),
+                const SizedBox(width: 10),
+                Text('CONSIGNES DE TRI',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5, color: const Color(0xFF64748B))),
+                if (_instructions.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A6B3C),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('${_instructions.length}',
+                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ),
+                ],
+                const Spacer(),
+                Icon(_showInstructions ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    color: const Color(0xFF94A3B8), size: 20),
+              ]),
+            ),
+          ),
+        ),
+        if (_showInstructions) ...[
+          const SizedBox(height: 8),
+          if (_loadingInstructions)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(color: Color(0xFF1A6B3C)),
+            ))
+          else if (_instructions.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.info_outline_rounded, color: Color(0xFF94A3B8), size: 18),
+                const SizedBox(width: 10),
+                Text('Aucune consigne active pour le moment',
+                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8))),
+              ]),
+            )
+          else
+            Column(
+              children: _instructions.map((instr) {
+                final wasteType = instr['waste_type'] ?? '';
+                final territory = instr['territory'] ?? '';
+                final city = instr['city'] ?? '';
+                final content = instr['content'] ?? '';
+                final priority = (instr['priority'] ?? 0) as int;
+                final priorityColor = priority >= 3
+                    ? const Color(0xFFDC2626)
+                    : priority == 2
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF16A34A);
+                final priorityLabel = priority >= 3 ? 'URGENT' : priority == 2 ? 'MOYEN' : 'NORMAL';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: priorityColor.withOpacity(0.3)),
+                    boxShadow: [BoxShadow(
+                      color: priorityColor.withOpacity(0.06),
+                      blurRadius: 8, offset: const Offset(0, 2),
+                    )],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: priorityColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(priorityLabel,
+                              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700,
+                                  color: priorityColor)),
+                        ),
+                        if (wasteType.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A6B3C).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(wasteType,
+                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1A6B3C))),
+                          ),
+                        ],
+                        const Spacer(),
+                        if (territory.isNotEmpty)
+                          Text(city.isNotEmpty ? '$territory • $city' : territory,
+                              style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF94A3B8))),
+                      ]),
+                      const SizedBox(height: 10),
+                      Text(content,
+                          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E293B),
+                              height: 1.5)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ],
     );
   }
 
