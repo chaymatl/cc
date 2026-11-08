@@ -3563,7 +3563,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _hoursCtrl = TextEditingController();
-  final TextEditingController _typesCtrl = TextEditingController();
+  final Set<String> _selectedTypes = {};
   String _status = 'disponible';
 
   static const List<String> _statusOptions = ['disponible', 'sature', 'maintenance'];
@@ -3596,7 +3596,6 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
     _searchCtrl.dispose();
     _nameCtrl.dispose();
     _hoursCtrl.dispose();
-    _typesCtrl.dispose();
     super.dispose();
   }
 
@@ -3777,13 +3776,19 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
       );
       return;
     }
+    if (_selectedTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selectionnez au moins un type de dechet'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
     await widget.onSave(
       _nameCtrl.text.trim(),
       _selectedLoc.latitude,
       _selectedLoc.longitude,
       _selectedAddress,
-      _typesCtrl.text.trim(),
+      _selectedTypes.join(', '),
       _hoursCtrl.text.trim(),
       _status,
     );
@@ -4096,31 +4101,38 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
                     const SizedBox(height: 10),
 
                     // Types de dechets
-                    Autocomplete<String>(
-                      optionsBuilder: (tv) {
-                        if (tv.text.isEmpty) return const Iterable<String>.empty();
-                        return _wasteOptions.where((o) => o.toLowerCase().contains(tv.text.toLowerCase()));
-                      },
-                      onSelected: (sel) {
-                        final existing = _typesCtrl.text.trim();
-                        final parts = existing.isEmpty ? <String>[] : existing.split(',').map((s) => s.trim()).toList();
-                        if (!parts.contains(sel)) parts.add(sel);
-                        _typesCtrl.text = parts.join(', ');
-                      },
-                      fieldViewBuilder: (ctx, ctrl, fn, onSubmit) => TextField(
-                        controller: _typesCtrl,
-                        focusNode: fn,
-                        style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E293B)),
-                        decoration: InputDecoration(
-                          hintText: 'Types de dechets (ex: Plastique, Verre)',
-                          hintStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.recycling_rounded, color: Color(0xFF1A6B3C)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        ),
-                      ),
+                    Text('Types de dechets *',
+                        style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _wasteOptions.map((type) {
+                        final selected = _selectedTypes.contains(type);
+                        return FilterChip(
+                          label: Text(type,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                                color: selected ? Colors.white : const Color(0xFF1E293B),
+                              )),
+                          selected: selected,
+                          onSelected: (val) {
+                            setState(() {
+                              if (val) { _selectedTypes.add(type); }
+                              else { _selectedTypes.remove(type); }
+                            });
+                          },
+                          selectedColor: const Color(0xFF1A6B3C),
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          checkmarkColor: Colors.white,
+                          side: BorderSide(
+                            color: selected ? const Color(0xFF1A6B3C) : const Color(0xFFE2E8F0),
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 10),
 
