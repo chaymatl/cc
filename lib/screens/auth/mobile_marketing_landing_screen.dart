@@ -295,127 +295,196 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
     }
     if (_testimonials.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ce que disent nos citoyens',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.deepNavy,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Avis v\u00e9rifi\u00e9s et approuv\u00e9s',
-                style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
-              ),
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 32, 0, 0),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF0FAF4), Color(0xFFE8F5E9)],
         ),
-        SizedBox(
-          height: 180,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _testimonials.length,
-            itemBuilder: (context, index) {
-              final t = _testimonials[index];
-              final int rating = (t['rating'] ?? 5) as int;
-              final String itemContent = (t['content'] ?? '').toString();
-              final String name = (t['user_name'] ?? 'Anonyme').toString();
-              final bool featured = t['is_featured'] == true;
-              return Container(
-                width: 230,
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: featured
-                        ? const Color(0xFF1A6B3C).withOpacity(0.4)
-                        : Colors.grey.shade100,
-                    width: featured ? 1.5 : 1,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 28),
+          // ── Titre ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A6B3C),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: const Color(0xFF1A6B3C).withOpacity(0.1),
-                        child: Text(
-                          name.isNotEmpty ? name[0].toUpperCase() : 'A',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A6B3C),
-                            fontSize: 13,
-                          ),
-                        ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ce que disent nos citoyens',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF1A2B1E),
+                      letterSpacing: -0.5,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          // ── Carousel ──
+          SizedBox(
+            height: 200,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: _testimonials.length,
+              itemBuilder: (context, index) {
+                final t = _testimonials[index];
+                final int rating = (t['rating'] ?? 5) as int;
+                final String itemContent = (t['content'] ?? '').toString();
+                final String name = (t['user_name'] ?? 'Anonyme').toString();
+                final bool featured = t['is_featured'] == true;
+                // Couleur de fond alternée
+                final List<Color> bgColors = [
+                  Colors.white,
+                  const Color(0xFFF8FFFE),
+                  const Color(0xFFFFFDF5),
+                ];
+                return Container(
+                  width: 240,
+                  margin: const EdgeInsets.only(right: 14, bottom: 8, top: 4),
+                  decoration: BoxDecoration(
+                    color: bgColors[index % bgColors.length],
+                    borderRadius: BorderRadius.circular(24),
+                    border: featured
+                        ? Border.all(color: const Color(0xFF1A6B3C).withOpacity(0.5), width: 1.5)
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1A6B3C).withOpacity(0.08),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 6),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header : avatar + nom + badge
+                        Row(
                           children: [
-                            Text(
-                              name,
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 11),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF1A6B3C), Color(0xFF34A85A)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
                             ),
-                            Row(
-                              children: List.generate(5, (i) => Icon(
-                                i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                                size: 11,
-                                color: i < rating
-                                    ? const Color(0xFFF59E0B)
-                                    : Colors.grey.shade300,
-                              )),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: const Color(0xFF1A2B1E),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: List.generate(5, (i) => Padding(
+                                      padding: const EdgeInsets.only(right: 1),
+                                      child: Icon(
+                                        i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                        size: 13,
+                                        color: i < rating
+                                            ? const Color(0xFFF59E0B)
+                                            : Colors.grey.shade300,
+                                      ),
+                                    )),
+                                  ),
+                                ],
+                              ),
                             ),
+                            if (featured)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1A6B3C).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  '\u2605',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF1A6B3C),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
-                      ),
-                    ]),
-                    const SizedBox(height: 10),
-                    const Divider(height: 1),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Text(
-                        itemContent,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppTheme.textMuted,
-                          height: 1.4,
+                        const SizedBox(height: 14),
+                        // Guillemets décoratifs
+                        Text(
+                          '\u201c',
+                          style: GoogleFonts.merriweather(
+                            fontSize: 32,
+                            color: const Color(0xFF1A6B3C).withOpacity(0.25),
+                            height: 0.8,
+                          ),
                         ),
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Text(
+                            itemContent,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: const Color(0xFF3D5A45),
+                              height: 1.5,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-      ],
+          const SizedBox(height: 28),
+        ],
+      ),
     );
   }
 
