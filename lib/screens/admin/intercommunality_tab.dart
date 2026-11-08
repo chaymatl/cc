@@ -1322,7 +1322,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
     return Container(
       color: const Color(0xFFF1F5F9),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1386,7 +1386,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
               ],
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           Row(
             children: [
               _statusFilterCard('Tous', total, 'all', const Color(0xFF475569), Icons.grid_view_rounded),
@@ -1410,7 +1410,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         onTap: () => setState(() => _f2StatusFilter = key),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
           decoration: BoxDecoration(
             color: isSelected ? color : color.withOpacity(0.08),
             borderRadius: BorderRadius.circular(10),
@@ -1506,7 +1506,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       child: ClipRect(
         child: Column(
           children: [
-            Flexible(fit: FlexFit.loose, child: _buildPointsStatusDashboard()),
+            _buildPointsStatusDashboard(),
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
