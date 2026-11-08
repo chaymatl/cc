@@ -1503,7 +1503,9 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       {'key': 'textile',      'label': 'Textile',        'icon': Icons.checkroom_rounded},
     ];
 
-    return RefreshIndicator(
+    return MediaQuery(
+      data: MediaQuery.of(context).removeViewInsets(removeBottom: true),
+      child: RefreshIndicator(
       onRefresh: _loadPoints,
       color: primaryColor,
       child: ClipRect(
@@ -1738,6 +1740,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         ],
         ),
       ),
+    ),
     );
   }
 
