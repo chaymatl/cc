@@ -395,11 +395,31 @@ def _basic_mod_fallback(description: str, has_image: bool = False) -> dict:
             "details": None,
         }
 
-    # 4. Texte seul + propre → publié directement
+    # 4. Texte seul + propre → publié directement UNIQUEMENT si
+    #    au moins un mot-clé éco est détecté (sécurité sans IA)
+    text_lower = text.lower() if text else ""
+    ECO_KEYWORDS_BASIC = [
+        "recyclage", "recycler", "dechets", "dechet", "tri", "trier",
+        "compost", "nature", "environnement", "nettoyage", "nettoyer",
+        "pollution", "plastique", "verre", "papier", "ecologie", "ecologique",
+        "biodiversite", "foret", "arbre", "solaire", "energie", "durable",
+        "proprete", "citoyen", "communaute", "signaler", "poubelle",
+        "ramasser", "ramassage", "point de collecte", "zero dechet",
+    ]
+    has_eco_keyword = any(kw in text_lower for kw in ECO_KEYWORDS_BASIC)
+    if has_eco_keyword:
+        return {
+            "final_status": "published",
+            "score": 0.05,
+            "reason": "BASIC_RULES:texte_eco_approuve",
+            "model_version": "rules_v1.0",
+            "details": None,
+        }
+    # Texte sans mot-clé éco → review admin
     return {
-        "final_status": "published",
-        "score": 0.05,
-        "reason": "BASIC_RULES:texte_seul_approuve",
+        "final_status": "pending_review",
+        "score": 0.32,
+        "reason": "BASIC_RULES:texte_sans_contexte_eco",
         "model_version": "rules_v1.0",
         "details": None,
     }
@@ -484,12 +504,29 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
                 pass
             model_version = "|".join(model_parts) if model_parts else "rules_only"
 
-            # Contenu signalé par l'IA → toujours en pending_review
-            # L'admin arbitre en dernier. L'IA ne rejette jamais automatiquement.
+            # Politique stricte : l'IA ne rejette jamais auto, l'admin tranche.
+            # De plus : si l'image n'est pas clairement éco, forcer pending_review
+            # même si le score global est faible.
             if mod_result.status == "rejected":
                 details = _rejection_details(mod_result.reasons, mod_result.score)
                 final_status = "pending_review"
                 moderation_reason = f"AI_FLAGGED:{details['category']}"
+            elif mod_result.status == "published" and bool(image_local_path):
+                # Image présente → vérifier que l'IA est confiante sur le côté éco
+                img_analysis = getattr(mod_result, 'image_analysis', {})
+                resnet_eco_val = img_analysis.get('resnet_eco', 0.0)
+                resnet_offtopic_val = img_analysis.get('resnet_offtopic', 0.0)
+                # Auto-publish UNIQUEMENT si image clairement éco (resnet_eco > 0.65)
+                # et aucun signal hors-sujet fort
+                if resnet_eco_val > 0.65 and resnet_offtopic_val < 0.20:
+                    details = None
+                    final_status = "published"
+                    moderation_reason = mod_result.short_reason
+                else:
+                    # Image ambiguë → review admin
+                    details = None
+                    final_status = "pending_review"
+                    moderation_reason = "IMAGE_REVIEW:image_non_confirmee_eco"
             else:
                 details = None
                 final_status = mod_result.status

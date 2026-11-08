@@ -31,7 +31,7 @@ class ModerationStatus(str, Enum):
     REJECTED      = "rejected"        # Auto-rejected
 
 # Thresholds (adjustable)
-SAFE_THRESHOLD   = 0.30   # Score < 0.30 -> auto-publish
+SAFE_THRESHOLD   = 0.15   # Score < 0.15 -> auto-publish (seulement texte eco pur sans image)
 REVIEW_THRESHOLD = 0.65   # 0.30 ≤ score < 0.65 -> admin review / ≥ 0.65 -> reject
 
 # Feature flags
@@ -574,34 +574,31 @@ class AIModerator:
                 relevance_penalty += 0.35
                 result.reasons.append("Texte sans contexte environnemental detecte")
 
-        # Case 3: Image avec texte éco -> PAS de pénalité image
-        # Documenter la pollution avec un message encourageant est un acte éco valide
-        if has_image and eco_count == 0 and off_topic_count == 0:
-            # Image sans texte eco : utiliser ResNet18 pour distinguer eco / hors-sujet.
-            # resnet_eco > 0.50  -> probablement une image eco -> faible penalite
-            # resnet_offtopic > 0.40 -> hors-sujet confirme  -> review obligatoire
+        # Case 3: Image présente → vérification stricte obligatoire
+        # POLITIQUE : seule une image confirmée éco (resnet_eco > 0.65) avec
+        # texte éco peut être auto-publiée. Toute image ambiguë → pending_review.
+        if has_image:
             if image_score >= 0.10:
-                # NudeNet detecte contenu sensible -> penalite moderee
-                relevance_penalty += 0.25
+                # NudeNet détecte contenu sensible → review obligatoire
+                relevance_penalty += 0.40
                 if "Image potentiellement inappropriee" not in result.reasons:
                     result.reasons.append("Image potentiellement inappropriee")
-            elif resnet_offtopic > 0.40:
-                # ResNet18 confirme : image hors-sujet (voiture, sport, dessin anime...)
-                relevance_penalty += 0.35  # -> pending_review
+            elif resnet_offtopic > 0.35:
+                # ResNet18 confirme hors-sujet (voiture, sport, dessin animé...)
+                relevance_penalty += 0.45  # → pending_review garanti
                 if "Image hors sujet detectee par IA" not in result.reasons:
                     result.reasons.append("Image hors sujet detectee par IA")
-            elif resnet_eco > 0.50:
-                # ResNet18 confirme : image eco (nature, foret, recyclage...)
-                relevance_penalty += 0.10  # -> auto-publie
+            elif resnet_eco > 0.65 and eco_count > 0:
+                # Image clairement éco + texte éco → pénalité minimale
+                relevance_penalty += 0.05
+            elif resnet_eco > 0.65:
+                # Image éco sans texte éco explicite → légère pénalité
+                relevance_penalty += 0.12
             else:
-                # Incertain : mettre en review par precaution
-                relevance_penalty += 0.32  # -> pending_review
+                # Image non classifiée avec certitude → toujours en review
+                relevance_penalty += 0.40  # → pending_review
                 if "Image non classifiee - verification requise" not in result.reasons:
                     result.reasons.append("Image non classifiee - verification requise")
-        elif has_image and eco_count > 0:
-            # Texte éco présent : l'image (même de pollution) est valide
-            # Le texte contextualise et encourage → aucune pénalité image
-            pass
 
         # Case 3: Rule-based off-topic keywords detected in text
         if off_topic_count > 0:

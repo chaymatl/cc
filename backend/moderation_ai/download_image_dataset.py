@@ -93,6 +93,17 @@ SEARCH_QUERIES = {
         ("airport travel luggage plane boarding",          50),
         ("school classroom students learning lesson",      55),
         ("fitness gym workout exercise sport",             65),
+        # Illustrations / dessins animés / fêtes (manquants dans dataset actuel)
+        ("cartoon animation characters colorful illustration",  80),
+        ("cartoon car accident crash animated drawing",          80),
+        ("party balloon celebration cartoon illustration",       80),
+        ("animated movie characters Disney Pixar cartoon",       75),
+        ("birthday party balloons confetti celebration",         75),
+        ("cartoon animal cute funny animated character",         70),
+        ("vector illustration clip art colorful drawing",        65),
+        ("animated people celebration dancing happy",            65),
+        ("road accident crash car illustration drawing",         70),
+        ("comic superhero illustration cartoon action",          60),
     ],
     "nsfw": [
         ("lingerie fashion model photoshoot editorial", 100),
@@ -108,7 +119,7 @@ SEARCH_QUERIES = {
 # Cibles par classe (train + val combinés) — v2 doublé
 TARGETS = {
     "eco":       2000,
-    "off_topic": 2000,
+    "off_topic": 2500,   # Augmenté : + illustrations/cartoons/fêtes
     "nsfw":      1000,
 }
 
