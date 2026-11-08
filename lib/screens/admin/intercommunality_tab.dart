@@ -1491,13 +1491,16 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     const primaryColor = Color(0xFF1A6B3C);
 
     const wasteFilterChips = [
-      {'key': 'all', 'label': 'Tous déchets', 'icon': Icons.all_inclusive_rounded},
-      {'key': 'plastique', 'label': 'Plastique', 'icon': Icons.local_drink_rounded},
-      {'key': 'verre', 'label': 'Verre', 'icon': Icons.wine_bar_rounded},
-      {'key': 'papier', 'label': 'Papier', 'icon': Icons.newspaper_rounded},
-      {'key': 'batteries', 'label': 'Piles / Batteries', 'icon': Icons.battery_charging_full_rounded},
-      {'key': 'electronique', 'label': 'Électronique', 'icon': Icons.devices_other_rounded},
-      {'key': 'compost', 'label': 'Compost', 'icon': Icons.eco_rounded},
+      {'key': 'all',          'label': 'Tous déchets',   'icon': Icons.all_inclusive_rounded},
+      {'key': 'plastique',    'label': 'Plastique',      'icon': Icons.local_drink_rounded},
+      {'key': 'verre',        'label': 'Verre',          'icon': Icons.wine_bar_rounded},
+      {'key': 'papier',       'label': 'Papier/Carton',  'icon': Icons.newspaper_rounded},
+      {'key': 'metal',        'label': 'Métal',         'icon': Icons.hardware_rounded},
+      {'key': 'organique',    'label': 'Organique',      'icon': Icons.eco_rounded},
+      {'key': 'electronique', 'label': 'Électronique',  'icon': Icons.devices_other_rounded},
+      {'key': 'batteries',    'label': 'Batteries',      'icon': Icons.battery_charging_full_rounded},
+      {'key': 'dangereux',    'label': 'Dangereux',      'icon': Icons.warning_rounded},
+      {'key': 'textile',      'label': 'Textile',        'icon': Icons.checkroom_rounded},
     ];
 
     return RefreshIndicator(
@@ -3572,7 +3575,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   static const List<String> _statusOptions = ['disponible', 'sature', 'maintenance'];
   static const List<String> _wasteOptions = [
     'Plastique', 'Verre', 'Papier / Carton', 'Metal',
-    'Organique', 'Electronique', 'Dangereux', 'Autre'
+    'Organique', 'Electronique', 'Batteries', 'Dangereux', 'Textile', 'Autre',
   ];
 
   @override

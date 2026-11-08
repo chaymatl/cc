@@ -100,14 +100,14 @@ class _MapTabState extends State<MapTab> {
     {'key': 'tous',         'fr': 'Tous'},
     {'key': 'plastique',    'fr': 'Plastique'},
     {'key': 'verre',        'fr': 'Verre'},
-    {'key': 'papier',       'fr': 'Papier'},
-    {'key': 'carton',       'fr': 'Carton'},
+    {'key': 'papier',       'fr': 'Papier / Carton'},
     {'key': 'metal',        'fr': 'Métal'},
+    {'key': 'organique',    'fr': 'Organique'},
     {'key': 'electronique', 'fr': 'Électronique'},
     {'key': 'batteries',    'fr': 'Batteries'},
-    {'key': 'compost',      'fr': 'Compost'},
-    {'key': 'vetements',    'fr': 'Vêtements'},
-    {'key': 'general',      'fr': 'Général'},
+    {'key': 'dangereux',    'fr': 'Dangereux'},
+    {'key': 'textile',      'fr': 'Textile'},
+    {'key': 'autre',        'fr': 'Autre'},
   ];
 
   String _norm(String s) => s.toLowerCase()
@@ -119,6 +119,16 @@ class _MapTabState extends State<MapTab> {
     .trim();
 
   List<String> _bilingualTerms(String key) {
+    // Papier / Carton : les deux termes matchent
+    if (key == 'papier') return ['papier', 'carton'];
+    // Metal : avec ou sans accent
+    if (key == 'metal') return ['metal', 'metal'];
+    // Organique / Compost
+    if (key == 'organique') return ['organique', 'compost'];
+    // Textile / Vetements
+    if (key == 'textile') return ['textile', 'vetement', 'vetements'];
+    // Batteries / Piles
+    if (key == 'batteries') return ['batterie', 'batteries', 'pile', 'piles'];
     final e = _typeMap.firstWhere((m) => m['key'] == key, orElse: () => {});
     if (e.isEmpty) return [];
     return [_norm(e['fr']!)];

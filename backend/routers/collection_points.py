@@ -93,11 +93,11 @@ async def get_points_version():
 
 @router.get("/collection-points/waste-types")
 async def get_waste_types():
-    """Retourne la liste des types de déchets disponibles."""
+    """Retourne la liste canonique des types de déchets."""
     return [
-        "Plastique", "Verre", "Papier", "Carton",
-        "Métal", "Électronique", "Batteries", "Compost",
-        "Vêtements", "Général"
+        "Plastique", "Verre", "Papier / Carton", "Metal",
+        "Organique", "Electronique", "Batteries",
+        "Dangereux", "Textile", "Autre"
     ]
 
 
