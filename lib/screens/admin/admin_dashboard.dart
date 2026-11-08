@@ -710,9 +710,8 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
   List<Map<String, dynamic>> _points = [];
   // Types pré-remplis (liste fixe du backend) + complétés par les centres chargés
   List<String> _typesFromApi = [
-    'Plastique', 'Verre', 'Papier', 'Carton',
-    'Métal', 'Électronique', 'Batteries', 'Compost',
-    'Vêtements', 'Général',
+    'Plastique', 'Verre', 'Papier / Carton', 'Metal',
+    'Organique', 'Electronique', 'Batteries', 'Dangereux', 'Textile', 'Autre',
   ];
   bool _isLoading = true;
 
@@ -796,7 +795,7 @@ class _CollectionPointsManagementTabState extends State<_CollectionPointsManagem
       }
       // Si aucun type extrait -> fallback liste statique
       final types = typesSet.isEmpty
-          ? ['Plastique', 'Verre', 'Papier', 'Carton', 'Métal', 'Électronique', 'Batteries', 'Compost', 'Vêtements', 'Général']
+          ? ['Plastique', 'Verre', 'Papier / Carton', 'Metal', 'Organique', 'Electronique', 'Batteries', 'Dangereux', 'Textile', 'Autre']
           : (typesSet.toList()..sort());
 
       if (mounted) {
