@@ -1503,9 +1503,10 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     return RefreshIndicator(
       onRefresh: _loadPoints,
       color: primaryColor,
-      child: Column(
-        children: [
-          _buildPointsStatusDashboard(),
+      child: ClipRect(
+        child: Column(
+          children: [
+            Flexible(fit: FlexFit.loose, child: _buildPointsStatusDashboard()),
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -1732,6 +1733,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                       )),
           ),
         ],
+        ),
       ),
     );
   }
