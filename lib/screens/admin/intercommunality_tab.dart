@@ -2403,7 +2403,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       'is_verified': true,
     };
     final res = await http.post(
-      Uri.parse('${AuthService.baseUrl}/admin/collection-points'),
+      Uri.parse('${AuthService.baseUrl}/intercommunality/collection-points'),
       headers: {..._headers(jwt), 'Content-Type': 'application/json'},
       body: json.encode(body),
     );

@@ -26,8 +26,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 import db_models as db_models
+import models as models
 from database import get_db
 from core.deps import get_current_user
+from routers.collection_points import _reverse_geocode, _bump_version
+from services.firebase_service import update_admin_stats
 from app.intercommunality.models import LocalInstruction, CustomActorGroup
 from app.intercommunality.schemas import (
     LocalInstructionCreate,
@@ -285,6 +288,47 @@ async def get_collection_points(
         }
         for p in points
     ]
+
+
+@router.post(
+    "/collection-points",
+    summary="[F2] Creer un nouveau point de collecte (intercommunalite)",
+)
+async def create_collection_point_intercommunality(
+    point: models.CollectionPointCreate,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(_require_intercommunality),
+):
+    """
+    Permet a l'intercommunalite (et aux admins) de creer un point de collecte.
+    Le point est cree avec is_verified=True directement.
+    """
+    data = point.dict()
+    data["is_verified"] = True
+    if not data.get("address"):
+        data["address"] = await _reverse_geocode(data["lat"], data["lng"])
+    db_point = db_models.CollectionPoint(**data)
+    db.add(db_point)
+    db.commit()
+    db.refresh(db_point)
+    _bump_version()
+    try:
+        update_admin_stats(db)
+    except Exception:
+        pass
+    return {
+        "id":          db_point.id,
+        "name":        db_point.name,
+        "address":     db_point.address or "",
+        "lat":         float(db_point.lat),
+        "lng":         float(db_point.lng),
+        "status":      db_point.status or "disponible",
+        "load_level":  float(db_point.load_level or 0.0),
+        "is_verified": db_point.is_verified,
+        "hours":       db_point.hours or "",
+        "types":       [t.strip() for t in (db_point.types or "").split(",") if t.strip()],
+        "created_at":  db_point.created_at.isoformat() if db_point.created_at else None,
+    }
 
 
 @router.get(
