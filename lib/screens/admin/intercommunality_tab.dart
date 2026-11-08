@@ -3558,6 +3558,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   Timer? _debounce;
   bool _isSaving = false;
   bool _isSearchActive = false;
+  final FocusNode _searchFocus = FocusNode();
 
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _nameCtrl = TextEditingController();
@@ -3574,6 +3575,15 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   @override
   void initState() {
     super.initState();
+    _searchFocus.addListener(() {
+      if (_searchFocus.hasFocus) {
+        if (!_isSearchActive) setState(() => _isSearchActive = true);
+      } else {
+        if (_searchCtrl.text.isEmpty) {
+          setState(() => _isSearchActive = false);
+        }
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchLocation();
     });
@@ -3582,6 +3592,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _searchFocus.dispose();
     _searchCtrl.dispose();
     _nameCtrl.dispose();
     _hoursCtrl.dispose();
@@ -3742,6 +3753,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
       _searchResults = [];
       _searchCtrl.clear();
       _isSearchActive = false;
+      _searchFocus.unfocus();
       if (_nameCtrl.text.isEmpty && shortName.isNotEmpty) {
         _nameCtrl.text = shortName;
       }
@@ -3874,6 +3886,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
                   elevation: 4,
                   child: TextField(
                     controller: _searchCtrl,
+                    focusNode: _searchFocus,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Rechercher une adresse, quartier, ville...',
