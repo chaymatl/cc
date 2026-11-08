@@ -539,6 +539,7 @@ class _PinCardState extends State<_PinCard> {
                     if (isOwn)
                       GestureDetector(
                         onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             title: Text('Supprimer ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
@@ -548,8 +549,46 @@ class _PinCardState extends State<_PinCard> {
                             ],
                           ));
                           if (ok == true) {
-                            await widget.auth.deletePost(widget.post['id'].toString());
-                            if (mounted) widget.onRefresh();
+                            final deleted = await widget.auth.deletePost(widget.post['id'].toString());
+                            if (!mounted) return;
+                            if (deleted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Row(children: [
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Publication supprimée avec succès.',
+                                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                                    ),
+                                  ]),
+                                  backgroundColor: const Color(0xFF1A6B3C),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  margin: const EdgeInsets.all(16),
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                              widget.onRefresh();
+                            } else {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Row(children: [
+                                    const Icon(Icons.error_rounded, color: Colors.white, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Erreur lors de la suppression.',
+                                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                                    ),
+                                  ]),
+                                  backgroundColor: Colors.red.shade600,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  margin: const EdgeInsets.all(16),
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
                           }
                         },
                         child: Icon(Icons.more_horiz_rounded, size: 18, color: Colors.grey.shade400),
