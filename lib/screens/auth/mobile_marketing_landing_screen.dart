@@ -4,11 +4,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../theme/app_theme.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/auth_prompt_dialog.dart';
 import 'section_impact.dart';
-import 'section_testimonials.dart';
 import '../client/feed_tab.dart';
 import '../client/rewards_tab.dart';
 import '../client/map_tab.dart';
@@ -26,6 +27,8 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
   late AnimationController _bgAnimationController;
   
   String _impactSubtitle = '...';
+  List<Map<String, dynamic>> _testimonials = [];
+  bool _loadingTestimonials = true;
 
   @override
   void initState() {
@@ -37,6 +40,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
     )..repeat(reverse: true);
     
     _loadStats();
+    _loadTestimonialsForLanding();
   }
 
   void _loadStats() async {
@@ -124,7 +128,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
                 ),
               ),
               SliverToBoxAdapter(child: _buildPinterestGrid()),
-              const SliverToBoxAdapter(child: SectionTestimonials()),
+              SliverToBoxAdapter(child: _buildTestimonialsInline()),
               const SliverToBoxAdapter(child: SizedBox(height: 140)), // Padding for bottom bar
             ],
           ),
@@ -257,6 +261,161 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _loadTestimonialsForLanding() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AuthService.baseUrl}/testimonials/landing?limit=10'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        if (mounted) {
+          setState(() {
+            _testimonials = data.cast<Map<String, dynamic>>();
+            _loadingTestimonials = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingTestimonials = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingTestimonials = false);
+    }
+  }
+
+  Widget _buildTestimonialsInline() {
+    if (_loadingTestimonials) {
+      return const SizedBox(
+        height: 80,
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF1A6B3C))),
+      );
+    }
+    if (_testimonials.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ce que disent nos citoyens',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.deepNavy,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Avis v\u00e9rifi\u00e9s et approuv\u00e9s',
+                style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _testimonials.length,
+            itemBuilder: (context, index) {
+              final t = _testimonials[index];
+              final int rating = (t['rating'] ?? 5) as int;
+              final String itemContent = (t['content'] ?? '').toString();
+              final String name = (t['user_name'] ?? 'Anonyme').toString();
+              final bool featured = t['is_featured'] == true;
+              return Container(
+                width: 230,
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: featured
+                        ? const Color(0xFF1A6B3C).withOpacity(0.4)
+                        : Colors.grey.shade100,
+                    width: featured ? 1.5 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: const Color(0xFF1A6B3C).withOpacity(0.1),
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1A6B3C),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Row(
+                              children: List.generate(5, (i) => Icon(
+                                i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                size: 11,
+                                color: i < rating
+                                    ? const Color(0xFFF59E0B)
+                                    : Colors.grey.shade300,
+                              )),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 10),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Text(
+                        itemContent,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
+                          height: 1.4,
+                        ),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
