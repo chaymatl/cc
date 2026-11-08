@@ -2255,7 +2255,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         onSave: () async {
           final jwt = await _jwt();
           if (jwt == null) return;
-          await http.post(
+          final resp = await http.post(
             Uri.parse('${AuthService.baseUrl}/intercommunality/instructions'),
             headers: _headers(jwt),
             body: json.encode({
@@ -2269,6 +2269,70 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           );
           _loadInstructions();
           if (ctx.mounted) Navigator.pop(ctx);
+          if (mounted) {
+            final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+            final savedTitle = titleCtrl.text.trim();
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (_) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: ok ? const Color(0xFFD1FAE5) : const Color(0xFFFFEDED),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        ok ? Icons.check_rounded : Icons.error_outline_rounded,
+                        color: ok ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      ok ? 'Consigne ajoutée !' : 'Erreur lors de l\'ajout',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E293B),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      ok
+                          ? 'La consigne "$savedTitle" a bien été enregistrée.'
+                          : 'Une erreur est survenue (code ${resp.statusCode}). Réessayez.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: const Color(0xFF64748B),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ok ? const Color(0xFF6C3EB8) : const Color(0xFFDC2626),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('OK', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
         },
       ),
     );
