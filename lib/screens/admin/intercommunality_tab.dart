@@ -3557,6 +3557,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   List<dynamic> _searchResults = [];
   Timer? _debounce;
   bool _isSaving = false;
+  bool _isSearchActive = false;
 
   final TextEditingController _searchCtrl = TextEditingController();
   final TextEditingController _nameCtrl = TextEditingController();
@@ -3637,9 +3638,10 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     if (query.isEmpty) {
-      setState(() { _searchResults = []; _searchNoResults = false; });
+      setState(() { _searchResults = []; _searchNoResults = false; _isSearchActive = false; });
       return;
     }
+    if (!_isSearchActive) setState(() => _isSearchActive = true);
     _debounce = Timer(const Duration(milliseconds: 350), () {
       if (query.length >= 2) _searchLocation(query);
     });
@@ -3739,6 +3741,7 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
       _selectedAddress = readable;
       _searchResults = [];
       _searchCtrl.clear();
+      _isSearchActive = false;
       if (_nameCtrl.text.isEmpty && shortName.isNotEmpty) {
         _nameCtrl.text = shortName;
       }
@@ -3889,7 +3892,8 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
                               icon: const Icon(Icons.clear_rounded, size: 18),
                               onPressed: () {
                                 _searchCtrl.clear();
-                                setState(() { _searchResults = []; _searchNoResults = false; });
+                                setState(() { _searchResults = []; _searchNoResults = false; _isSearchActive = false; });
+                                FocusScope.of(context).unfocus();
                               },
                             )
                           : null,
@@ -3955,8 +3959,8 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
             ),
           ),
 
-          // ---- CHIP ADRESSE + COORDS (milieu-bas de carte) ----
-          Positioned(
+          // ---- CHIP ADRESSE + COORDS (cache pendant recherche) ----
+          if (!_isSearchActive) Positioned(
             bottom: screenH * 0.38 + 8,
             left: 12,
             right: 12,
@@ -4020,8 +4024,8 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
             ),
           ),
 
-          // ---- BOUTON MA POSITION ----
-          Positioned(
+          // ---- BOUTON MA POSITION (cache pendant recherche) ----
+          if (!_isSearchActive) Positioned(
             right: 12,
             bottom: screenH * 0.38 + 60,
             child: FloatingActionButton.small(
@@ -4033,9 +4037,11 @@ class _AddCollectionPointPageState extends State<_AddCollectionPointPage> {
             ),
           ),
 
-          // ---- FEUILLE BASSE : FORMULAIRE ----
-          Positioned(
-            bottom: 0,
+          // ---- FEUILLE BASSE : FORMULAIRE (cache pendant recherche) ----
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            bottom: _isSearchActive ? -(screenH * 0.42) : 0,
             left: 0,
             right: 0,
             child: Container(
