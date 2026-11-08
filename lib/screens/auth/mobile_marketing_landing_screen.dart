@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/auth_prompt_dialog.dart';
 import 'section_impact.dart';
+import 'section_testimonials.dart';
 import '../client/feed_tab.dart';
 import '../client/rewards_tab.dart';
 import '../client/map_tab.dart';
@@ -123,6 +124,7 @@ class _MobileMarketingLandingScreenState extends State<MobileMarketingLandingScr
                 ),
               ),
               SliverToBoxAdapter(child: _buildPinterestGrid()),
+              const SliverToBoxAdapter(child: SectionTestimonials()),
               const SliverToBoxAdapter(child: SizedBox(height: 140)), // Padding for bottom bar
             ],
           ),
