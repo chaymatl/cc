@@ -27,20 +27,14 @@ class _CollectorTabState extends State<CollectorTab>
 
   Timer? _pollingTimer;
 
-  List<Map<String, dynamic>> _alerts = [];
   List<Map<String, dynamic>> _centers = [];
   List<Map<String, dynamic>> _missions = [];
   List<Map<String, dynamic>> _instructions = [];
   bool _loadingInstructions = true;
   bool _showInstructions = true;
-  int _unreadCount = 0;
   int _unreadMessages = 0;
-  bool _loadingAlerts = true;
   bool _loadingCenters = true;
   bool _loadingMissions = true;
-  bool _markingRead = false;
-  bool _showAlerts = true;
-  bool _showAllAlerts = false;
   bool _showMissions = true;
 
   @override
@@ -67,7 +61,7 @@ class _CollectorTabState extends State<CollectorTab>
   }
 
   Future<void> _loadAll() async {
-    await Future.wait([_loadAlerts(), _loadCenters(), _loadMissions(), _loadInstructions()]);
+    await Future.wait([_loadCenters(), _loadMissions(), _loadInstructions()]);
   }
 
   Future<void> _loadMissions() async {
@@ -123,40 +117,6 @@ class _CollectorTabState extends State<CollectorTab>
     if (mounted) setState(() => _unreadMessages = count);
   }
 
-  Future<void> _loadAlerts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
-      if (jwt == null) return;
-
-      final response = await http.get(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts?limit=30'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-      final countRes = await http.get(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts/unread-count'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-
-      if (!mounted) return;
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes)) as List;
-        final count = countRes.statusCode == 200
-            ? (json.decode(countRes.body)['count'] ?? 0) as int
-            : 0;
-        setState(() {
-          _alerts = data.cast<Map<String, dynamic>>();
-          _unreadCount = count;
-          _loadingAlerts = false;
-        });
-      } else {
-        setState(() => _loadingAlerts = false);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingAlerts = false);
-    }
-  }
-
   Future<void> _loadCenters() async {
     try {
       final response = await http.get(
@@ -185,48 +145,6 @@ class _CollectorTabState extends State<CollectorTab>
     }
   }
 
-  Future<void> _markAllRead() async {
-    if (_markingRead) return;
-    setState(() => _markingRead = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jwt = prefs.getString('jwt_token');
-      if (jwt == null) return;
-      final res = await http.put(
-        Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts/read-all'),
-        headers: {'Authorization': 'Bearer $jwt'},
-      );
-      await _loadAlerts();
-      if (mounted) {
-        final ok = res.statusCode >= 200 && res.statusCode < 300;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            ok ? 'Toutes les alertes marquées comme lues.' : 'Erreur (${res.statusCode}).',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ));
-      }
-    } catch (_) {}
-    if (mounted) setState(() => _markingRead = false);
-  }
-  String _timeAgo(String? isoDate) {
-    if (isoDate == null) return '';
-    try {
-      final dt = DateTime.parse(isoDate).toLocal();
-      final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return 'È l\'instant';
-      if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
-      if (diff.inHours < 24) return 'Il y a ${diff.inHours}h';
-      return 'Il y a ${diff.inDays}j';
-    } catch (_) {
-      return '';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +186,6 @@ class _CollectorTabState extends State<CollectorTab>
             Text('Logistique Temps Réel',
                 style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
             const Spacer(),
-            if (_unreadCount > 0) _buildBadge(_unreadCount),
             const SizedBox(width: 8),
             _buildMessagesButton(),
           ]),
@@ -294,100 +211,6 @@ class _CollectorTabState extends State<CollectorTab>
 
               // -- Résumé flux ---------------------------------------------
               _buildFluxStats(satureCenters.length, maintenanceCenters.length, _centers.length),
-              const SizedBox(height: 28),
-
-              // -- Alertes -------------------------------------------------
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => setState(() => _showAlerts = !_showAlerts),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                    child: Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: (_unreadCount > 0 ? Colors.red : Colors.grey).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.notifications_active_rounded,
-                            color: _unreadCount > 0 ? Colors.red : Colors.grey, size: 16),
-                      ),
-                      const SizedBox(width: 10),
-                      Text('NOTIFICATIONS CENTRES',
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5, color: AppTheme.textMuted)),
-                      if (_unreadCount > 0) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)),
-                          child: Text('$_unreadCount',
-                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-                        ),
-                      ],
-                      const Spacer(),
-                      Icon(_showAlerts ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                          color: AppTheme.textMuted, size: 20),
-                    ]),
-                  ),
-                ),
-              ),
-
-              if (_showAlerts) ...[
-                const SizedBox(height: 16),
-                if (_unreadCount > 0)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: _markAllRead,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.2)),
-                        ),
-                        child: _markingRead
-                            ? const SizedBox(width: 14, height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryGreen))
-                            : Row(mainAxisSize: MainAxisSize.min, children: [
-                                const Icon(Icons.done_all_rounded, size: 14, color: AppTheme.primaryGreen),
-                                const SizedBox(width: 6),
-                                Text('Tout marquer comme lu',
-                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
-                                        color: AppTheme.primaryGreen)),
-                              ]),
-                      ),
-                    ),
-                  ),
-                if (_loadingAlerts)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
-                  )
-                else if (_alerts.isEmpty)
-                  _buildEmptyAlerts()
-                else ...[
-                  ...(_showAllAlerts ? _alerts : _alerts.take(8)).map((a) => _buildAlertCard(a)).toList(),
-                  if (_alerts.length > 8)
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: () => setState(() => _showAllAlerts = !_showAllAlerts),
-                        icon: Icon(_showAllAlerts ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: AppTheme.primaryGreen),
-                        label: Text(
-                          _showAllAlerts 
-                            ? 'Voir moins' 
-                            : '${'Voir tout'} (${_alerts.length})',
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
-                        ),
-                      ),
-                    ),
-                ],
-              ],
-
               const SizedBox(height: 28),
 
               // -- Flux par centre -----------------------------------------
@@ -499,12 +322,6 @@ class _CollectorTabState extends State<CollectorTab>
     ]),
   );
 
-  Widget _buildBadge(int count) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)),
-    child: Text('$count', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
-  ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds, color: Colors.white30);
-
   Widget _buildMessagesButton() {
     return Stack(
       clipBehavior: Clip.none,
@@ -608,69 +425,6 @@ class _CollectorTabState extends State<CollectorTab>
       Text(val, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: color)),
       Text(label, style: GoogleFonts.inter(fontSize: 9, color: color.withOpacity(0.7), fontWeight: FontWeight.w700),
           textAlign: TextAlign.center),
-    ]),
-  );
-
-  // -- Carte alerte -------------------------------------------------------------
-  Widget _buildAlertCard(Map<String, dynamic> alert) {
-    final isSature = (alert['title'] ?? '').toString().contains('Saturé');
-    final isRead = alert['is_read'] == true;
-    final color = isSature ? Colors.red : Colors.orange;
-    final icon = isSature ? Icons.error_rounded : Icons.build_circle_rounded;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isRead ? Theme.of(context).colorScheme.surface : color.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppTheme.tightShadow,
-        border: Border.all(
-          color: isRead ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade100) : color.withOpacity(0.2),
-          width: isRead ? 1 : 1.5,
-        ),
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text(alert['title'] ?? '',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold, fontSize: 12,
-                  color: isRead ? AppTheme.textMuted : AppTheme.deepSlate,
-                ))),
-            if (!isRead)
-              Container(width: 7, height: 7,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          ]),
-          const SizedBox(height: 3),
-          Text(alert['body'] ?? '',
-              style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
-              maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 5),
-          Text(_timeAgo(alert['created_at']),
-              style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted.withOpacity(0.6), fontWeight: FontWeight.w600)),
-        ])),
-      ]),
-    ).animate().fadeIn().slideX(begin: 0.06);
-  }
-
-  Widget _buildEmptyAlerts() => Container(
-    padding: const EdgeInsets.all(32),
-    margin: const EdgeInsets.only(bottom: 4),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), boxShadow: AppTheme.tightShadow,
-    ),
-    child: Column(children: [
-      Icon(Icons.notifications_none_rounded, size: 40, color: AppTheme.primaryGreen.withOpacity(0.4)),
-      const SizedBox(height: 12),
-      Text('Aucune alerte', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.deepSlate)),
-      Text('Tous les centres fonctionnent normalement', style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted)),
     ]),
   );
 
