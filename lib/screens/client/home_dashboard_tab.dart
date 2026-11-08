@@ -41,6 +41,10 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
   int _trees = 0;
   bool _statsLoaded = false;
 
+  // -- Temoignages approuves -------------------------------------
+  List<Map<String, dynamic>> _testimonials = [];
+  bool _loadingTestimonials = true;
+
   // -- Carte mini ----------------------------------------------
   final MapController _miniMapController = MapController();
   List<Map<String, dynamic>> _mapPoints = [];
@@ -67,6 +71,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     _refreshUserScoreOnce();
     _syncUnreadNotifications();
     _loadMapPoints();
+    _loadTestimonials();
   }
 
   /// Synchronise le compteur de notifications non lues depuis le backend
@@ -284,6 +289,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
           SliverToBoxAdapter(child: _buildVlogSpotlight()),
           SliverToBoxAdapter(child: _buildGlobalImpact()),
           SliverToBoxAdapter(child: _buildFeedTeaser()),
+          SliverToBoxAdapter(child: _buildTestimonialsSection()),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -1371,6 +1377,191 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> with SingleTickerPr
     );
   }
 
+
+  Future<void> _loadTestimonials() async {
+    try {
+      final data = await _authService.fetchTestimonials();
+      if (mounted) setState(() { _testimonials = data; _loadingTestimonials = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingTestimonials = false);
+    }
+  }
+
+
+  // -- Section Temoignages approuves ------------------------------------
+  Widget _buildTestimonialsSection() {
+    if (_loadingTestimonials) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen)),
+      );
+    }
+    if (_testimonials.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 4),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.format_quote_rounded, color: AppTheme.primaryGreen, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Ce que disent nos citoyens',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 20, bottom: 16),
+          child: Text(
+            'Avis verifies et approuves',
+            style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+          ),
+        ),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _testimonials.length,
+            itemBuilder: (context, index) {
+              return _buildTestimonialCard(_testimonials[index]);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTestimonialCard(Map<String, dynamic> t) {
+    final int rating = (t['rating'] ?? 5) as int;
+    final String content = (t['content'] ?? '').toString();
+    final String name = (t['user_name'] ?? 'Anonyme').toString();
+    final String? avatar = t['user_avatar_url']?.toString();
+    final bool featured = t['is_featured'] == true;
+
+    return Container(
+      width: 240,
+      margin: const EdgeInsets.only(right: 12, bottom: 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: featured
+              ? AppTheme.primaryGreen.withOpacity(0.35)
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF334155)
+                  : Colors.grey.shade100),
+          width: featured ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
+                backgroundImage: (avatar != null && avatar.isNotEmpty)
+                    ? NetworkImage(avatar)
+                    : null,
+                child: (avatar == null || avatar.isEmpty)
+                    ? Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                        style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryGreen,
+                          fontSize: 14,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
+                      children: List.generate(5, (i) => Icon(
+                        i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 12,
+                        color: i < rating ? const Color(0xFFF59E0B) : Colors.grey.shade300,
+                      )),
+                    ),
+                  ],
+                ),
+              ),
+              if (featured)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'TOP',
+                    style: GoogleFonts.outfit(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Text(
+              content,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppTheme.textMuted,
+                height: 1.5,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: 60 * (_testimonials.indexOf(t)))).slideX(begin: 0.05);
+  }
 
   // -- Section carte dans le home ------------------------------
   Widget _buildMapSection() {
