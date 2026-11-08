@@ -41,6 +41,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
   bool _isReverseGeocoding = false;
   List<dynamic> _searchResults = [];
   Timer? _debounce;
+  bool _isSearchActive = false;
 
   List<String> _availableTypes = [];
   final Map<String, List<String>> _categorizedTypes = {
@@ -249,9 +250,10 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     if (query.isEmpty) {
-      setState(() { _searchResults = []; _searchNoResults = false; });
+      setState(() { _searchResults = []; _searchNoResults = false; _isSearchActive = false; });
       return;
     }
+    if (!_isSearchActive) setState(() => _isSearchActive = true);
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (query.length >= 2) {
         _searchLocation(query);
@@ -402,6 +404,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
       _searchResults = [];
       _searchController.clear();
       _selectedAddress = readableAddr;
+      _isSearchActive = false;
       // Auto-fill name only when field is still empty
       if (_nameController.text.isEmpty && shortName.isNotEmpty) {
         _nameController.text = shortName;
@@ -605,8 +608,8 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
           ),
 
-          // -- 3. Address bar + GPS chip above bottom sheet ---------------------
-          Positioned(
+          // -- 3. Address bar + GPS chip (cache pendant la recherche) ----------
+          if (!_isSearchActive) Positioned(
             bottom: screenHeight * 0.46 + 4,
             left: 12,
             right: 12,
@@ -678,9 +681,11 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
             ),
           ),
 
-          // -- 3. Bottom Details Sheet -----------------------------------------
-          Positioned(
-            bottom: 0,
+          // -- 3. Bottom Details Sheet (cache pendant la recherche) -----------
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            bottom: _isSearchActive ? -(screenHeight * 0.55) : 0,
             left: 0,
             right: 0,
             child: ClipRRect(
@@ -1087,7 +1092,7 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                 ),
               ),
             ),
-          ).animate().slideY(begin: 1, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
+          ),
 
           // -- 4. Search Bar Overlay --------------------------------------------
           Positioned(
@@ -1162,7 +1167,9 @@ class _AddSortingCenterScreenState extends State<AddSortingCenterScreen> {
                                     setState(() {
                                       _searchResults = [];
                                       _searchNoResults = false;
+                                      _isSearchActive = false;
                                     });
+                                    FocusScope.of(context).unfocus();
                                   },                                )
                               : null,
                           border: InputBorder.none,
