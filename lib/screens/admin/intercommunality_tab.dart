@@ -449,11 +449,118 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
     _loadPoints();
   }
 
-  Future<void> _deleteInstruction(int id) async {
-    await AuthService().authenticatedDelete(
+  Future<void> _deleteInstruction(int id, String title) async {
+    // -- Confirmation avant suppression --
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        icon: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+          child: Icon(Icons.delete_forever_rounded, color: Colors.red.shade600, size: 32),
+        ),
+        title: Text('Supprimer la consigne ?',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 17, color: const Color(0xFF1E293B))),
+        content: Text(
+          '"$title"\nCette action est irréversible.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                child: Text('Annuler', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: Text('Supprimer', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: Colors.white)),
+              ),
+            ),
+          ]),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final res = await AuthService().authenticatedDelete(
       '${AuthService.baseUrl}/intercommunality/instructions/$id',
     );
     _loadInstructions();
+    if (!mounted) return;
+    final ok = res.statusCode >= 200 && res.statusCode < 300;
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64, height: 64,
+              decoration: BoxDecoration(
+                color: ok ? const Color(0xFFD1FAE5) : const Color(0xFFFFEDED),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                ok ? Icons.check_rounded : Icons.error_outline_rounded,
+                color: ok ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              ok ? 'Consigne supprimée !' : 'Erreur suppression',
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              ok
+                  ? 'La consigne "$title" a été supprimée avec succès.'
+                  : 'Impossible de supprimer (code ${res.statusCode}).',
+              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: ok ? const Color(0xFF6C3EB8) : const Color(0xFFDC2626),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _markReplyRead(Map<String, dynamic> reply) async {
@@ -1189,7 +1296,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                      onPressed: () => _deleteInstruction(instr['id']),
+                      onPressed: () => _deleteInstruction(instr['id'], instr['title'] ?? 'Consigne'),
                     ),
                   ],
                 ),
