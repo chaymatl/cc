@@ -550,33 +550,66 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
         # ── Notifications selon le résultat ──────────────────────────────────
         if final_status == "published":
             # Post approuvé automatiquement : notifier l'utilisateur
+            _notif_title = "✅ Publication approuvée !"
+            _notif_body  = "Votre publication a été validée et est maintenant visible par la communauté."
             notif = db_models.Notification(
                 user_id=user_id,
                 type="moderation",
-                title="✅ Publication approuvée !",
-                body="Votre publication a été validée et est maintenant visible par la communauté.",
+                title=_notif_title,
+                body=_notif_body,
                 from_user_name="EcoRewind IA",
                 post_id=post_id,
             )
             db.add(notif)
             db.commit()
+            # Push FCM
+            try:
+                from services.fcm_push_service import send_push_to_user
+                send_push_to_user(
+                    db=db, user_id=user_id,
+                    title=_notif_title, body=_notif_body,
+                    data={"type": "moderation", "post_id": str(post_id), "status": "published"},
+                )
+            except Exception as _fe:
+                if IS_DEV: print(f"[FCM] Erreur push moderation published : {_fe}")
 
-        elif details is not None:
-            # Contenu signalé → notifier que l'admin va examiner
-            notif = db_models.Notification(
-                user_id=user_id,
-                type="moderation",
-                title="⚠️ Publication signalée par l'IA",
-                body=(
+        elif final_status == "pending_review":
+            # Post en attente de modération admin → toujours notifier le citoyen
+            if details is not None:
+                # Contenu explicitement signalé par l'IA (hors-sujet, toxique…)
+                _notif_title = "⚠️ Publication signalée par l'IA"
+                _notif_body = (
                     "Votre publication a été détectée comme potentiellement hors-sujet "
                     "par notre IA. Elle a été transmise à un administrateur pour vérification. "
                     "Vous serez notifié(e) dès sa décision."
-                ),
+                )
+            else:
+                # Image ambiguë ou texte sans contexte éco → review préventive
+                _notif_title = "📋 Publication en cours d'examen"
+                _notif_body = (
+                    "Votre publication est en cours d'examen par notre équipe. "
+                    "Elle sera visible dès validation. Vous serez notifié(e) de la décision."
+                )
+            notif = db_models.Notification(
+                user_id=user_id,
+                type="moderation",
+                title=_notif_title,
+                body=_notif_body,
                 from_user_name="EcoRewind IA",
                 post_id=post_id,
             )
             db.add(notif)
             db.commit()
+            # Push FCM
+            try:
+                from services.fcm_push_service import send_push_to_user
+                send_push_to_user(
+                    db=db, user_id=user_id,
+                    title=_notif_title, body=_notif_body,
+                    data={"type": "moderation", "post_id": str(post_id), "status": "pending_review"},
+                )
+            except Exception as _fe:
+                if IS_DEV: print(f"[FCM] Erreur push moderation pending : {_fe}")
 
     except Exception as e:
         if IS_DEV:
