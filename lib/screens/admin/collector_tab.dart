@@ -165,11 +165,25 @@ class _CollectorTabState extends State<CollectorTab>
       final prefs = await SharedPreferences.getInstance();
       final jwt = prefs.getString('jwt_token');
       if (jwt == null) return;
-      await http.put(
+      final res = await http.put(
         Uri.parse('${AuthService.baseUrl}/admin/collection-points/alerts/read-all'),
         headers: {'Authorization': 'Bearer $jwt'},
       );
       await _loadAlerts();
+      if (mounted) {
+        final ok = res.statusCode >= 200 && res.statusCode < 300;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            ok ? 'Toutes les alertes marquées comme lues.' : 'Erreur (${res.statusCode}).',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ));
+      }
     } catch (_) {}
     if (mounted) setState(() => _markingRead = false);
   }

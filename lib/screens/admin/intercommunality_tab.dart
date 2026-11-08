@@ -509,19 +509,59 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
   Future<void> _updateAssignmentStatus(int id, String status) async {
     final jwt = await _jwt();
     if (jwt == null) return;
-    await http.patch(
+    final res = await http.patch(
       Uri.parse('${AuthService.baseUrl}/intercommunality/assignments/$id/status'),
       headers: _headers(jwt),
       body: json.encode({'status': status}),
     );
     _loadPilotage();
+    if (mounted) {
+      final ok = res.statusCode >= 200 && res.statusCode < 300;
+      final label = status == 'done' ? 'terminée'
+          : status == 'in_progress' ? 'en cours'
+          : status == 'cancelled' ? 'annulée'
+          : status;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          Icon(ok ? Icons.check_circle_rounded : Icons.error_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            ok ? 'Mission marquée "$label".' : 'Erreur mise à jour (${res.statusCode}).',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+          )),
+        ]),
+        backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ));
+    }
   }
 
   Future<void> _deleteAssignment(int id) async {
-    await AuthService().authenticatedDelete(
+    final res = await AuthService().authenticatedDelete(
       '${AuthService.baseUrl}/intercommunality/assignments/$id',
     );
     _loadPilotage();
+    if (mounted) {
+      final ok = res.statusCode >= 200 && res.statusCode < 300;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          Icon(ok ? Icons.check_circle_rounded : Icons.error_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            ok ? 'Mission supprimée avec succès.' : 'Erreur suppression (${res.statusCode}).',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+          )),
+        ]),
+        backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ));
+    }
   }
 
   Future<void> _notifyActors(List<String> roles, String title, String msg) async {
@@ -536,7 +576,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
 
   Future<void> _createZone(String name, String territory, String description, Color color, {List<int> pointIds = const []}) async {
     final colorHex = '#${color.value.toRadixString(16).substring(2, 8)}';
-    await AuthService().authenticatedPost(
+    final res = await AuthService().authenticatedPost(
       '${AuthService.baseUrl}/intercommunality/zones',
       body: {
         'name': name,
@@ -547,6 +587,61 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
       },
     );
     _loadPilotage();
+    if (mounted) {
+      final ok = res.statusCode >= 200 && res.statusCode < 300;
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: ok ? const Color(0xFFD1FAE5) : const Color(0xFFFFEDED),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  ok ? Icons.check_rounded : Icons.error_outline_rounded,
+                  color: ok ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                ok ? 'Zone créée !' : 'Erreur création',
+                style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                ok
+                    ? 'La zone "$name" a été créée avec succès.'
+                    : 'Impossible de créer la zone (code ${res.statusCode}).',
+                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ok ? const Color(0xFF6C3EB8) : const Color(0xFFDC2626),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('OK', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _deleteZone(int id, String name) async {
@@ -1049,12 +1144,30 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
                   onChanged: (v) async {
                     final jwt = await _jwt();
                     if (jwt == null) return;
-                    await http.put(
+                    final res = await http.put(
                       Uri.parse('${AuthService.baseUrl}/intercommunality/instructions/${instr['id']}'),
                       headers: _headers(jwt),
                       body: json.encode({'is_active': v}),
                     );
                     _loadInstructions();
+                    if (mounted) {
+                      final ok = res.statusCode >= 200 && res.statusCode < 300;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                          ok
+                              ? 'Consigne ${v ? 'activée' : 'désactivée'} avec succès.'
+                              : 'Erreur mise à jour (${res.statusCode}).',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: ok
+                            ? (v ? const Color(0xFF16A34A) : const Color(0xFF64748B))
+                            : Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        margin: const EdgeInsets.all(16),
+                        duration: const Duration(seconds: 2),
+                      ));
+                    }
                   },
                 ),
               ],
@@ -2359,7 +2472,7 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
         onSave: () async {
           final jwt = await _jwt();
           if (jwt == null) return;
-          await http.put(
+          final resp = await http.put(
             Uri.parse('${AuthService.baseUrl}/intercommunality/instructions/${instr['id']}'),
             headers: _headers(jwt),
             body: json.encode({
@@ -2372,6 +2485,62 @@ class _IntercommunalityTabState extends State<IntercommunalityTab>
           );
           _loadInstructions();
           if (ctx.mounted) Navigator.pop(ctx);
+          if (mounted) {
+            final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+            final savedTitle = titleCtrl.text.trim();
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (_) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64, height: 64,
+                      decoration: BoxDecoration(
+                        color: ok ? const Color(0xFFD1FAE5) : const Color(0xFFFFEDED),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        ok ? Icons.check_rounded : Icons.error_outline_rounded,
+                        color: ok ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      ok ? 'Consigne modifiée !' : 'Erreur modification',
+                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      ok
+                          ? 'La consigne "$savedTitle" a été mise à jour.'
+                          : 'Impossible de modifier (code ${resp.statusCode}).',
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ok ? const Color(0xFF6C3EB8) : const Color(0xFFDC2626),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('OK', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
         },
       ),
     );
