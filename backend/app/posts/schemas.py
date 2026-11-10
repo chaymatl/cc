@@ -33,9 +33,9 @@ class CommentUpdate(BaseModel):
 
 class PostBase(BaseModel):
     user_name: str
-    user_avatar_url: str
-    image_url: str
-    description: str
+    user_avatar_url: Optional[str] = ""
+    image_url: Optional[str] = ""
+    description: Optional[str] = ""
 
 
 class PostCreate(PostBase):

@@ -918,7 +918,7 @@ class AuthService {
         contentType: MediaType.parse(contentType),
       ));
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       if (streamedResponse.statusCode == 200) {
         final respStr = await streamedResponse.stream.bytesToString();
         final data = json.decode(respStr);
@@ -972,14 +972,14 @@ class AuthService {
     required String description,
   }) async {
     try {
-      final token = await _getToken();
+      var token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      final response = await _http.post(
+      Future<http.Response> doPost(String tok) => _http.post(
         Uri.parse('$baseUrl/posts'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $tok',
         },
         body: json.encode({
           'user_name': userName,
@@ -987,7 +987,21 @@ class AuthService {
           'image_url': imageUrl,
           'description': description,
         }),
-      ).timeout(_kTimeout);
+      ).timeout(const Duration(seconds: 30));
+
+      var response = await doPost(token);
+
+      // Retry auto si token expiré (401)
+      if (response.statusCode == 401) {
+        developer.log('[createPost] 401 → tentative refresh token', name: 'AuthService');
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          token = await _getToken();
+          if (token != null) response = await doPost(token);
+        }
+      }
+
+      developer.log('[createPost] HTTP ${response.statusCode}', name: 'AuthService');
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -1013,9 +1027,15 @@ class AuthService {
         };
       }
 
-      return {'success': false, 'message': 'Erreur lors de la création de la publication'};
+      // Log du body pour faciliter le debug
+      developer.log('[createPost] Erreur body: ${response.body}', name: 'AuthService');
+      return {
+        'success': false,
+        'message': 'Erreur ${response.statusCode} lors de la création de la publication',
+      };
 
     } catch (e) {
+      developer.log('[createPost] Exception: $e', name: 'AuthService');
       return {'success': false, 'message': 'Erreur réseau : $e'};
     }
   }
