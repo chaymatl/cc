@@ -9,7 +9,7 @@ import '../../services/groups_service.dart';
 import '../../models/user_model.dart';
 
 class CreateMeetingScreen extends StatefulWidget {
-  final Map<String, dynamic>? existingMeeting; // non-null = mode édition
+  final Map<String, dynamic>? existingMeeting;
   const CreateMeetingScreen({super.key, this.existingMeeting});
 
   @override
@@ -25,21 +25,26 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   DateTime  _selectedDate    = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime    = const TimeOfDay(hour: 10, minute: 0);
   int       _durationMinutes = 60;
-  String    _audience        = 'all';  // 'all' | 'group' | 'citizens'
+  String    _audience        = 'all';
   bool      _isLoading       = false;
 
-  // Groupes
-  List<dynamic> _groups          = [];
+  List<dynamic> _groups           = [];
   int?          _selectedGroupId;
 
-  // Citoyens sélectionnés manuellement
-  List<dynamic> _allCitizens     = [];
+  List<dynamic> _allCitizens      = [];
   List<dynamic> _filteredCitizens = [];
   final Set<int> _selectedCitizenIds = {};
-  bool _citizensLoaded = false;
+  bool _citizensLoaded  = false;
   bool _citizensLoading = false;
 
-  static const _kGreen = Color(0xFF00C896);
+  // ── Palette ──────────────────────────────────────────────────────────────
+  static const _kGreen     = Color(0xFF00C896);
+  static const _kBg        = Colors.white;
+  static const _kCard      = Color(0xFFF5F7FA);
+  static const _kBorder    = Color(0xFFE2E8F0);
+  static const _kTextMain  = Color(0xFF0F172A);
+  static const _kTextSub   = Color(0xFF64748B);
+  static const _kTextHint  = Color(0xFFB0BAC9);
 
   @override
   void initState() {
@@ -56,7 +61,6 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         _selectedDate = dt;
         _selectedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
       }
-      // Pré-sélectionner les participants existants si mode citizens
       if (_audience == 'group') {
         final parts = m['participants'] as List? ?? [];
         for (final p in parts) {
@@ -120,8 +124,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(primary: _kGreen),
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: _kGreen),
         ),
         child: child!,
       ),
@@ -134,8 +138,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       context: context,
       initialTime: _selectedTime,
       builder: (ctx, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(primary: _kGreen),
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: _kGreen),
         ),
         child: child!,
       ),
@@ -145,7 +149,6 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    // Vérification : si citoyens, au moins 1 sélectionné
     if (_audience == 'citizens' && _selectedCitizenIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Sélectionnez au moins un citoyen'),
@@ -162,14 +165,10 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     }
     setState(() => _isLoading = true);
 
-    final bool isEdit = widget.existingMeeting != null;
+    final bool isEdit     = widget.existingMeeting != null;
+    final apiAudience     = _audience == 'citizens' ? 'group' : _audience;
+    final citizenIds      = _audience == 'citizens' ? _selectedCitizenIds.toList() : <int>[];
     bool ok = false;
-
-    // Mapper audience 'citizens' → 'group' côté API (avec citizen_ids)
-    final apiAudience  = _audience == 'citizens' ? 'group' : _audience;
-    final citizenIds   = _audience == 'citizens'
-        ? _selectedCitizenIds.toList()
-        : <int>[];
 
     try {
       if (isEdit) {
@@ -193,9 +192,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         );
         ok = result['success'] == true;
       }
-    } catch (e) {
-      ok = false;
-    }
+    } catch (_) { ok = false; }
 
     setState(() => _isLoading = false);
     if (!mounted) return;
@@ -218,42 +215,65 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.existingMeeting != null;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: _kBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1923),
+        backgroundColor: _kBg,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: _kTextMain),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           isEdit ? 'Modifier la séance' : 'Planifier une séance',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.w800,
+            color: _kTextMain,
+            fontSize: 18,
+          ),
         ),
         actions: [
           if (_isLoading)
             const Center(child: Padding(
               padding: EdgeInsets.only(right: 16),
               child: SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2)),
+                child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2.5)),
             ))
           else
-            TextButton(
-              onPressed: _submit,
-              child: Text(isEdit ? 'Enregistrer' : 'Créer',
-                style: GoogleFonts.outfit(color: _kGreen, fontWeight: FontWeight.bold, fontSize: 16)),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isEdit ? 'Enregistrer' : 'Créer',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
             ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: _kBorder),
+        ),
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             children: [
-              _SectionLabel('Nom du cours'),
-              _StyledField(
+
+              // ── Titre ───────────────────────────────────────────────────
+              _Label('Nom du cours'),
+              _Field(
                 controller: _titleCtrl,
                 hint: 'Ex : Tri des déchets plastiques',
                 icon: Icons.menu_book_rounded,
@@ -261,8 +281,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ),
               const SizedBox(height: 20),
 
-              _SectionLabel('Description / Objectifs'),
-              _StyledField(
+              // ── Description ─────────────────────────────────────────────
+              _Label('Description / Objectifs'),
+              _Field(
                 controller: _descCtrl,
                 hint: 'Décrivez les objectifs de cette séance...',
                 icon: Icons.notes_rounded,
@@ -270,15 +291,16 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ),
               const SizedBox(height: 20),
 
-              _SectionLabel('Date & Heure'),
+              // ── Date & Heure ─────────────────────────────────────────────
+              _Label('Date & Heure'),
               Row(children: [
-                Expanded(child: _DateTimeChip(
+                Expanded(child: _DateChip(
                   icon: Icons.calendar_today_rounded,
                   label: DateFormat('dd/MM/yyyy').format(_selectedDate),
                   onTap: _pickDate,
                 )),
                 const SizedBox(width: 12),
-                Expanded(child: _DateTimeChip(
+                Expanded(child: _DateChip(
                   icon: Icons.access_time_rounded,
                   label: _selectedTime.format(context),
                   onTap: _pickTime,
@@ -286,48 +308,51 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ]),
               const SizedBox(height: 20),
 
-              _SectionLabel('Durée de la séance'),
+              // ── Durée ────────────────────────────────────────────────────
+              _Label('Durée de la séance'),
               _DurationSelector(
                 value: _durationMinutes,
                 onChanged: (v) => setState(() => _durationMinutes = v),
               ),
               const SizedBox(height: 20),
 
-              _SectionLabel('Destinataires'),
+              // ── Destinataires ────────────────────────────────────────────
+              _Label('Destinataires'),
               _AudienceSelector(
                 value: _audience,
                 onChanged: (v) {
-                  setState(() { _audience = v; });
+                  setState(() => _audience = v);
                   if (v == 'citizens') _loadCitizens();
                 },
               ),
 
-              // ── Groupe ciblé ──────────────────────────────────────────────
+              // ── Groupe ciblé ─────────────────────────────────────────────
               if (_audience == 'group') ...[
-                const SizedBox(height: 12),
-                _SectionLabel('Sélectionner un groupe'),
+                const SizedBox(height: 16),
+                _Label('Sélectionner un groupe'),
                 if (_groups.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A2634),
+                      color: _kCard,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kBorder),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<int?>(
                         value: _selectedGroupId,
-                        dropdownColor: const Color(0xFF1A2634),
+                        dropdownColor: Colors.white,
                         isExpanded: true,
                         hint: Row(children: [
-                          const Icon(Icons.group_rounded, color: Color(0xFF00C896), size: 20),
+                          const Icon(Icons.group_rounded, color: _kGreen, size: 20),
                           const SizedBox(width: 8),
                           Text('Choisir un groupe',
-                            style: GoogleFonts.inter(color: Colors.white38)),
+                            style: GoogleFonts.inter(color: _kTextHint)),
                         ]),
                         items: [
                           DropdownMenuItem<int?>(value: null,
                             child: Text('- Aucun groupe -',
-                              style: GoogleFonts.inter(color: Colors.white54))),
+                              style: GoogleFonts.inter(color: _kTextSub))),
                           ..._groups.map((g) => DropdownMenuItem<int?>(
                             value: g['id'] as int,
                             child: Row(children: [
@@ -340,7 +365,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text('${g['name']} (${g['member_count']} membres)',
-                                style: GoogleFonts.inter(color: Colors.white)),
+                                style: GoogleFonts.inter(color: _kTextMain)),
                             ]),
                           )),
                         ],
@@ -349,34 +374,21 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     ),
                   )
                 else
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A2634),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(children: [
-                      const Icon(Icons.info_outline_rounded, color: Color(0xFF00C896), size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(
-                        'Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.',
-                        style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
-                      )),
-                    ]),
-                  ),
+                  _InfoBox('Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.'),
               ],
 
               // ── Citoyens individuels ──────────────────────────────────────
               if (_audience == 'citizens') ...[
                 const SizedBox(height: 16),
-                // Chips des citoyens sélectionnés
+
+                // Récap sélectionnés
                 if (_selectedCitizenIds.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF002E22),
+                      color: _kGreen.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _kGreen.withOpacity(0.5), width: 1.5),
+                      border: Border.all(color: _kGreen.withOpacity(0.35), width: 1.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,14 +401,14 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.people_rounded, color: Colors.black, size: 14),
+                              const Icon(Icons.people_rounded, color: Colors.white, size: 14),
                               const SizedBox(width: 5),
                               Text(
                                 '${_selectedCitizenIds.length} sélectionné(s)',
                                 style: GoogleFonts.inter(
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ]),
@@ -410,66 +422,83 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                               (x) => x['id'] == id,
                               orElse: () => {'full_name': '#$id'},
                             );
-                            return RawChip(
-                              backgroundColor: const Color(0xFF004D3A),
-                              side: const BorderSide(color: _kGreen, width: 1.5),
-                              avatar: CircleAvatar(
-                                backgroundColor: _kGreen,
-                                child: Text(
-                                  (c['full_name'] as String? ?? '?').isNotEmpty
-                                      ? (c['full_name'] as String)[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
+                            final name = c['full_name'] as String? ?? '';
+                            final initials = name.trim().split(' ')
+                                .where((w) => w.isNotEmpty).take(2)
+                                .map((w) => w[0].toUpperCase()).join();
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: _kGreen, width: 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _kGreen.withOpacity(0.1),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                CircleAvatar(
+                                  radius: 11,
+                                  backgroundColor: _kGreen,
+                                  child: Text(initials,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    )),
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  name,
+                                  style: GoogleFonts.inter(
+                                    color: _kTextMain,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ),
-                              label: Text(
-                                c['full_name'] as String? ?? '',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: () => setState(() => _selectedCitizenIds.remove(id)),
+                                  child: const Icon(Icons.close_rounded, size: 15, color: _kTextSub),
                                 ),
-                              ),
-                              deleteIcon: const Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: _kGreen,
-                              ),
-                              onDeleted: () => setState(() => _selectedCitizenIds.remove(id)),
-                              selected: false,
-                              onSelected: null,
+                              ]),
                             );
                           }).toList(),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                 ],
+
                 // Barre de recherche
-                _SectionLabel('Rechercher un citoyen'),
+                _Label('Rechercher un citoyen'),
                 TextFormField(
                   controller: _searchCtrl,
-                  style: GoogleFonts.inter(color: Colors.white),
+                  style: GoogleFonts.inter(color: _kTextMain, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Nom ou email...',
-                    hintStyle: GoogleFonts.inter(color: Colors.white38),
+                    hintStyle: GoogleFonts.inter(color: _kTextHint),
                     prefixIcon: const Icon(Icons.search_rounded, color: _kGreen, size: 20),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white38, size: 18),
-                            onPressed: () { _searchCtrl.clear(); },
+                            icon: const Icon(Icons.clear, color: _kTextHint, size: 18),
+                            onPressed: () => _searchCtrl.clear(),
                           )
                         : null,
                     filled: true,
-                    fillColor: const Color(0xFF1A2634),
+                    fillColor: _kCard,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      borderSide: const BorderSide(color: _kBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _kBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -478,75 +507,78 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Liste des citoyens
+
+                // Liste citoyens
                 if (_citizensLoading)
                   const Center(child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2.5),
                   ))
                 else if (_filteredCitizens.isEmpty && _citizensLoaded)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A2634),
+                      color: _kCard,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kBorder),
                     ),
-                    child: Center(child: Text(
-                      'Aucun citoyen trouvé',
-                      style: GoogleFonts.inter(color: Colors.white38),
-                    )),
+                    child: Center(child: Text('Aucun citoyen trouvé',
+                      style: GoogleFonts.inter(color: _kTextSub))),
                   )
                 else
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A2634),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _kBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    constraints: const BoxConstraints(maxHeight: 280),
+                    constraints: const BoxConstraints(maxHeight: 300),
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const ClampingScrollPhysics(),
                       itemCount: _filteredCitizens.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1, color: Colors.white.withOpacity(0.06),
-                      ),
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: _kBorder),
                       itemBuilder: (ctx, i) {
                         final c   = _filteredCitizens[i];
                         final id  = c['id'] as int;
                         final sel = _selectedCitizenIds.contains(id);
-                        final initials = (c['full_name'] as String? ?? '?')
-                            .split(' ')
-                            .where((w) => w.isNotEmpty)
-                            .take(2)
-                            .map((w) => w[0].toUpperCase())
-                            .join();
+                        final name = c['full_name'] as String? ?? '';
+                        final initials = name.trim().split(' ')
+                            .where((w) => w.isNotEmpty).take(2)
+                            .map((w) => w[0].toUpperCase()).join();
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          tileColor: sel ? _kGreen.withOpacity(0.05) : Colors.white,
                           leading: CircleAvatar(
                             radius: 20,
-                            backgroundColor: sel
-                                ? _kGreen.withOpacity(0.3)
-                                : Colors.white.withOpacity(0.07),
+                            backgroundColor: sel ? _kGreen : const Color(0xFFE2E8F0),
                             child: Text(
                               initials,
                               style: TextStyle(
-                                color: sel ? _kGreen : Colors.white54,
+                                color: sel ? Colors.white : _kTextSub,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                           title: Text(
-                            c['full_name'] as String? ?? '',
+                            name,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: _kTextMain,
                               fontSize: 14,
                               fontWeight: sel ? FontWeight.w700 : FontWeight.normal,
                             ),
                           ),
                           subtitle: Text(
                             c['email'] as String? ?? '',
-                            style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                            style: GoogleFonts.inter(color: _kTextSub, fontSize: 12),
                           ),
                           trailing: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 150),
@@ -558,31 +590,29 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                                       color: _kGreen,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(Icons.check_rounded, color: Colors.black, size: 16),
+                                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
                                   )
                                 : Container(
                                     key: const ValueKey('unchecked'),
                                     width: 26, height: 26,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.white24, width: 1.5),
+                                      border: Border.all(color: _kBorder, width: 1.5),
                                     ),
                                   ),
                           ),
                           onTap: () => setState(() {
-                            if (sel) {
-                              _selectedCitizenIds.remove(id);
-                            } else {
-                              _selectedCitizenIds.add(id);
-                            }
+                            if (sel) { _selectedCitizenIds.remove(id); }
+                            else { _selectedCitizenIds.add(id); }
                           }),
                         );
                       },
                     ),
                   ),
-                // Bouton Tout sélectionner / Tout désélectionner
+
+                // Tout sélectionner
                 if (_filteredCitizens.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                     TextButton.icon(
                       onPressed: () => setState(() {
@@ -597,36 +627,36 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                         _filteredCitizens.map((c) => c['id'] as int).every(_selectedCitizenIds.contains)
                             ? Icons.deselect_rounded
                             : Icons.select_all_rounded,
-                        size: 16,
-                        color: _kGreen,
+                        size: 16, color: _kGreen,
                       ),
                       label: Text(
                         _filteredCitizens.map((c) => c['id'] as int).every(_selectedCitizenIds.contains)
                             ? 'Tout désélectionner'
                             : 'Tout sélectionner',
-                        style: GoogleFonts.inter(color: _kGreen, fontSize: 12, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                          color: _kGreen, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ]),
                 ],
               ],
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
 
-              // -- Info Meet --------------------------------------------------
+              // ── Info Meet ────────────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _kGreen.withOpacity(0.08),
+                  color: _kGreen.withOpacity(0.07),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _kGreen.withOpacity(0.3)),
+                  border: Border.all(color: _kGreen.withOpacity(0.25)),
                 ),
                 child: Row(children: [
                   const Icon(Icons.video_camera_front_rounded, color: _kGreen, size: 28),
                   const SizedBox(width: 12),
                   Expanded(child: Text(
                     'Un lien Google Meet unique sera généré automatiquement et partagé avec les participants.',
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
+                    style: GoogleFonts.inter(color: _kTextSub, fontSize: 13, height: 1.5),
                   )),
                 ]),
               ),
@@ -644,60 +674,95 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   }
 }
 
-// -- Sous-widgets --------------------------------------------------------------
+// ── Sous-widgets ──────────────────────────────────────────────────────────────
 
-class _SectionLabel extends StatelessWidget {
+class _Label extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  const _Label(this.text);
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(text, style: GoogleFonts.outfit(
-        color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600,
-        letterSpacing: 0.5)),
+      color: const Color(0xFF0F172A),
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.3,
+    )),
   );
 }
 
-class _StyledField extends StatelessWidget {
+class _InfoBox extends StatelessWidget {
+  final String text;
+  const _InfoBox(this.text);
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF5F7FA),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2E8F0)),
+    ),
+    child: Row(children: [
+      const Icon(Icons.info_outline_rounded, color: Color(0xFF00C896), size: 18),
+      const SizedBox(width: 10),
+      Expanded(child: Text(text,
+        style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 12))),
+    ]),
+  );
+}
+
+class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
   final int maxLines;
   final String? Function(String?)? validator;
-  const _StyledField({
+  const _Field({
     required this.controller, required this.hint, required this.icon,
     this.maxLines = 1, this.validator,
   });
+
+  static const _kGreen  = Color(0xFF00C896);
+  static const _kCard   = Color(0xFFF5F7FA);
+  static const _kBorder = Color(0xFFE2E8F0);
 
   @override
   Widget build(BuildContext context) => TextFormField(
     controller: controller,
     maxLines: maxLines,
     validator: validator,
-    style: GoogleFonts.inter(color: Colors.white),
+    style: GoogleFonts.inter(color: const Color(0xFF0F172A), fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.white38),
-      prefixIcon: Icon(icon, color: const Color(0xFF00C896), size: 20),
+      hintStyle: GoogleFonts.inter(color: const Color(0xFFB0BAC9)),
+      prefixIcon: Icon(icon, color: _kGreen, size: 20),
       filled: true,
-      fillColor: const Color(0xFF1A2634),
+      fillColor: _kCard,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: _kBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _kBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF00C896), width: 1.5),
+        borderSide: const BorderSide(color: _kGreen, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red),
       ),
     ),
   );
 }
 
-class _DateTimeChip extends StatelessWidget {
+class _DateChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _DateTimeChip({required this.icon, required this.label, required this.onTap});
+  const _DateChip({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) => InkWell(
@@ -706,13 +771,14 @@ class _DateTimeChip extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2634),
+        color: const Color(0xFFF5F7FA),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(children: [
-        Icon(icon, color: const Color(0xFF00C896), size: 18),
+        const Icon(Icons.edit_calendar_rounded, color: Color(0xFF00C896), size: 18),
         const SizedBox(width: 8),
-        Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
+        Text(label, style: GoogleFonts.inter(color: const Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w500)),
       ]),
     ),
   );
@@ -734,11 +800,15 @@ class _DurationSelector extends StatelessWidget {
         selected: selected,
         onSelected: (_) => onChanged(d),
         selectedColor: const Color(0xFF00C896),
-        backgroundColor: const Color(0xFF1A2634),
+        backgroundColor: const Color(0xFFF5F7FA),
+        side: BorderSide(
+          color: selected ? const Color(0xFF00C896) : const Color(0xFFE2E8F0),
+        ),
         labelStyle: GoogleFonts.inter(
-          color: selected ? Colors.black : Colors.white70,
+          color: selected ? Colors.white : const Color(0xFF64748B),
           fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
+        checkmarkColor: Colors.white,
       );
     }).toList(),
   );
@@ -779,31 +849,41 @@ class _AudienceChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _AudienceChip({required this.icon, required this.label,
-    required this.selected, required this.onTap});
+  const _AudienceChip({
+    required this.icon, required this.label,
+    required this.selected, required this.onTap,
+  });
+
+  static const _kGreen = Color(0xFF00C896);
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(12),
     child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 180),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFF00C896).withOpacity(0.15) : const Color(0xFF1A2634),
+        color: selected ? _kGreen.withOpacity(0.1) : const Color(0xFFF5F7FA),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? const Color(0xFF00C896) : Colors.transparent,
-          width: 1.5,
+          color: selected ? _kGreen : const Color(0xFFE2E8F0),
+          width: selected ? 1.5 : 1,
         ),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: selected ? const Color(0xFF00C896) : Colors.white54, size: 22),
+        Icon(icon,
+          color: selected ? _kGreen : const Color(0xFF94A3B8),
+          size: 22),
         const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center,
+        Text(label,
+          textAlign: TextAlign.center,
           style: GoogleFonts.inter(
-            color: selected ? const Color(0xFF00C896) : Colors.white54,
-            fontSize: 11, fontWeight: FontWeight.w600, height: 1.3)),
+            color: selected ? _kGreen : const Color(0xFF64748B),
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            height: 1.3,
+          )),
       ]),
     ),
   );
