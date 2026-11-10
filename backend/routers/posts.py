@@ -511,6 +511,12 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
                 details = _rejection_details(mod_result.reasons, mod_result.score)
                 final_status = "pending_review"
                 moderation_reason = f"AI_FLAGGED:{details['category']}"
+            elif mod_result.status == "published" and bool(image_url) and not bool(image_local_path):
+                # image_url fournie mais fichier non trouvé sur disque → IA n'a pas
+                # analysé l'image visuellement → ne jamais auto-publier
+                details = None
+                final_status = "pending_review"
+                moderation_reason = "IMAGE_REVIEW:image_non_analysee_localement"
             elif mod_result.status == "published" and bool(image_local_path):
                 # Image présente → vérifier que l'IA est confiante sur le côté éco
                 img_analysis = getattr(mod_result, 'image_analysis', {})

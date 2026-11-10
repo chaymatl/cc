@@ -244,143 +244,35 @@ class _CommunityScreenState extends State<CommunityScreen> {
   // -- Add Testimonial Dialog --
 
   void _showAddTestimonialDialog() {
-    final contentController = TextEditingController();
-    int selectedRating = 5;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
+      useSafeArea: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final kb = MediaQuery.of(ctx).viewInsets.bottom;
-          final bottomInset = MediaQuery.of(ctx).padding.bottom;
-          final safeBottom = (kb > 0 ? 0.0 : bottomInset) + 16.0;
-          return Padding(
-            // Remonte tout le sheet quand le clavier s'ouvre
-            padding: EdgeInsets.only(bottom: kb),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Poignée ──
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14, bottom: 4),
-                    child: Center(
-                      child: Container(
-                        width: 40, height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // ── Contenu scrollable ──
-                  Flexible(
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(L10n.tr('Votre avis'), style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
-                          const SizedBox(height: 8),
-                          Text(L10n.tr('Partagez votre expérience avec EcoRewind'), style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted)),
-                          const SizedBox(height: 24),
-                          Text(L10n.tr('Note'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: List.generate(5, (i) => GestureDetector(
-                              onTap: () => setModalState(() => selectedRating = i + 1),
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Icon(
-                                  i < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                                  color: const Color(0xFFFBBF24),
-                                  size: 36,
-                                ),
-                              ),
-                            )),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(L10n.tr('Votre témoignage'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: contentController,
-                            maxLines: 4,
-                            maxLength: 500,
-                            style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
-                            cursorColor: const Color(0xFF00BFA6),
-                            decoration: InputDecoration(
-                              hintText: 'Décrivez votre expérience...',
-                              hintStyle: GoogleFonts.inter(color: AppTheme.textMuted),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // ── Bouton TOUJOURS visible au-dessus du clavier ──
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(24, 8, 24, safeBottom),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final content = contentController.text.trim();
-                          if (content.isEmpty) return;
-                          Navigator.pop(ctx);
-                          final result = await _authService.createTestimonial(content, selectedRating);
-                          if (result['success'] == true) {
-                            _loadTestimonials();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: const Text('  Avis soumis ! Il sera visible après approbation.'),
-                                backgroundColor: AppTheme.primaryGreen,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ));
-                            }
-                          } else if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(result['message'] ?? 'Erreur'),
-                              backgroundColor: Colors.red.shade400,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ));
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryGreen,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        child: Text('Publier mon avis', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-    },
-  ),
-);
+      builder: (ctx) => _TestimonialSheet(
+        onSubmit: (content, rating) async {
+          final result = await _authService.createTestimonial(content, rating);
+          if (result['success'] == true) {
+            _loadTestimonials();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: const Text('  Avis soumis ! Il sera visible après approbation.'),
+                backgroundColor: AppTheme.primaryGreen,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ));
+            }
+          } else if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(result['message'] ?? 'Erreur'),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ));
+          }
+        },
+      ),
+    );
   }
 
 
@@ -509,5 +401,159 @@ class _TestimonialCard extends StatelessWidget {
     } catch (_) {
       return '';
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget separé pour la feuille de témoignage.
+// Étant un StatefulWidget, son build() est appelé à chaque frame où
+// MediaQuery change → le clavier ne cache plus le bouton "Publier mon avis".
+// ─────────────────────────────────────────────────────────────────────────────
+class _TestimonialSheet extends StatefulWidget {
+  final Future<void> Function(String content, int rating) onSubmit;
+  const _TestimonialSheet({required this.onSubmit});
+
+  @override
+  State<_TestimonialSheet> createState() => _TestimonialSheetState();
+}
+
+class _TestimonialSheetState extends State<_TestimonialSheet> {
+  final TextEditingController _ctrl = TextEditingController();
+  int _rating = 5;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // MediaQuery.of(context) est appelé dans build() → reconstruction auto
+    // lorsque le clavier s'ouvre/se ferme.
+    final kb          = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom  = MediaQuery.of(context).padding.bottom;
+    final btnBottom   = (kb > 0 ? kb : safeBottom) + 16.0;
+
+    return Padding(
+      // Remonte le sheet entier au-dessus du clavier
+      padding: EdgeInsets.only(bottom: kb),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Poignée ──
+            Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+            // ── Contenu scrollable ──
+            Flexible(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(L10n.tr('Votre avis'),
+                        style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.deepSlate)),
+                    const SizedBox(height: 8),
+                    Text(L10n.tr('Partagez votre expérience avec EcoRewind'),
+                        style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted)),
+                    const SizedBox(height: 24),
+                    Text(L10n.tr('Note'),
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (i) => GestureDetector(
+                        onTap: () => setState(() => _rating = i + 1),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Icon(
+                            i < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                            color: const Color(0xFFFBBF24),
+                            size: 36,
+                          ),
+                        ),
+                      )),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(L10n.tr('Votre témoignage'),
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _ctrl,
+                      maxLines: 4,
+                      maxLength: 500,
+                      style: GoogleFonts.inter(color: const Color(0xFF1E293B), fontSize: 14),
+                      cursorColor: const Color(0xFF00BFA6),
+                      decoration: InputDecoration(
+                        hintText: 'Décrivez votre expérience...',
+                        hintStyle: GoogleFonts.inter(color: AppTheme.textMuted),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ),
+            // ── Bouton TOUJOURS visible, épinglé au-dessus du clavier ──
+            Padding(
+              padding: EdgeInsets.fromLTRB(24, 8, 24, btnBottom),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _loading
+                      ? null
+                      : () async {
+                          final text = _ctrl.text.trim();
+                          if (text.isEmpty) return;
+                          setState(() => _loading = true);
+                          Navigator.pop(context);
+                          await widget.onSubmit(text, _rating);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                      : Text('Publier mon avis',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
