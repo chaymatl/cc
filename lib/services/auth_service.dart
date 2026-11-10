@@ -1951,6 +1951,8 @@ class AuthService {
   }
 
   /// Soumet les réponses d'un étudiant à un quiz
+  /// Timeout étendu à 90s car Gemini peut prendre 20-60s pour corriger
+  static const Duration _kQuizTimeout = Duration(seconds: 90);
   Future<Map<String, dynamic>> submitQuizAnswers(int quizId, Map<String, String> answers) async {
     try {
       final token = await _getToken();
@@ -1959,7 +1961,7 @@ class AuthService {
         Uri.parse('$baseUrl/quiz/$quizId/submit'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
         body: json.encode(answers),
-      ).timeout(_kTimeout);
+      ).timeout(_kQuizTimeout);
       final data = json.decode(utf8.decode(response.bodyBytes));
       if (response.statusCode == 200) {
         return {'success': true, ...data};

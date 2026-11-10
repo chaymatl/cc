@@ -331,11 +331,11 @@ async def submit_quiz_answers(
     if not questions:
         raise HTTPException(status_code=400, detail="Aucune question dans ce quiz")
 
-    # Corriger via Gemini
+    # Corriger via Gemini (async pour ne pas bloquer l'event loop FastAPI)
     try:
-        from services.gemini_quiz import grade_submission
+        from services.gemini_quiz import grade_submission_async
 
-        grading = grade_submission(questions, answers)
+        grading = await grade_submission_async(questions, answers)
 
         submission = db_models.QuizSubmission(
             quiz_id=quiz_id,

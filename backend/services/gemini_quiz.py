@@ -10,16 +10,32 @@ Utilise l'API Google Gemini pour :
 import os
 import json
 import base64
+import re
 import httpx
+import asyncio
 from typing import Optional
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
+# Timeout Gemini : 90 secondes (correction quiz peut prendre 20-60s)
+GEMINI_TIMEOUT = 90.0
 
-def _call_gemini(prompt: str, pdf_bytes: Optional[bytes] = None) -> dict:
-    """Appel synchrone à l'API Gemini avec support PDF inline."""
+
+def _parse_gemini_response(text: str) -> dict:
+    """Parse la réponse JSON de Gemini (avec ou sans bloc markdown)."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
+        if match:
+            return json.loads(match.group(1))
+        raise ValueError(f"Gemini n'a pas retourné du JSON valide: {text[:300]}")
+
+
+async def _call_gemini_async(prompt: str, pdf_bytes: Optional[bytes] = None) -> dict:
+    """Appel ASYNCHRONE à l'API Gemini avec support PDF inline."""
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY non configurée dans le .env")
 
@@ -46,29 +62,24 @@ def _call_gemini(prompt: str, pdf_bytes: Optional[bytes] = None) -> dict:
         },
     }
 
-    resp = httpx.post(
-        GEMINI_URL,
-        params={"key": GEMINI_API_KEY},
-        json=payload,
-        timeout=120.0,
-    )
+    async with httpx.AsyncClient(timeout=GEMINI_TIMEOUT) as client:
+        resp = await client.post(
+            GEMINI_URL,
+            params={"key": GEMINI_API_KEY},
+            json=payload,
+        )
 
     if resp.status_code != 200:
         raise RuntimeError(f"Gemini API error {resp.status_code}: {resp.text[:500]}")
 
     data = resp.json()
     text = data["candidates"][0]["content"]["parts"][0]["text"]
+    return _parse_gemini_response(text)
 
-    # Parser le JSON retourné par Gemini
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # Tenter d'extraire le JSON d'un bloc markdown ```json ... ```
-        import re
-        match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
-        if match:
-            return json.loads(match.group(1))
-        raise ValueError(f"Gemini n'a pas retourné du JSON valide: {text[:300]}")
+
+def _call_gemini(prompt: str, pdf_bytes: Optional[bytes] = None) -> dict:
+    """Appel synchrone à l'API Gemini (exécute la coroutine async via asyncio)."""
+    return asyncio.run(_call_gemini_async(prompt, pdf_bytes))
 
 
 def extract_quiz_from_pdf(pdf_bytes: bytes) -> dict:
@@ -126,7 +137,47 @@ IMPORTANT:
 - Chaque question doit avoir une réponse correcte
 - Pour les questions ouvertes, donne la réponse attendue la plus complète possible"""
 
-    return _call_gemini(prompt, pdf_bytes)
+    return asyncio.run(_call_gemini_async(prompt, pdf_bytes))
+
+
+async def grade_submission_async(questions: list, answers: dict) -> dict:
+    """Version ASYNCHRONE de grade_submission (utilisée par FastAPI async)."""
+    prompt = f"""Tu es un correcteur de quiz éducatif.
+
+Voici les questions du quiz avec les réponses correctes :
+{json.dumps(questions, ensure_ascii=False, indent=2)}
+
+Voici les réponses de l'étudiant (numéro de question → réponse) :
+{json.dumps(answers, ensure_ascii=False, indent=2)}
+
+Corrige chaque réponse et attribue une note sur 10.
+
+Règles de notation :
+- Chaque question vaut le même nombre de points (10 / nombre_total_questions)
+- Pour les QCM et Vrai/Faux : la réponse est correcte ou incorrecte (pas de demi-point)
+- Pour les questions ouvertes : accorde des points partiels si la réponse est partiellement correcte
+- Si l'étudiant n'a pas répondu à une question, c'est 0 point
+
+Retourne un JSON avec cette structure exacte :
+{{
+    "score": <note sur 10, arrondie à 1 décimale>,
+    "max_score": 10,
+    "total_correct": <nombre de réponses correctes>,
+    "total_questions": <nombre total de questions>,
+    "details": [
+        {{
+            "number": 1,
+            "student_answer": "réponse de l'étudiant",
+            "correct_answer": "bonne réponse",
+            "is_correct": true/false,
+            "points": <points obtenus pour cette question>,
+            "feedback": "Explication courte"
+        }}
+    ],
+    "general_feedback": "Feedback général encourageant avec conseils de révision"
+}}"""
+
+    return await _call_gemini_async(prompt)
 
 
 def grade_submission(questions: list, answers: dict) -> dict:
