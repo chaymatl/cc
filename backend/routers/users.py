@@ -9,7 +9,7 @@ import db_models as db_models
 import models as models
 from app.auth.service import get_password_hash
 from database import get_db
-from core.deps import get_current_user, get_admin_user
+from core.deps import get_current_user, get_admin_user, _utc_iso
 
 router = APIRouter(tags=["users"])
 
@@ -372,6 +372,7 @@ async def get_my_stats(db: Session = Depends(get_db),
     }
 
 
+
 @router.get("/users/me/points-history")
 async def get_points_history(db: Session = Depends(get_db),
                              current_user: db_models.User = Depends(get_current_user)):
@@ -401,7 +402,7 @@ async def get_points_history(db: Session = Depends(get_db),
                 "id": f"scan_{s.id}",
                 "type": "tri",
                 "points": s.points_earned,
-                "date": s.scanned_at.isoformat() if s.scanned_at else None,
+                "date": _utc_iso(s.scanned_at),
                 "description": f"Tri de déchets - {s.waste_type or 'général'}"
             })
 
@@ -411,7 +412,7 @@ async def get_points_history(db: Session = Depends(get_db),
                 "id": f"quiz_{qs.id}",
                 "type": "quiz",
                 "points": qs.score,
-                "date": qs.submitted_at.isoformat() if qs.submitted_at else (qs.graded_at.isoformat() if qs.graded_at else None),
+                "date": _utc_iso(qs.submitted_at or qs.graded_at),
                 "description": f"Quiz complété : {qs.quiz.title if qs.quiz else 'Quiz'}"
             })
 
@@ -605,7 +606,7 @@ async def get_my_rewards(
                 "label":       r.label,
                 "description": r.description,
                 "icon":        r.icon,
-                "unlocked_at": r.unlocked_at.isoformat() if r.unlocked_at else None,
+                "unlocked_at": _utc_iso(r.unlocked_at),
             }
             for r in rewards
         ],
