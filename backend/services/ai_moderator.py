@@ -661,6 +661,15 @@ class AIModerator:
             if _ml_tox > 0.5:
                 combined = max(combined, round(REVIEW_THRESHOLD + 0.01, 3))  # ≥ 0.66
 
+        # Rule D : Image présente sans aucun mot-clé éco dans le texte
+        # → review admin obligatoire sauf si ResNet TRÈS confiant sur le contenu éco (> 0.70)
+        # Fixes: dessins animés (fête, voitures) ou images sans rapport passant sous tous les filtres ML
+        # car ResNet mal calibré sur illustrations/cartoons (couleurs vives = faux positif éco)
+        if has_image and eco_count == 0 and resnet_eco <= 0.70:
+            combined = max(combined, round(SAFE_THRESHOLD + 0.05, 3))  # ≥ 0.20 → pending_review
+            if "Image sans contexte environnemental" not in result.reasons:
+                result.reasons.append("Image sans contexte environnemental dans le texte")
+
         result.score = combined
         result.text_model_used = (
             "Detoxify+XLM-RoBERTa" if text_analysis.get("ml_used") else "RuleBased"

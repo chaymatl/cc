@@ -522,8 +522,10 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
                 img_analysis = getattr(mod_result, 'image_analysis', {})
                 resnet_eco_val = img_analysis.get('resnet_eco', 0.0)
                 resnet_offtopic_val = img_analysis.get('resnet_offtopic', 0.0)
-                # Auto-publish si image éco/nature (resnet_eco > 0.45)
-                # et aucun signal hors-sujet fort (offtopic < 0.35)
+                # Auto-publish si image éco/nature confirmée par ResNet (eco > 0.45)
+                # et aucun signal hors-sujet fort (offtopic < 0.35).
+                # Rule D dans ai_moderator garantit déjà que les posts sans texte éco
+                # n'arrivent jamais ici avec status=published.
                 if resnet_eco_val > 0.45 and resnet_offtopic_val < 0.35:
                     details = None
                     final_status = "published"
