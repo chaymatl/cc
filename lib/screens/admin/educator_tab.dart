@@ -595,8 +595,6 @@ class _EducatorTabState extends State<EducatorTab> {
           children: [
             _buildHeader(),
             const SizedBox(height: 32),
-            _buildQuickStats(context),
-            const SizedBox(height: 48),
 
             _buildSectionHeader('QUIZ AUTOMATIQUE (IA GEMINI)', Icons.auto_awesome_rounded),
             const SizedBox(height: 20),
@@ -805,47 +803,9 @@ class _EducatorTabState extends State<EducatorTab> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Gérez vos quiz et contenus pédagogiques.',
-          style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 16),
-        ),
+
       ],
     ).animate().fadeIn().slideX();
-  }
-
-  Widget _buildQuickStats(BuildContext context) {
-    return Row(
-      children: [
-        _buildStatCard(context, 'Quiz Créés', '${_quizzes.length}', Icons.quiz_rounded, Colors.purple),
-        const SizedBox(width: 12),
-        _buildStatCard(context, 'Soumissions', '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.assignment_turned_in_rounded, Colors.orange),
-        const SizedBox(width: 12),
-        _buildStatCard(context, 'Corrigés IA', '${_quizzes.fold<int>(0, (sum, q) => sum + ((q['submissions_count'] as num?) ?? 0).toInt())}', Icons.auto_awesome, Colors.amber),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppTheme.tightShadow,
-          border: Border.all(color: color.withOpacity(0.1)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(value, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-            Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    ).animate().scale(delay: 200.ms);
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
