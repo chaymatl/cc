@@ -374,3 +374,30 @@ async def get_all_meetings(
         .all()
     )
     return [_fmt_meeting(m) for m in meetings]
+
+@router.get("/meetings/citizens")
+async def list_citizens_for_meeting(
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
+    """Educateur : liste les citoyens disponibles pour une invitation manuelle."""
+    if current_user.role not in ("educator", "admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Reserve aux educateurs")
+    q = db.query(db_models.User).filter(db_models.User.role == "citoyen")
+    if search:
+        like = f"%{search}%"
+        q = q.filter(
+            (db_models.User.full_name.ilike(like)) |
+            (db_models.User.email.ilike(like))
+        )
+    users = q.order_by(db_models.User.full_name).limit(50).all()
+    return [
+        {
+            "id":        u.id,
+            "full_name": u.full_name or u.email,
+            "email":     u.email,
+            "avatar":    u.avatar_url,
+        }
+        for u in users
+    ]

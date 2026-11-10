@@ -77,6 +77,18 @@ class MeetingsService {
     return res.statusCode == 200;
   }
 
+  /// Liste des citoyens disponibles pour invitation manuelle
+  static Future<List<dynamic>> fetchCitizens({String search = ''}) async {
+    try {
+      final uri = Uri.parse('$_base/meetings/citizens').replace(
+        queryParameters: search.isNotEmpty ? {'search': search} : null,
+      );
+      final res = await http.get(uri, headers: _headers());
+      if (res.statusCode == 200) return jsonDecode(res.body);
+    } catch (_) {}
+    return [];
+  }
+
   // -- Citoyen ----------------------------------------------------------------
 
   /// Séances à venir pour le citoyen

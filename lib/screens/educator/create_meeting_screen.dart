@@ -20,17 +20,24 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   final _formKey    = GlobalKey<FormState>();
   final _titleCtrl  = TextEditingController();
   final _descCtrl   = TextEditingController();
-  final _groupCtrl  = TextEditingController();
+  final _searchCtrl = TextEditingController();
 
   DateTime  _selectedDate    = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime    = const TimeOfDay(hour: 10, minute: 0);
   int       _durationMinutes = 60;
-  String    _audience        = 'all';  // 'all' | 'group'
+  String    _audience        = 'all';  // 'all' | 'group' | 'citizens'
   bool      _isLoading       = false;
 
   // Groupes
-  List<dynamic> _groups       = [];
+  List<dynamic> _groups          = [];
   int?          _selectedGroupId;
+
+  // Citoyens sélectionnés manuellement
+  List<dynamic> _allCitizens     = [];
+  List<dynamic> _filteredCitizens = [];
+  final Set<int> _selectedCitizenIds = {};
+  bool _citizensLoaded = false;
+  bool _citizensLoading = false;
 
   static const _kGreen = Color(0xFF00C896);
 
@@ -40,17 +47,24 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     _loadGroups();
     final m = widget.existingMeeting;
     if (m != null) {
-      _titleCtrl.text = m['title'] ?? '';
-      _descCtrl.text  = m['description'] ?? '';
-      _groupCtrl.text = m['group_name'] ?? '';
-      _audience       = m['audience'] ?? 'all';
+      _titleCtrl.text  = m['title'] ?? '';
+      _descCtrl.text   = m['description'] ?? '';
+      _audience        = m['audience'] ?? 'all';
       _durationMinutes = m['duration_minutes'] ?? 60;
       if (m['scheduled_at'] != null) {
         final dt = DateTime.tryParse(m['scheduled_at']) ?? _selectedDate;
         _selectedDate = dt;
         _selectedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
       }
+      // Pré-sélectionner les participants existants si mode citizens
+      if (_audience == 'group') {
+        final parts = m['participants'] as List? ?? [];
+        for (final p in parts) {
+          if (p['user_id'] != null) _selectedCitizenIds.add(p['user_id'] as int);
+        }
+      }
     }
+    _searchCtrl.addListener(_onSearchChanged);
   }
 
   Future<void> _loadGroups() async {
@@ -58,11 +72,39 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     if (mounted) setState(() => _groups = data);
   }
 
+  Future<void> _loadCitizens() async {
+    if (_citizensLoaded) return;
+    setState(() => _citizensLoading = true);
+    final data = await MeetingsService.fetchCitizens();
+    if (mounted) {
+      setState(() {
+        _allCitizens      = data;
+        _filteredCitizens = data;
+        _citizensLoaded   = true;
+        _citizensLoading  = false;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filteredCitizens = q.isEmpty
+          ? _allCitizens
+          : _allCitizens.where((c) {
+              final name  = (c['full_name'] as String? ?? '').toLowerCase();
+              final email = (c['email'] as String? ?? '').toLowerCase();
+              return name.contains(q) || email.contains(q);
+            }).toList();
+    });
+  }
+
   @override
   void dispose() {
     _titleCtrl.dispose();
     _descCtrl.dispose();
-    _groupCtrl.dispose();
+    _searchCtrl.removeListener(_onSearchChanged);
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -103,6 +145,14 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    // Vérification : si citoyens, au moins 1 sélectionné
+    if (_audience == 'citizens' && _selectedCitizenIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Sélectionnez au moins un citoyen'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
     if (!AuthState.hasValidToken) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Session expirée, veuillez vous reconnecter'),
@@ -115,6 +165,12 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     final bool isEdit = widget.existingMeeting != null;
     bool ok = false;
 
+    // Mapper audience 'citizens' → 'group' côté API (avec citizen_ids)
+    final apiAudience  = _audience == 'citizens' ? 'group' : _audience;
+    final citizenIds   = _audience == 'citizens'
+        ? _selectedCitizenIds.toList()
+        : <int>[];
+
     try {
       if (isEdit) {
         ok = await MeetingsService.updateMeeting(widget.existingMeeting!['id'], {
@@ -122,8 +178,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           'description':      _descCtrl.text.trim(),
           'scheduled_at':     _scheduledAt.toIso8601String(),
           'duration_minutes': _durationMinutes,
-          'audience':         _audience,
-          'group_name':       _groupCtrl.text.trim(),
+          'audience':         apiAudience,
+          'citizen_ids':      citizenIds,
         });
       } else {
         final result = await MeetingsService.createMeeting(
@@ -131,9 +187,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           description:     _descCtrl.text.trim(),
           scheduledAt:     _scheduledAt,
           durationMinutes: _durationMinutes,
-          audience:        _audience,
-          groupName:       _groupCtrl.text.trim(),
-          groupId:         _selectedGroupId,
+          audience:        apiAudience,
+          citizenIds:      citizenIds,
+          groupId:         _audience == 'group' ? _selectedGroupId : null,
         );
         ok = result['success'] == true;
       }
@@ -146,7 +202,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(isEdit ? ('Séance modifiée !') : ('Séance créée et citoyens notifiés !')),
+        content: Text(isEdit ? 'Séance modifiée !' : 'Séance créée et citoyens notifiés !'),
         backgroundColor: _kGreen,
       ));
       Navigator.pop(context, true);
@@ -167,7 +223,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         backgroundColor: const Color(0xFF0F1923),
         elevation: 0,
         title: Text(
-          isEdit ? ('Modifier la séance') : ('Planifier une séance'),
+          isEdit ? 'Modifier la séance' : 'Planifier une séance',
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         leading: IconButton(
@@ -184,7 +240,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           else
             TextButton(
               onPressed: _submit,
-              child: Text(isEdit ? ('Enregistrer') : ('Créer'),
+              child: Text(isEdit ? 'Enregistrer' : 'Créer',
                 style: GoogleFonts.outfit(color: _kGreen, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
         ],
@@ -196,136 +252,359 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-            _SectionLabel('Nom du cours'),
-            _StyledField(
-              controller: _titleCtrl,
-              hint: 'Ex : Tri des déchets plastiques',
-              icon: Icons.menu_book_rounded,
-              validator: (v) => (v == null || v.isEmpty) ? ('Titre requis') : null,
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel('Description / Objectifs'),
-            _StyledField(
-              controller: _descCtrl,
-              hint: 'Décrivez les objectifs de cette séance...',
-              icon: Icons.notes_rounded,
-              maxLines: 3,
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel('Date & Heure'),
-            Row(children: [
-              Expanded(child: _DateTimeChip(
-                icon: Icons.calendar_today_rounded,
-                label: DateFormat('dd/MM/yyyy').format(_selectedDate),
-                onTap: _pickDate,
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _DateTimeChip(
-                icon: Icons.access_time_rounded,
-                label: _selectedTime.format(context),
-                onTap: _pickTime,
-              )),
-            ]),
-            const SizedBox(height: 20),
-
-            _SectionLabel('Durée de la séance'),
-            _DurationSelector(
-              value: _durationMinutes,
-              onChanged: (v) => setState(() => _durationMinutes = v),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel('Destinataires'),
-            _AudienceSelector(
-              value: _audience,
-              onChanged: (v) => setState(() => _audience = v),
-            ),
-            if (_audience == 'group') ...[
-              const SizedBox(height: 12),
-              _SectionLabel('Sélectionner un groupe'),
-              // Dropdown groupes existants
-              if (_groups.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A2634),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int?>(
-                      value: _selectedGroupId,
-                      dropdownColor: const Color(0xFF1A2634),
-                      isExpanded: true,
-                      hint: Row(children: [
-                        const Icon(Icons.group_rounded, color: Color(0xFF00C896), size: 20),
-                        const SizedBox(width: 8),
-                        Text('Choisir un groupe',
-                          style: GoogleFonts.inter(color: Colors.white38)),
-                      ]),
-                      items: [
-                        DropdownMenuItem<int?>(value: null,
-                          child: Text('- Aucun groupe -',
-                            style: GoogleFonts.inter(color: Colors.white54))),
-                        ..._groups.map((g) => DropdownMenuItem<int?>(
-                          value: g['id'] as int,
-                          child: Row(children: [
-                            Container(
-                              width: 12, height: 12,
-                              decoration: BoxDecoration(
-                                color: _hexColor(g['color'] ?? '#00C896'),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text('${g['name']} (${g['member_count']} membres)',
-                              style: GoogleFonts.inter(color: Colors.white)),
-                          ]),
-                        )),
-                      ],
-                      onChanged: (v) => setState(() => _selectedGroupId = v),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A2634),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(children: [
-                    const Icon(Icons.info_outline_rounded,
-                      color: Color(0xFF00C896), size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(
-                      'Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.',
-                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
-                    )),
-                  ]),
-                ),
-            ],
-            const SizedBox(height: 32),
-
-            // -- Info Meet --------------------------------------------------
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _kGreen.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _kGreen.withOpacity(0.3)),
+              _SectionLabel('Nom du cours'),
+              _StyledField(
+                controller: _titleCtrl,
+                hint: 'Ex : Tri des déchets plastiques',
+                icon: Icons.menu_book_rounded,
+                validator: (v) => (v == null || v.isEmpty) ? 'Titre requis' : null,
               ),
-              child: Row(children: [
-                const Icon(Icons.video_camera_front_rounded, color: _kGreen, size: 28),
+              const SizedBox(height: 20),
+
+              _SectionLabel('Description / Objectifs'),
+              _StyledField(
+                controller: _descCtrl,
+                hint: 'Décrivez les objectifs de cette séance...',
+                icon: Icons.notes_rounded,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 20),
+
+              _SectionLabel('Date & Heure'),
+              Row(children: [
+                Expanded(child: _DateTimeChip(
+                  icon: Icons.calendar_today_rounded,
+                  label: DateFormat('dd/MM/yyyy').format(_selectedDate),
+                  onTap: _pickDate,
+                )),
                 const SizedBox(width: 12),
-                Expanded(child: Text(
-                  'Un lien Google Meet unique sera généré automatiquement et partagé avec les participants.',
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
+                Expanded(child: _DateTimeChip(
+                  icon: Icons.access_time_rounded,
+                  label: _selectedTime.format(context),
+                  onTap: _pickTime,
                 )),
               ]),
-            ),
-            const SizedBox(height: 30),
+              const SizedBox(height: 20),
+
+              _SectionLabel('Durée de la séance'),
+              _DurationSelector(
+                value: _durationMinutes,
+                onChanged: (v) => setState(() => _durationMinutes = v),
+              ),
+              const SizedBox(height: 20),
+
+              _SectionLabel('Destinataires'),
+              _AudienceSelector(
+                value: _audience,
+                onChanged: (v) {
+                  setState(() { _audience = v; });
+                  if (v == 'citizens') _loadCitizens();
+                },
+              ),
+
+              // ── Groupe ciblé ──────────────────────────────────────────────
+              if (_audience == 'group') ...[
+                const SizedBox(height: 12),
+                _SectionLabel('Sélectionner un groupe'),
+                if (_groups.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A2634),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int?>(
+                        value: _selectedGroupId,
+                        dropdownColor: const Color(0xFF1A2634),
+                        isExpanded: true,
+                        hint: Row(children: [
+                          const Icon(Icons.group_rounded, color: Color(0xFF00C896), size: 20),
+                          const SizedBox(width: 8),
+                          Text('Choisir un groupe',
+                            style: GoogleFonts.inter(color: Colors.white38)),
+                        ]),
+                        items: [
+                          DropdownMenuItem<int?>(value: null,
+                            child: Text('- Aucun groupe -',
+                              style: GoogleFonts.inter(color: Colors.white54))),
+                          ..._groups.map((g) => DropdownMenuItem<int?>(
+                            value: g['id'] as int,
+                            child: Row(children: [
+                              Container(
+                                width: 12, height: 12,
+                                decoration: BoxDecoration(
+                                  color: _hexColor(g['color'] ?? '#00C896'),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('${g['name']} (${g['member_count']} membres)',
+                                style: GoogleFonts.inter(color: Colors.white)),
+                            ]),
+                          )),
+                        ],
+                        onChanged: (v) => setState(() => _selectedGroupId = v),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A2634),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.info_outline_rounded, color: Color(0xFF00C896), size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(
+                        'Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.',
+                        style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                      )),
+                    ]),
+                  ),
+              ],
+
+              // ── Citoyens individuels ──────────────────────────────────────
+              if (_audience == 'citizens') ...[
+                const SizedBox(height: 16),
+                // Chips des citoyens sélectionnés
+                if (_selectedCitizenIds.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _kGreen.withOpacity(0.07),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kGreen.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.people_rounded, color: _kGreen, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${_selectedCitizenIds.length} citoyen(s) sélectionné(s)',
+                            style: GoogleFonts.inter(
+                              color: _kGreen, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ]),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8, runSpacing: 6,
+                          children: _selectedCitizenIds.map((id) {
+                            final c = _allCitizens.firstWhere(
+                              (x) => x['id'] == id,
+                              orElse: () => {'full_name': '#$id'},
+                            );
+                            return Chip(
+                              backgroundColor: _kGreen.withOpacity(0.15),
+                              side: const BorderSide(color: _kGreen, width: 1),
+                              avatar: CircleAvatar(
+                                backgroundColor: _kGreen.withOpacity(0.3),
+                                child: Text(
+                                  (c['full_name'] as String? ?? '?').isNotEmpty
+                                      ? (c['full_name'] as String)[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(color: _kGreen, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              label: Text(
+                                c['full_name'] as String? ?? '',
+                                style: GoogleFonts.inter(color: Colors.white, fontSize: 12),
+                              ),
+                              deleteIconColor: Colors.white54,
+                              onDeleted: () => setState(() => _selectedCitizenIds.remove(id)),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                // Barre de recherche
+                _SectionLabel('Rechercher un citoyen'),
+                TextFormField(
+                  controller: _searchCtrl,
+                  style: GoogleFonts.inter(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Nom ou email...',
+                    hintStyle: GoogleFonts.inter(color: Colors.white38),
+                    prefixIcon: const Icon(Icons.search_rounded, color: _kGreen, size: 20),
+                    suffixIcon: _searchCtrl.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.white38, size: 18),
+                            onPressed: () { _searchCtrl.clear(); },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: const Color(0xFF1A2634),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _kGreen, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Liste des citoyens
+                if (_citizensLoading)
+                  const Center(child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+                  ))
+                else if (_filteredCitizens.isEmpty && _citizensLoaded)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A2634),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(child: Text(
+                      'Aucun citoyen trouvé',
+                      style: GoogleFonts.inter(color: Colors.white38),
+                    )),
+                  )
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A2634),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const ClampingScrollPhysics(),
+                      itemCount: _filteredCitizens.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1, color: Colors.white.withOpacity(0.06),
+                      ),
+                      itemBuilder: (ctx, i) {
+                        final c   = _filteredCitizens[i];
+                        final id  = c['id'] as int;
+                        final sel = _selectedCitizenIds.contains(id);
+                        final initials = (c['full_name'] as String? ?? '?')
+                            .split(' ')
+                            .where((w) => w.isNotEmpty)
+                            .take(2)
+                            .map((w) => w[0].toUpperCase())
+                            .join();
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          leading: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: sel
+                                ? _kGreen.withOpacity(0.3)
+                                : Colors.white.withOpacity(0.07),
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                color: sel ? _kGreen : Colors.white54,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            c['full_name'] as String? ?? '',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: sel ? FontWeight.w700 : FontWeight.normal,
+                            ),
+                          ),
+                          subtitle: Text(
+                            c['email'] as String? ?? '',
+                            style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                          ),
+                          trailing: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 150),
+                            child: sel
+                                ? Container(
+                                    key: const ValueKey('checked'),
+                                    width: 26, height: 26,
+                                    decoration: BoxDecoration(
+                                      color: _kGreen,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.check_rounded, color: Colors.black, size: 16),
+                                  )
+                                : Container(
+                                    key: const ValueKey('unchecked'),
+                                    width: 26, height: 26,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.white24, width: 1.5),
+                                    ),
+                                  ),
+                          ),
+                          onTap: () => setState(() {
+                            if (sel) {
+                              _selectedCitizenIds.remove(id);
+                            } else {
+                              _selectedCitizenIds.add(id);
+                            }
+                          }),
+                        );
+                      },
+                    ),
+                  ),
+                // Bouton Tout sélectionner / Tout désélectionner
+                if (_filteredCitizens.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    TextButton.icon(
+                      onPressed: () => setState(() {
+                        final allIds = _filteredCitizens.map((c) => c['id'] as int).toSet();
+                        if (allIds.every(_selectedCitizenIds.contains)) {
+                          _selectedCitizenIds.removeAll(allIds);
+                        } else {
+                          _selectedCitizenIds.addAll(allIds);
+                        }
+                      }),
+                      icon: Icon(
+                        _filteredCitizens.map((c) => c['id'] as int).every(_selectedCitizenIds.contains)
+                            ? Icons.deselect_rounded
+                            : Icons.select_all_rounded,
+                        size: 16,
+                        color: _kGreen,
+                      ),
+                      label: Text(
+                        _filteredCitizens.map((c) => c['id'] as int).every(_selectedCitizenIds.contains)
+                            ? 'Tout désélectionner'
+                            : 'Tout sélectionner',
+                        style: GoogleFonts.inter(color: _kGreen, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ]),
+                ],
+              ],
+
+              const SizedBox(height: 32),
+
+              // -- Info Meet --------------------------------------------------
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _kGreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _kGreen.withOpacity(0.3)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.video_camera_front_rounded, color: _kGreen, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(
+                    'Un lien Google Meet unique sera généré automatiquement et partagé avec les participants.',
+                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
+                  )),
+                ]),
+              ),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -448,14 +727,21 @@ class _AudienceSelector extends StatelessWidget {
   Widget build(BuildContext context) => Row(children: [
     Expanded(child: _AudienceChip(
       icon: Icons.public_rounded,
-      label: 'Tous les citoyens',
+      label: 'Tous les\ncitoyens',
       selected: value == 'all',
       onTap: () => onChanged('all'),
     )),
-    const SizedBox(width: 12),
+    const SizedBox(width: 10),
+    Expanded(child: _AudienceChip(
+      icon: Icons.person_search_rounded,
+      label: 'Citoyens\nspécifiques',
+      selected: value == 'citizens',
+      onTap: () => onChanged('citizens'),
+    )),
+    const SizedBox(width: 10),
     Expanded(child: _AudienceChip(
       icon: Icons.group_rounded,
-      label: 'Groupe ciblé',
+      label: 'Groupe\nciblé',
       selected: value == 'group',
       onTap: () => onChanged('group'),
     )),
@@ -476,7 +762,7 @@ class _AudienceChip extends StatelessWidget {
     borderRadius: BorderRadius.circular(12),
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: selected ? const Color(0xFF00C896).withOpacity(0.15) : const Color(0xFF1A2634),
         borderRadius: BorderRadius.circular(12),
@@ -491,7 +777,7 @@ class _AudienceChip extends StatelessWidget {
         Text(label, textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             color: selected ? const Color(0xFF00C896) : Colors.white54,
-            fontSize: 12, fontWeight: FontWeight.w600)),
+            fontSize: 11, fontWeight: FontWeight.w600, height: 1.3)),
       ]),
     ),
   );
