@@ -1369,25 +1369,172 @@ class _EducatorTabState extends State<EducatorTab> {
                       // Supprimer
                       IconButton(
                         onPressed: () async {
-                          final confirm = await showDialog<bool>(context: context, builder: (_) =>
-                            AlertDialog(
-                              title: Text('Supprimer la séance ?', style: GoogleFonts.outfit()),
-                              content: Text('Cette action est irréversible.', style: GoogleFonts.inter()),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false),
-                                  child: Text('Annuler')),
-                                TextButton(onPressed: () => Navigator.pop(context, true),
-                                  child: Text('Supprimer', style: const TextStyle(color: Colors.red))),
-                              ],
-                            ));
+                          final messenger = ScaffoldMessenger.of(context);
+                          final meetingTitle = m['title'] as String? ?? 'Séance';
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            barrierDismissible: true,
+                            builder: (ctx) => Dialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              child: Container(
+                                padding: const EdgeInsets.all(28),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(0.15),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Icone rouge dans cercle
+                                    Container(
+                                      width: 72, height: 72,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.red.withOpacity(0.25), width: 2),
+                                      ),
+                                      child: const Icon(
+                                        Icons.delete_forever_rounded,
+                                        color: Colors.red,
+                                        size: 36,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    // Titre
+                                    Text(
+                                      'Supprimer la séance ?',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Nom de la seance
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.07),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        m['title'] ?? 'Séance sans titre',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.red.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Description
+                                    Text(
+                                      'Cette action est irréversible.\nLes participants seront notifiés de l\'annulation.',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF64748B),
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 28),
+                                    // Boutons
+                                    Row(
+                                      children: [
+                                        // Annuler
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            style: OutlinedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(14)),
+                                              side: BorderSide(
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? const Color(0xFF334155)
+                                                    : Colors.grey.shade300,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'Annuler',
+                                              style: GoogleFonts.outfit(
+                                                fontWeight: FontWeight.w700,
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.white70
+                                                    : const Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        // Supprimer
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            icon: const Icon(Icons.delete_rounded, size: 18),
+                                            label: Text(
+                                              'Supprimer',
+                                              style: GoogleFonts.outfit(fontWeight: FontWeight.w800),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(14)),
+                                              elevation: 4,
+                                              shadowColor: Colors.red.withOpacity(0.4),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
                           if (confirm == true) {
                             await MeetingsService.deleteMeeting(m['id']);
-                            _loadMeetings();
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Row(children: [
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text('Séance "$meetingTitle" supprimée',
+                                        style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                  ]),
+                                  backgroundColor: Colors.red.shade700,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  margin: const EdgeInsets.all(16),
+                                ),
+                              );
+                              _loadMeetings();
+                            }
                           }
                         },
                         icon: const Icon(Icons.delete_outline_rounded, size: 20),
                         color: Colors.red,
-                        tooltip: 'Supprimer',
+                        tooltip: 'Supprimer la séance',
                       ),
                     ]),
                   ]),
