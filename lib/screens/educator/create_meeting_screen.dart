@@ -37,14 +37,15 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   bool _citizensLoaded  = false;
   bool _citizensLoading = false;
 
-  // ── Palette ──────────────────────────────────────────────────────────────
-  static const _kGreen     = Color(0xFF00C896);
-  static const _kBg        = Colors.white;
-  static const _kCard      = Color(0xFFF5F7FA);
-  static const _kBorder    = Color(0xFFE2E8F0);
-  static const _kTextMain  = Color(0xFF0F172A);
-  static const _kTextSub   = Color(0xFF64748B);
-  static const _kTextHint  = Color(0xFFB0BAC9);
+  static const _kGreen = Color(0xFF00C896);
+
+  // ── Palette adaptative ───────────────────────────────────────────────────
+  Color _bg(bool dark)       => dark ? const Color(0xFF0F1923) : Colors.white;
+  Color _card(bool dark)     => dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA);
+  Color _border(bool dark)   => dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0);
+  Color _textMain(bool dark) => dark ? Colors.white : const Color(0xFF0F172A);
+  Color _textSub(bool dark)  => dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color _textHint(bool dark) => dark ? const Color(0xFF4A5568) : const Color(0xFFB0BAC9);
 
   @override
   void initState() {
@@ -117,30 +118,30 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     _selectedTime.hour, _selectedTime.minute,
   );
 
-  Future<void> _pickDate() async {
+  Future<void> _pickDate(bool dark) async {
     final d = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(primary: _kGreen),
-        ),
+        data: dark
+            ? ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: _kGreen))
+            : ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: _kGreen)),
         child: child!,
       ),
     );
     if (d != null) setState(() => _selectedDate = d);
   }
 
-  Future<void> _pickTime() async {
+  Future<void> _pickTime(bool dark) async {
     final t = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (ctx, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(primary: _kGreen),
-        ),
+        data: dark
+            ? ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: _kGreen))
+            : ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: _kGreen)),
         child: child!,
       ),
     );
@@ -165,9 +166,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     }
     setState(() => _isLoading = true);
 
-    final bool isEdit     = widget.existingMeeting != null;
-    final apiAudience     = _audience == 'citizens' ? 'group' : _audience;
-    final citizenIds      = _audience == 'citizens' ? _selectedCitizenIds.toList() : <int>[];
+    final bool isEdit = widget.existingMeeting != null;
+    final apiAudience = _audience == 'citizens' ? 'group' : _audience;
+    final citizenIds  = _audience == 'citizens' ? _selectedCitizenIds.toList() : <int>[];
     bool ok = false;
 
     try {
@@ -213,22 +214,24 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dark   = Theme.of(context).brightness == Brightness.dark;
     final isEdit = widget.existingMeeting != null;
+
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: _bg(dark),
       appBar: AppBar(
-        backgroundColor: _kBg,
+        backgroundColor: _bg(dark),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: _kTextMain),
+          icon: Icon(Icons.close_rounded, color: _textMain(dark)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           isEdit ? 'Modifier la séance' : 'Planifier une séance',
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.w800,
-            color: _kTextMain,
+            color: _textMain(dark),
             fontSize: 18,
           ),
         ),
@@ -260,7 +263,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: _kBorder),
+          child: Divider(height: 1, color: _border(dark)),
         ),
       ),
       body: GestureDetector(
@@ -272,87 +275,93 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
             children: [
 
               // ── Titre ───────────────────────────────────────────────────
-              _Label('Nom du cours'),
+              _Label('Nom du cours', dark: dark),
               _Field(
                 controller: _titleCtrl,
                 hint: 'Ex : Tri des déchets plastiques',
                 icon: Icons.menu_book_rounded,
+                dark: dark,
                 validator: (v) => (v == null || v.isEmpty) ? 'Titre requis' : null,
               ),
               const SizedBox(height: 20),
 
               // ── Description ─────────────────────────────────────────────
-              _Label('Description / Objectifs'),
+              _Label('Description / Objectifs', dark: dark),
               _Field(
                 controller: _descCtrl,
                 hint: 'Décrivez les objectifs de cette séance...',
                 icon: Icons.notes_rounded,
+                dark: dark,
                 maxLines: 3,
               ),
               const SizedBox(height: 20),
 
               // ── Date & Heure ─────────────────────────────────────────────
-              _Label('Date & Heure'),
+              _Label('Date & Heure', dark: dark),
               Row(children: [
                 Expanded(child: _DateChip(
                   icon: Icons.calendar_today_rounded,
                   label: DateFormat('dd/MM/yyyy').format(_selectedDate),
-                  onTap: _pickDate,
+                  dark: dark,
+                  onTap: () => _pickDate(dark),
                 )),
                 const SizedBox(width: 12),
                 Expanded(child: _DateChip(
                   icon: Icons.access_time_rounded,
                   label: _selectedTime.format(context),
-                  onTap: _pickTime,
+                  dark: dark,
+                  onTap: () => _pickTime(dark),
                 )),
               ]),
               const SizedBox(height: 20),
 
               // ── Durée ────────────────────────────────────────────────────
-              _Label('Durée de la séance'),
+              _Label('Durée de la séance', dark: dark),
               _DurationSelector(
                 value: _durationMinutes,
+                dark: dark,
                 onChanged: (v) => setState(() => _durationMinutes = v),
               ),
               const SizedBox(height: 20),
 
               // ── Destinataires ────────────────────────────────────────────
-              _Label('Destinataires'),
+              _Label('Destinataires', dark: dark),
               _AudienceSelector(
                 value: _audience,
+                dark: dark,
                 onChanged: (v) {
                   setState(() => _audience = v);
                   if (v == 'citizens') _loadCitizens();
                 },
               ),
 
-              // ── Groupe ciblé ─────────────────────────────────────────────
+              // ── Groupe ciblé ──────────────────────────────────────────────
               if (_audience == 'group') ...[
                 const SizedBox(height: 16),
-                _Label('Sélectionner un groupe'),
+                _Label('Sélectionner un groupe', dark: dark),
                 if (_groups.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: _kCard,
+                      color: _card(dark),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kBorder),
+                      border: Border.all(color: _border(dark)),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<int?>(
                         value: _selectedGroupId,
-                        dropdownColor: Colors.white,
+                        dropdownColor: _card(dark),
                         isExpanded: true,
                         hint: Row(children: [
                           const Icon(Icons.group_rounded, color: _kGreen, size: 20),
                           const SizedBox(width: 8),
                           Text('Choisir un groupe',
-                            style: GoogleFonts.inter(color: _kTextHint)),
+                            style: GoogleFonts.inter(color: _textHint(dark))),
                         ]),
                         items: [
                           DropdownMenuItem<int?>(value: null,
                             child: Text('- Aucun groupe -',
-                              style: GoogleFonts.inter(color: _kTextSub))),
+                              style: GoogleFonts.inter(color: _textSub(dark)))),
                           ..._groups.map((g) => DropdownMenuItem<int?>(
                             value: g['id'] as int,
                             child: Row(children: [
@@ -365,7 +374,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text('${g['name']} (${g['member_count']} membres)',
-                                style: GoogleFonts.inter(color: _kTextMain)),
+                                style: GoogleFonts.inter(color: _textMain(dark))),
                             ]),
                           )),
                         ],
@@ -374,7 +383,10 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     ),
                   )
                 else
-                  _InfoBox('Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.'),
+                  _InfoBox(
+                    'Aucun groupe. Créez d\'abord un groupe depuis votre tableau de bord.',
+                    dark: dark,
+                  ),
               ],
 
               // ── Citoyens individuels ──────────────────────────────────────
@@ -386,35 +398,32 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: _kGreen.withOpacity(0.06),
+                      color: _kGreen.withOpacity(dark ? 0.1 : 0.06),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: _kGreen.withOpacity(0.35), width: 1.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: _kGreen,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.people_rounded, color: Colors.white, size: 14),
-                              const SizedBox(width: 5),
-                              Text(
-                                '${_selectedCitizenIds.length} sélectionné(s)',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ]),
+                        // Badge compteur
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _kGreen,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ]),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.people_rounded, color: Colors.white, size: 14),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${_selectedCitizenIds.length} sélectionné(s)',
+                              style: GoogleFonts.inter(
+                                color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ]),
+                        ),
                         const SizedBox(height: 10),
+                        // Chips des citoyens choisis
                         Wrap(
                           spacing: 8, runSpacing: 6,
                           children: _selectedCitizenIds.map((id) {
@@ -429,14 +438,13 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: dark ? const Color(0xFF1E3A2F) : Colors.white,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: _kGreen, width: 1.5),
-                                boxShadow: [
+                                boxShadow: dark ? [] : [
                                   BoxShadow(
                                     color: _kGreen.withOpacity(0.1),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
+                                    blurRadius: 6, offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
@@ -446,16 +454,13 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                                   backgroundColor: _kGreen,
                                   child: Text(initials,
                                     style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    )),
+                                      color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                                 const SizedBox(width: 7),
                                 Text(
                                   name,
                                   style: GoogleFonts.inter(
-                                    color: _kTextMain,
+                                    color: _textMain(dark),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -463,7 +468,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                                 const SizedBox(width: 6),
                                 GestureDetector(
                                   onTap: () => setState(() => _selectedCitizenIds.remove(id)),
-                                  child: const Icon(Icons.close_rounded, size: 15, color: _kTextSub),
+                                  child: Icon(Icons.close_rounded, size: 15, color: _textSub(dark)),
                                 ),
                               ]),
                             );
@@ -476,29 +481,29 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                 ],
 
                 // Barre de recherche
-                _Label('Rechercher un citoyen'),
+                _Label('Rechercher un citoyen', dark: dark),
                 TextFormField(
                   controller: _searchCtrl,
-                  style: GoogleFonts.inter(color: _kTextMain, fontSize: 14),
+                  style: GoogleFonts.inter(color: _textMain(dark), fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Nom ou email...',
-                    hintStyle: GoogleFonts.inter(color: _kTextHint),
+                    hintStyle: GoogleFonts.inter(color: _textHint(dark)),
                     prefixIcon: const Icon(Icons.search_rounded, color: _kGreen, size: 20),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: _kTextHint, size: 18),
+                            icon: Icon(Icons.clear, color: _textHint(dark), size: 18),
                             onPressed: () => _searchCtrl.clear(),
                           )
                         : null,
                     filled: true,
-                    fillColor: _kCard,
+                    fillColor: _card(dark),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _kBorder),
+                      borderSide: BorderSide(color: _border(dark)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _kBorder),
+                      borderSide: BorderSide(color: _border(dark)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -518,24 +523,23 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _kCard,
+                      color: _card(dark),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kBorder),
+                      border: Border.all(color: _border(dark)),
                     ),
                     child: Center(child: Text('Aucun citoyen trouvé',
-                      style: GoogleFonts.inter(color: _kTextSub))),
+                      style: GoogleFonts.inter(color: _textSub(dark)))),
                   )
                 else
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: dark ? const Color(0xFF1A2634) : Colors.white,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _kBorder),
-                      boxShadow: [
+                      border: Border.all(color: _border(dark)),
+                      boxShadow: dark ? [] : [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          blurRadius: 10, offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -544,7 +548,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       shrinkWrap: true,
                       physics: const ClampingScrollPhysics(),
                       itemCount: _filteredCitizens.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: _kBorder),
+                      separatorBuilder: (_, __) => Divider(height: 1, color: _border(dark)),
                       itemBuilder: (ctx, i) {
                         final c   = _filteredCitizens[i];
                         final id  = c['id'] as int;
@@ -555,31 +559,28 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                             .map((w) => w[0].toUpperCase()).join();
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                          tileColor: sel ? _kGreen.withOpacity(0.05) : Colors.white,
+                          tileColor: sel
+                              ? _kGreen.withOpacity(dark ? 0.12 : 0.05)
+                              : (dark ? const Color(0xFF1A2634) : Colors.white),
                           leading: CircleAvatar(
                             radius: 20,
-                            backgroundColor: sel ? _kGreen : const Color(0xFFE2E8F0),
-                            child: Text(
-                              initials,
+                            backgroundColor: sel
+                                ? _kGreen
+                                : (dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0)),
+                            child: Text(initials,
                               style: TextStyle(
-                                color: sel ? Colors.white : _kTextSub,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                                color: sel ? Colors.white : _textSub(dark),
+                                fontSize: 13, fontWeight: FontWeight.bold,
+                              )),
                           ),
-                          title: Text(
-                            name,
+                          title: Text(name,
                             style: GoogleFonts.inter(
-                              color: _kTextMain,
+                              color: _textMain(dark),
                               fontSize: 14,
                               fontWeight: sel ? FontWeight.w700 : FontWeight.normal,
-                            ),
-                          ),
-                          subtitle: Text(
-                            c['email'] as String? ?? '',
-                            style: GoogleFonts.inter(color: _kTextSub, fontSize: 12),
-                          ),
+                            )),
+                          subtitle: Text(c['email'] as String? ?? '',
+                            style: GoogleFonts.inter(color: _textSub(dark), fontSize: 12)),
                           trailing: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 150),
                             child: sel
@@ -597,7 +598,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                                     width: 26, height: 26,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: _kBorder, width: 1.5),
+                                      border: Border.all(color: _border(dark), width: 1.5),
                                     ),
                                   ),
                           ),
@@ -647,7 +648,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _kGreen.withOpacity(0.07),
+                  color: _kGreen.withOpacity(dark ? 0.1 : 0.07),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _kGreen.withOpacity(0.25)),
                 ),
@@ -656,7 +657,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   const SizedBox(width: 12),
                   Expanded(child: Text(
                     'Un lien Google Meet unique sera généré automatiquement et partagé avec les participants.',
-                    style: GoogleFonts.inter(color: _kTextSub, fontSize: 13, height: 1.5),
+                    style: GoogleFonts.inter(color: _textSub(dark), fontSize: 13, height: 1.5),
                   )),
                 ]),
               ),
@@ -678,35 +679,39 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
 class _Label extends StatelessWidget {
   final String text;
-  const _Label(this.text);
+  final bool dark;
+  const _Label(this.text, {required this.dark});
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(text, style: GoogleFonts.outfit(
-      color: const Color(0xFF0F172A),
-      fontSize: 13,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.3,
+      color: dark ? Colors.white : const Color(0xFF0F172A),
+      fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.3,
     )),
   );
 }
 
 class _InfoBox extends StatelessWidget {
   final String text;
-  const _InfoBox(this.text);
+  final bool dark;
+  const _InfoBox(this.text, {required this.dark});
+
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: const Color(0xFFF5F7FA),
+      color: dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: const Color(0xFFE2E8F0)),
+      border: Border.all(color: dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0)),
     ),
     child: Row(children: [
       const Icon(Icons.info_outline_rounded, color: Color(0xFF00C896), size: 18),
       const SizedBox(width: 10),
       Expanded(child: Text(text,
-        style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 12))),
+        style: GoogleFonts.inter(
+          color: dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          fontSize: 12))),
     ]),
   );
 }
@@ -716,35 +721,39 @@ class _Field extends StatelessWidget {
   final String hint;
   final IconData icon;
   final int maxLines;
+  final bool dark;
   final String? Function(String?)? validator;
   const _Field({
     required this.controller, required this.hint, required this.icon,
-    this.maxLines = 1, this.validator,
+    required this.dark, this.maxLines = 1, this.validator,
   });
 
-  static const _kGreen  = Color(0xFF00C896);
-  static const _kCard   = Color(0xFFF5F7FA);
-  static const _kBorder = Color(0xFFE2E8F0);
+  static const _kGreen = Color(0xFF00C896);
+
+  Color get _cardColor   => dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA);
+  Color get _borderColor => dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0);
+  Color get _textColor   => dark ? Colors.white : const Color(0xFF0F172A);
+  Color get _hintColor   => dark ? const Color(0xFF4A5568) : const Color(0xFFB0BAC9);
 
   @override
   Widget build(BuildContext context) => TextFormField(
     controller: controller,
     maxLines: maxLines,
     validator: validator,
-    style: GoogleFonts.inter(color: const Color(0xFF0F172A), fontSize: 14),
+    style: GoogleFonts.inter(color: _textColor, fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: const Color(0xFFB0BAC9)),
+      hintStyle: GoogleFonts.inter(color: _hintColor),
       prefixIcon: Icon(icon, color: _kGreen, size: 20),
       filled: true,
-      fillColor: _kCard,
+      fillColor: _cardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _kBorder),
+        borderSide: BorderSide(color: _borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _kBorder),
+        borderSide: BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -761,8 +770,9 @@ class _Field extends StatelessWidget {
 class _DateChip extends StatelessWidget {
   final IconData icon;
   final String label;
+  final bool dark;
   final VoidCallback onTap;
-  const _DateChip({required this.icon, required this.label, required this.onTap});
+  const _DateChip({required this.icon, required this.label, required this.dark, required this.onTap});
 
   @override
   Widget build(BuildContext context) => InkWell(
@@ -771,14 +781,16 @@ class _DateChip extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0)),
       ),
       child: Row(children: [
         const Icon(Icons.edit_calendar_rounded, color: Color(0xFF00C896), size: 18),
         const SizedBox(width: 8),
-        Text(label, style: GoogleFonts.inter(color: const Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label, style: GoogleFonts.inter(
+          color: dark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 14, fontWeight: FontWeight.w500)),
       ]),
     ),
   );
@@ -786,9 +798,12 @@ class _DateChip extends StatelessWidget {
 
 class _DurationSelector extends StatelessWidget {
   final int value;
+  final bool dark;
   final ValueChanged<int> onChanged;
   static const _options = [30, 45, 60, 90, 120];
-  const _DurationSelector({required this.value, required this.onChanged});
+  const _DurationSelector({required this.value, required this.dark, required this.onChanged});
+
+  static const _kGreen = Color(0xFF00C896);
 
   @override
   Widget build(BuildContext context) => Wrap(
@@ -799,13 +814,13 @@ class _DurationSelector extends StatelessWidget {
         label: Text('$d min'),
         selected: selected,
         onSelected: (_) => onChanged(d),
-        selectedColor: const Color(0xFF00C896),
-        backgroundColor: const Color(0xFFF5F7FA),
+        selectedColor: _kGreen,
+        backgroundColor: dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA),
         side: BorderSide(
-          color: selected ? const Color(0xFF00C896) : const Color(0xFFE2E8F0),
+          color: selected ? _kGreen : (dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0)),
         ),
         labelStyle: GoogleFonts.inter(
-          color: selected ? Colors.white : const Color(0xFF64748B),
+          color: selected ? Colors.white : (dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
           fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
         checkmarkColor: Colors.white,
@@ -816,8 +831,9 @@ class _DurationSelector extends StatelessWidget {
 
 class _AudienceSelector extends StatelessWidget {
   final String value;
+  final bool dark;
   final ValueChanged<String> onChanged;
-  const _AudienceSelector({required this.value, required this.onChanged});
+  const _AudienceSelector({required this.value, required this.dark, required this.onChanged});
 
   @override
   Widget build(BuildContext context) => Row(children: [
@@ -825,6 +841,7 @@ class _AudienceSelector extends StatelessWidget {
       icon: Icons.public_rounded,
       label: 'Tous les\ncitoyens',
       selected: value == 'all',
+      dark: dark,
       onTap: () => onChanged('all'),
     )),
     const SizedBox(width: 10),
@@ -832,6 +849,7 @@ class _AudienceSelector extends StatelessWidget {
       icon: Icons.person_search_rounded,
       label: 'Citoyens\nspécifiques',
       selected: value == 'citizens',
+      dark: dark,
       onTap: () => onChanged('citizens'),
     )),
     const SizedBox(width: 10),
@@ -839,6 +857,7 @@ class _AudienceSelector extends StatelessWidget {
       icon: Icons.group_rounded,
       label: 'Groupe\nciblé',
       selected: value == 'group',
+      dark: dark,
       onTap: () => onChanged('group'),
     )),
   ]);
@@ -848,10 +867,11 @@ class _AudienceChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool selected;
+  final bool dark;
   final VoidCallback onTap;
   const _AudienceChip({
     required this.icon, required this.label,
-    required this.selected, required this.onTap,
+    required this.selected, required this.dark, required this.onTap,
   });
 
   static const _kGreen = Color(0xFF00C896);
@@ -864,22 +884,24 @@ class _AudienceChip extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: selected ? _kGreen.withOpacity(0.1) : const Color(0xFFF5F7FA),
+        color: selected
+            ? _kGreen.withOpacity(dark ? 0.15 : 0.1)
+            : (dark ? const Color(0xFF1A2634) : const Color(0xFFF5F7FA)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? _kGreen : const Color(0xFFE2E8F0),
+          color: selected ? _kGreen : (dark ? const Color(0xFF2D3F50) : const Color(0xFFE2E8F0)),
           width: selected ? 1.5 : 1,
         ),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon,
-          color: selected ? _kGreen : const Color(0xFF94A3B8),
+          color: selected ? _kGreen : (dark ? const Color(0xFF4A5568) : const Color(0xFF94A3B8)),
           size: 22),
         const SizedBox(height: 6),
         Text(label,
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
-            color: selected ? _kGreen : const Color(0xFF64748B),
+            color: selected ? _kGreen : (dark ? const Color(0xFF64748B) : const Color(0xFF64748B)),
             fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             height: 1.3,
