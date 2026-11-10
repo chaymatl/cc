@@ -662,13 +662,16 @@ class AIModerator:
                 combined = max(combined, round(REVIEW_THRESHOLD + 0.01, 3))  # ≥ 0.66
 
         # Rule D : Image présente sans aucun mot-clé éco dans le texte
-        # → review admin obligatoire sauf si ResNet TRÈS confiant sur le contenu éco (> 0.70)
-        # Fixes: dessins animés (fête, voitures) ou images sans rapport passant sous tous les filtres ML
-        # car ResNet mal calibré sur illustrations/cartoons (couleurs vives = faux positif éco)
-        if has_image and eco_count == 0 and resnet_eco <= 0.70:
-            combined = max(combined, round(SAFE_THRESHOLD + 0.05, 3))  # ≥ 0.20 → pending_review
-            if "Image sans contexte environnemental" not in result.reasons:
-                result.reasons.append("Image sans contexte environnemental dans le texte")
+        # → review admin SAUF si l'image est clairement un paysage nature :
+        #   exception : resnet_eco >= 0.50 ET off_topic < 0.10 (presque zéro signal hors-sujet)
+        #   → paysages naturels (lac, montagne, forêt) reconnus sans ambiguïté
+        # Bloque : dessins animés (fête=0.21, voiture=0.33 off_topic) et images sans rapport
+        if has_image and eco_count == 0:
+            is_clear_nature = (resnet_eco >= 0.50 and resnet_offtopic < 0.10)
+            if not is_clear_nature and resnet_eco <= 0.70:
+                combined = max(combined, round(SAFE_THRESHOLD + 0.05, 3))  # ≥ 0.20 → pending_review
+                if "Image sans contexte environnemental" not in result.reasons:
+                    result.reasons.append("Image sans contexte environnemental dans le texte")
 
         result.score = combined
         result.text_model_used = (
