@@ -32,6 +32,7 @@ class _MultimediaTabState extends State<MultimediaTab> {
   final AuthService _authService = AuthService();
   List<dynamic> _apiQuizzes = [];
   bool _quizzesLoaded = false;
+  bool _quizLoadError = false;
   // IDs des quiz déjà complétés par l'utilisateur
   final Set<int> _completedQuizIds = {};
 
@@ -60,15 +61,16 @@ class _MultimediaTabState extends State<MultimediaTab> {
   }
 
   Future<void> _loadApiQuizzes() async {
+    if (mounted) setState(() { _quizzesLoaded = false; _quizLoadError = false; });
     try {
       final quizzes = await _authService.fetchAvailableQuizzes();
       if (mounted) {
-        setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; });
+        setState(() { _apiQuizzes = quizzes; _quizzesLoaded = true; _quizLoadError = false; });
         _checkCompletedQuizzes(quizzes);
       }
     } catch (e) {
       debugPrint('[Multimedia] Erreur chargement quiz: $e');
-      if (mounted) setState(() => _quizzesLoaded = true);
+      if (mounted) setState(() { _quizzesLoaded = true; _quizLoadError = true; });
     }
   }
 
@@ -276,18 +278,43 @@ class _MultimediaTabState extends State<MultimediaTab> {
                 ),
               ),
 
-            // État vide
+            // État vide ou erreur Quiz
             if (_selectedCategory == 'Quiz' && _apiQuizzes.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.quiz_outlined, size: 64, color: Colors.grey.shade300),
+                      Icon(
+                        _quizLoadError ? Icons.wifi_off_rounded : Icons.quiz_outlined,
+                        size: 64,
+                        color: _quizLoadError ? Colors.orange.shade300 : Colors.grey.shade300,
+                      ),
                       const SizedBox(height: 16),
-                      Text(L10n.tr('Aucun quiz'), style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                      Text(
+                        _quizLoadError ? 'Connexion impossible' : L10n.tr('Aucun quiz'),
+                        style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade500),
+                      ),
                       const SizedBox(height: 8),
-                      Text(L10n.tr('Revenez plus tard pour de nouveaux défis'), style: GoogleFonts.inter(color: Colors.grey.shade400)),
+                      Text(
+                        _quizLoadError
+                            ? 'Vérifiez votre connexion au serveur'
+                            : L10n.tr('Revenez plus tard pour de nouveaux défis'),
+                        style: GoogleFonts.inter(color: Colors.grey.shade400),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: _loadApiQuizzes,
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Réessayer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                      ),
                     ],
                   ),
                 ),
