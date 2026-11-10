@@ -1738,8 +1738,9 @@ class _DirectTabState extends State<_DirectTab> {
       grouped.putIfAbsent(role, () => []).add(r);
     }
 
+    final kb = MediaQuery.of(context).viewInsets.bottom;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + kb),
       children: [
         Text('Sélectionner un destinataire',
             style: GoogleFonts.outfit(
@@ -1997,8 +1998,9 @@ class _GroupTabState extends State<_GroupTab> {
       return name.contains(q) || desc.contains(q);
     }).toList();
 
+    final kb = MediaQuery.of(context).viewInsets.bottom;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + kb),
       children: [
         Text('Choisir un groupe',
             style: GoogleFonts.outfit(
@@ -2209,6 +2211,7 @@ class _MessageInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final kb = MediaQuery.of(context).viewInsets.bottom;
     return Column(children: [
       TextField(
         controller: ctrl,
@@ -2262,6 +2265,8 @@ class _MessageInput extends StatelessWidget {
           ),
         ),
       ),
+      // Espace pour le clavier : empêche le bouton Envoyer d'être caché
+      SizedBox(height: kb > 0 ? kb : 0),
     ]);
   }
 }
