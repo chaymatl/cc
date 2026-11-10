@@ -637,8 +637,8 @@ async def create_post(post: models.PostCreate,
     1. Le post est IMMÉDIATEMENT persisté en DB avec status="pending_review".
        → L'utilisateur reçoit une confirmation en < 200ms.
 
-    2. La modération IA est lancée en tâche de fond (BackgroundTasks).
-       → Aucun blocage côté HTTP.
+    2. La modération IA est lancée dans un thread séparé (ThreadPoolExecutor).
+       → Les modèles IA (CPU-bound) ne bloquent plus l'event loop FastAPI.
 
     3. Le statut est mis à jour en arrière-plan :
          - score < 0.30  → "published"      (approuvé automatiquement)
@@ -649,6 +649,8 @@ async def create_post(post: models.PostCreate,
 
     4. Une notification est envoyée à l'utilisateur dès la décision IA.
     """
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
     from fastapi.responses import JSONResponse as _JSONResponse
     from database import SessionLocal
 
@@ -673,17 +675,20 @@ async def create_post(post: models.PostCreate,
     if IS_DEV:
         print(f"[MOD] Post {new_post.id} créé → status=pending_review (IA en background)")
 
-    # ── Étape 2 : Lancer la modération IA en tâche de fond ───────────────────
-    # On crée une nouvelle session DB indépendante pour la tâche de fond,
-    # car la session `db` de la requête HTTP sera fermée après la réponse.
+    # ── Étape 2 : Lancer la modération IA dans un thread CPU dédié ───────────
+    # run_in_executor() évite de bloquer l'event loop avec les inférences IA
+    # (Detoxify BERT + ResNet18 sont des tâches CPU-bound).
     bg_db = SessionLocal()
-    background_tasks.add_task(
+    loop = asyncio.get_event_loop()
+    _executor = ThreadPoolExecutor(max_workers=1)
+    loop.run_in_executor(
+        _executor,
         _run_ai_moderation,
-        post_id=new_post.id,
-        description=post.description or "",
-        image_url=post.image_url or "",
-        user_id=current_user.id,
-        db=bg_db,
+        new_post.id,
+        post.description or "",
+        post.image_url or "",
+        current_user.id,
+        bg_db,
     )
 
     # ── Étape 3 : Répondre immédiatement à l'utilisateur ─────────────────────

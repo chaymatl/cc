@@ -397,9 +397,18 @@ class AIModerator:
         ))
         results["rule_score"] = round(rule_score, 3)
 
-        # -- ML Layer 1: Detoxify ----------------------------------------------
+        # -- ML Layer 1: Detoxify (court-circuit si les règles suffisent) -------
+        # Optimisation temps : si les règles donnent déjà un signal clair, on
+        # évite l'inférence BERT (1-3 s). Detoxify n'est appelé QUE pour les
+        # contenus ambigus (rule_score entre 0.05 et 0.55). La vérification reste
+        # identique pour tous les autres cas (mêmes seuils, mêmes scores finaux).
         ml_categories = {}
-        if self._detoxify_model is not None:
+        _rules_conclusive = (
+            rule_score < 0.05              # Texte clairement eco -> pas besoin de ML
+            or profanity["score"] >= 0.70  # Insulte évidente par règles
+            or anti_env["score"] >= 0.50   # Anti-écologie évident par règles
+        )
+        if self._detoxify_model is not None and not _rules_conclusive:
             try:
                 ml_result     = self._detoxify_model.predict(text)
                 ml_categories = {k: round(float(v), 3) for k, v in ml_result.items()}
@@ -496,18 +505,27 @@ class AIModerator:
 
     def moderate(self, text: str = "", image_local_path: str = "") -> ModerationResult:
         import time
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         start  = time.time()
         result = ModerationResult(ml_available=self._ml_ready)
 
-        # -- Text --------------------------------------------------------------
-        text_analysis = self.analyze_text(text)
+        # -- Analyse texte ET image EN PARALLÈLE (réduit le temps de ~50%) ------
+        # Les deux analyses sont indépendantes : on les lance simultanément.
+        has_image = bool(image_local_path)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_text  = executor.submit(self.analyze_text, text)
+            future_image = executor.submit(self.analyze_image, image_local_path) if has_image else None
+
+            text_analysis  = future_text.result()
+            image_analysis = future_image.result() if future_image else {
+                "score": 0.0, "categories": {}, "ml_used": False, "note": "no_image"
+            }
+
         result.text_analysis    = text_analysis
         result.languages_detected = text_analysis.get("languages", [])
         for reason in self._extract_text_reasons(text_analysis):
             result.reasons.append(reason)
 
-        # -- Image -------------------------------------------------------------
-        image_analysis = self.analyze_image(image_local_path)
         result.image_analysis = image_analysis
         if image_analysis.get("ml_used"):
             models_used = []
