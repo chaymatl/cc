@@ -33,6 +33,9 @@ class _EducatorTabState extends State<EducatorTab> {
   bool _isUploading = false;
   bool _isPublishingVideo = false;
   int _unreadMessages = 0;
+  // Selection multiple quiz
+  bool _isSelectionMode = false;
+  final Set<int> _selectedQuizIds = {};
 
   @override
   void initState() {
@@ -604,7 +607,37 @@ class _EducatorTabState extends State<EducatorTab> {
             if (_isLoading)
               const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: AppTheme.primaryGreen)))
             else if (_quizzes.isNotEmpty) ...[
-              Text('Mes Quiz (${_quizzes.length})', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Mes Quiz (${_quizzes.length})',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textMuted, letterSpacing: 1),
+                    ),
+                  ),
+                  if (_isSelectionMode && _selectedQuizIds.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _deleteSelectedQuizzes,
+                      icon: const Icon(Icons.delete_sweep_rounded, size: 18, color: Colors.red),
+                      label: Text(
+                        'Supprimer (${_selectedQuizIds.length})',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.red, fontSize: 13),
+                      ),
+                    ),
+                  if (_isSelectionMode)
+                    TextButton(
+                      onPressed: () => setState(() { _isSelectionMode = false; _selectedQuizIds.clear(); }),
+                      child: Text('Annuler', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: AppTheme.textMuted)),
+                    )
+                  else
+                    TextButton.icon(
+                      onPressed: () => setState(() => _isSelectionMode = true),
+                      icon: const Icon(Icons.checklist_rounded, size: 18),
+                      label: Text('Sélectionner', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 13)),
+                      style: TextButton.styleFrom(foregroundColor: AppTheme.primaryGreen),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               ..._quizzes.map((q) => _buildQuizCard(q)).toList(),
             ],
@@ -872,21 +905,60 @@ class _EducatorTabState extends State<EducatorTab> {
     final Color statusColor = isReady ? AppTheme.primaryGreen : isError ? Colors.red : Colors.orange;
     final String statusLabel = isReady ? 'PRÊT' : isError ? 'ERREUR' : 'EN COURS';
 
+    final quizId = quiz['id'] as int;
+    final isSelected = _selectedQuizIds.contains(quizId);
+
     return GestureDetector(
-      onTap: isReady ? () => _viewQuizResults(Map<String, dynamic>.from(quiz)) : null,
-      child: Container(
+      onTap: _isSelectionMode
+          ? () => setState(() {
+                if (isSelected) { _selectedQuizIds.remove(quizId); }
+                else { _selectedQuizIds.add(quizId); }
+              })
+          : (isReady ? () => _viewQuizResults(Map<String, dynamic>.from(quiz)) : null),
+      onLongPress: !_isSelectionMode
+          ? () => setState(() { _isSelectionMode = true; _selectedQuizIds.add(quizId); })
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: isSelected
+              ? Colors.red.withOpacity(0.07)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppTheme.tightShadow,
-          border: Border(left: BorderSide(color: statusColor, width: 4)),
+          border: isSelected
+              ? Border.all(color: Colors.red.shade400, width: 2)
+              : Border(left: BorderSide(color: statusColor, width: 4)),
         ),
         child: Column(
           children: [
             Row(
               children: [
+                // Checkbox en mode selection, sinon icone status
+                if (_isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      child: isSelected
+                          ? Container(
+                              key: const ValueKey('checked'),
+                              width: 28, height: 28,
+                              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
+                              child: const Icon(Icons.check_rounded, color: Colors.white, size: 18),
+                            )
+                          : Container(
+                              key: const ValueKey('unchecked'),
+                              width: 28, height: 28,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade400, width: 2),
+                              ),
+                            ),
+                    ),
+                  ),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -916,21 +988,44 @@ class _EducatorTabState extends State<EducatorTab> {
                     ]),
                   ],
                 )),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                // Badge status + bouton supprimer (si pas mode selection)
+                if (!_isSelectionMode) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                    ),
                   ),
-                  child: Text(
-                    statusLabel,
-                    style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    onPressed: () => _deleteQuiz(quizId, quizTitle: quiz['title'] as String? ?? 'Quiz'),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    color: Colors.red.shade400,
+                    tooltip: 'Supprimer ce quiz',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
-                ),
+                ] else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                    ),
+                  ),
               ],
             ),
             // Bouton Réessayer + Supprimer pour les quiz en erreur
-            if (isError) ...[
+            if (isError && !_isSelectionMode) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -950,36 +1045,17 @@ class _EducatorTabState extends State<EducatorTab> {
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _retryQuiz(quiz['id']),
-                            icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: Text('RÉESSAYER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _deleteQuiz(quiz['id']),
-                            icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                            label: Text('SUPPRIMER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ],
+                    ElevatedButton.icon(
+                      onPressed: () => _retryQuiz(quiz['id']),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text('RÉESSAYER', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 11)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        minimumSize: const Size(double.infinity, 0),
+                      ),
                     ),
                   ],
                 ),
@@ -991,42 +1067,239 @@ class _EducatorTabState extends State<EducatorTab> {
     ).animate().fadeIn().slideX(begin: 0.05);
   }
 
-  Future<void> _deleteQuiz(int quizId) async {
+  Future<void> _deleteQuiz(int quizId, {String quizTitle = 'Quiz'}) async {
+    // Capturer le messenger AVANT le premier await
+    final messenger = ScaffoldMessenger.of(context);
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Supprimer ce quiz ?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text('Cette action est irréversible. Le fichier PDF et toutes les données seront supprimés.', style: GoogleFonts.inter(color: AppTheme.textMuted)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(Icons.delete_forever_rounded, size: 18),
-            label: Text('Supprimer', style: const TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red.withOpacity(0.25), width: 2),
+                ),
+                child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 36),
+              ),
+              const SizedBox(height: 20),
+              Text('Supprimer ce quiz ?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900,
+                  color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(color: Colors.red.withOpacity(0.07), borderRadius: BorderRadius.circular(10)),
+                child: Text(
+                  quizTitle,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.red.shade700),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Cette action est irréversible.\nLe PDF et toutes les soumissions seront supprimés.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 13,
+                  color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: BorderSide(
+                        color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Text('Annuler',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w700,
+                        color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    icon: const Icon(Icons.delete_rounded, size: 18),
+                    label: Text('Supprimer', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 4,
+                      shadowColor: Colors.red.withOpacity(0.4),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
       ),
     );
     if (confirmed != true) return;
 
     final res = await _authService.deleteQuiz(quizId);
-    if (res['success'] == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Quiz supprimé'),
-        backgroundColor: Colors.red.shade600,
+    if (!mounted) return;
+    if (res['success'] == true) {
+      messenger.showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Quiz "$quizTitle" supprimé', style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+        ]),
+        backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ));
       _loadQuizzes();
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    } else {
+      messenger.showSnackBar(SnackBar(
         content: Text(res['message'] ?? 'Erreur lors de la suppression'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ));
     }
+  }
+
+  Future<void> _deleteSelectedQuizzes() async {
+    final count = _selectedQuizIds.length;
+    if (count == 0) return;
+
+    // Capturer le messenger AVANT le premier await
+    final messenger = ScaffoldMessenger.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red.withOpacity(0.25), width: 2),
+                ),
+                child: const Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 36),
+              ),
+              const SizedBox(height: 20),
+              Text('Supprimer $count quiz ?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900,
+                  color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Cette action est irréversible.\nTous les PDFs et soumissions associés seront supprimés.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 13,
+                  color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: BorderSide(
+                        color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Text('Annuler',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w700,
+                        color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                    label: Text('Supprimer tout', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 4,
+                      shadowColor: Colors.red.withOpacity(0.4),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+
+    int successCount = 0;
+    final ids = Set<int>.from(_selectedQuizIds);
+    for (final id in ids) {
+      final res = await _authService.deleteQuiz(id);
+      if (res['success'] == true) successCount++;
+    }
+
+    if (!mounted) return;
+    setState(() { _isSelectionMode = false; _selectedQuizIds.clear(); });
+
+    messenger.showSnackBar(SnackBar(
+      content: Row(children: [
+        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+        const SizedBox(width: 10),
+        Expanded(child: Text(
+          '$successCount quiz supprimé${successCount > 1 ? "s" : ""} sur $count',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        )),
+      ]),
+      backgroundColor: Colors.red.shade700,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
+    _loadQuizzes();
   }
 
   Future<void> _retryQuiz(int quizId) async {
