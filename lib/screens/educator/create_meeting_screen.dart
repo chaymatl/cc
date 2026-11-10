@@ -372,22 +372,34 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                 // Chips des citoyens sélectionnés
                 if (_selectedCitizenIds.isNotEmpty) ...[
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: _kGreen.withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kGreen.withOpacity(0.3)),
+                      color: const Color(0xFF002E22),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _kGreen.withOpacity(0.5), width: 1.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
-                          const Icon(Icons.people_rounded, color: _kGreen, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${_selectedCitizenIds.length} citoyen(s) sélectionné(s)',
-                            style: GoogleFonts.inter(
-                              color: _kGreen, fontSize: 12, fontWeight: FontWeight.w700),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _kGreen,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              const Icon(Icons.people_rounded, color: Colors.black, size: 14),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${_selectedCitizenIds.length} sélectionné(s)',
+                                style: GoogleFonts.inter(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ]),
                           ),
                         ]),
                         const SizedBox(height: 10),
@@ -398,24 +410,38 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                               (x) => x['id'] == id,
                               orElse: () => {'full_name': '#$id'},
                             );
-                            return Chip(
-                              backgroundColor: _kGreen.withOpacity(0.15),
-                              side: const BorderSide(color: _kGreen, width: 1),
+                            return RawChip(
+                              backgroundColor: const Color(0xFF004D3A),
+                              side: const BorderSide(color: _kGreen, width: 1.5),
                               avatar: CircleAvatar(
-                                backgroundColor: _kGreen.withOpacity(0.3),
+                                backgroundColor: _kGreen,
                                 child: Text(
                                   (c['full_name'] as String? ?? '?').isNotEmpty
                                       ? (c['full_name'] as String)[0].toUpperCase()
                                       : '?',
-                                  style: const TextStyle(color: _kGreen, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               label: Text(
                                 c['full_name'] as String? ?? '',
-                                style: GoogleFonts.inter(color: Colors.white, fontSize: 12),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                              deleteIconColor: Colors.white54,
+                              deleteIcon: const Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: _kGreen,
+                              ),
                               onDeleted: () => setState(() => _selectedCitizenIds.remove(id)),
+                              selected: false,
+                              onSelected: null,
                             );
                           }).toList(),
                         ),
