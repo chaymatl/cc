@@ -593,8 +593,8 @@ class AIModerator:
                 result.reasons.append("Texte sans contexte environnemental detecte")
 
         # Case 3: Image présente → vérification stricte obligatoire
-        # POLITIQUE : seule une image confirmée éco (resnet_eco > 0.65) avec
-        # texte éco peut être auto-publiée. Toute image ambiguë → pending_review.
+        # POLITIQUE : une image nature/éco (resnet_eco > 0.45) et sans signal
+        # hors-sujet fort peut être auto-publiée. Toute image ambiguë → pending_review.
         if has_image:
             if image_score >= 0.10:
                 # NudeNet détecte contenu sensible → review obligatoire
@@ -606,11 +606,11 @@ class AIModerator:
                 relevance_penalty += 0.45  # → pending_review garanti
                 if "Image hors sujet detectee par IA" not in result.reasons:
                     result.reasons.append("Image hors sujet detectee par IA")
-            elif resnet_eco > 0.65 and eco_count > 0:
-                # Image clairement éco + texte éco → pénalité minimale
+            elif resnet_eco > 0.45 and eco_count > 0:
+                # Image éco/nature + texte éco → pénalité minimale
                 relevance_penalty += 0.05
-            elif resnet_eco > 0.65:
-                # Image éco sans texte éco explicite → légère pénalité
+            elif resnet_eco > 0.45:
+                # Image éco/nature sans texte éco explicite → légère pénalité
                 relevance_penalty += 0.12
             else:
                 # Image non classifiée avec certitude → toujours en review

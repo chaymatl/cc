@@ -518,13 +518,13 @@ def _run_ai_moderation(post_id: int, description: str, image_url: str, user_id: 
                 final_status = "pending_review"
                 moderation_reason = "IMAGE_REVIEW:image_non_analysee_localement"
             elif mod_result.status == "published" and bool(image_local_path):
-                # Image présente → vérifier que l'IA est confiante sur le côté éco
+                # Image présente → vérifier que l'IA est confiante sur le côté éco/nature
                 img_analysis = getattr(mod_result, 'image_analysis', {})
                 resnet_eco_val = img_analysis.get('resnet_eco', 0.0)
                 resnet_offtopic_val = img_analysis.get('resnet_offtopic', 0.0)
-                # Auto-publish UNIQUEMENT si image clairement éco (resnet_eco > 0.65)
-                # et aucun signal hors-sujet fort
-                if resnet_eco_val > 0.65 and resnet_offtopic_val < 0.20:
+                # Auto-publish si image éco/nature (resnet_eco > 0.45)
+                # et aucun signal hors-sujet fort (offtopic < 0.35)
+                if resnet_eco_val > 0.45 and resnet_offtopic_val < 0.35:
                     details = None
                     final_status = "published"
                     moderation_reason = mod_result.short_reason
