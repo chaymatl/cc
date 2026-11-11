@@ -1770,7 +1770,12 @@ class AuthService {
         Uri.parse('$baseUrl/admin/moderation/$postId/approve'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200 || response.statusCode == 204;
+      final success = response.statusCode == 200 || response.statusCode == 204;
+      if (success) {
+        // Invalider le cache du fil pour que la publication apparaisse immédiatement
+        await CacheService.invalidate(CacheService.kFeedPosts);
+      }
+      return success;
     } catch (e) {
       return false;
     }
@@ -1788,7 +1793,12 @@ class AuthService {
         uri,
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(_kTimeout);
-      return response.statusCode == 200 || response.statusCode == 204;
+      final success = response.statusCode == 200 || response.statusCode == 204;
+      if (success) {
+        // Invalider le cache du fil après rejet aussi
+        await CacheService.invalidate(CacheService.kFeedPosts);
+      }
+      return success;
     } catch (e) {
       return false;
     }
