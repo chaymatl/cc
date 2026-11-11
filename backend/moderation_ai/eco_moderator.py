@@ -60,6 +60,7 @@ OFF_TOPIC_HARD_KEYWORDS: dict = {
 
     # Violence / Accidents / Securite routiere
     "violence": [
+        "violence", "meurtre", "terrorisme", "attentat", "crime", "haine",
         "accident de voiture", "accident de moto", "accident de la route",
         "carambolage", "collision frontale", "crash moto", "securite routiere",
         "bagarre", "rixe", "combat de rue", "affrontement violent", "coup de poing",

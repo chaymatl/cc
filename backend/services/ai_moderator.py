@@ -45,6 +45,8 @@ BAD_WORDS_FR = [
     "idiot", "imbécile", "crétin", "nul", "honte", "dégueu", "abruti",
     "stupide", "con", "idiote", "ta gueule",
     "tuer", "mourir", "crever", "massacre", "viol", "agresser",
+    "violence", "meurtre", "terrorisme", "attentat", "crime",
+    "haine", "racisme", "xenophobie",
 ]
 BAD_WORDS_AR = [
     "عرص", "كلب", "شرموطة", "ابن الكلب", "حرام", "منيك",
