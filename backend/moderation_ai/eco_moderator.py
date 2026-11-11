@@ -723,7 +723,7 @@ class EcoCNNModerator(AIModerator):
             # ballon de foot (bleu/blanc) = ciel/eau, etc.
             # Texte court/neutre      : eco_img >= 0.65 requis (strict).
             _text_is_empty = len((text or "").strip()) < 5
-            _required_eco_conf = 0.80 if _text_is_empty else 0.65
+            _required_eco_conf = 0.70 if _text_is_empty else 0.60
 
             if eco_img < _required_eco_conf:
                 result.score  = max(result.score, 0.45)
@@ -731,7 +731,7 @@ class EcoCNNModerator(AIModerator):
                 if _text_is_empty:
                     low_conf_reason = (
                         "Publication sans texte et image ambigue : "
-                        "confiance eco insuffisante ({:.0f}% < 80%) "
+                        "confiance eco insuffisante ({:.0f}% < 70%) "
                         "validation admin requise".format(eco_img * 100)
                     )
                 else:
