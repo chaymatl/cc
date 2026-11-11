@@ -612,8 +612,9 @@ class AIModerator:
                 # Image éco/nature + texte éco → pénalité minimale
                 relevance_penalty += 0.05
             elif resnet_eco > 0.45:
-                # Image éco/nature sans texte éco explicite → légère pénalité
-                relevance_penalty += 0.12
+                # Image éco/nature sans texte éco explicite → pénalité très légère
+                # Une belle photo de nature sans légende reste du contenu éco valide
+                relevance_penalty += 0.05
             else:
                 # Image non classifiée avec certitude → toujours en review
                 relevance_penalty += 0.40  # → pending_review

@@ -765,11 +765,11 @@ class EcoCNNModerator(AIModerator):
             text_cnn_is_offtopic = (cnn_text_decision == "off_topic")
 
             # ── Décision ─────────────────────────────────────────────────────
-            # Publier SEULEMENT si : texte neutre + pas commercial + CNN pas off_topic
-            # ET texte non vide (une image seule, meme bien classee, doit etre validee)
+            # Publier si : image eco confiante + pas de signaux négatifs.
+            # Pour un texte vide, on autorise la publication si eco_img >= seuil
+            # (déjà vérifié ci-dessus). On ne punit pas l'absence de texte.
             if (
-                not _text_is_empty              # texte absent = toujours admin
-                and is_safe_text
+                is_safe_text
                 and is_safe_image
                 and anti_env_score < 0.35
                 and profanity_sc < 0.30
@@ -855,12 +855,14 @@ class EcoCNNModerator(AIModerator):
         # ── GARDE FINALE : le CNN ne peut pas publier ce que le parent a bloqué ─
         # Si le parent a rendu un verdict fort (pending_review, score >= 0.50)
         # ET que le CNN veut publier → on revient à pending_review.
-        # Exemple concret : image hors-sujet détectée par les règles (score 0.6),
-        # mais le CNN voit "eco" dans l'image → SANS cette garde, il publie.
+        # EXCEPTION : image nature clairement eco (eco_img >= 0.70) sans texte
+        # problématique → on laisse le CNN publier (c'est son rôle).
         result.processing_time_ms = round((time.time() - t0) * 1000, 2)
+        _image_clearly_eco = (cnn_img_decision == "eco" and eco_img >= 0.70)
         if (
             _parent_is_strict_pending
             and result.status == ModerationStatus.PUBLISHED.value
+            and not _image_clearly_eco   # exception : image nature confiante
         ):
             result.status = ModerationStatus.PENDING_REVIEW.value
             result.score  = max(result.score, _parent_score)
