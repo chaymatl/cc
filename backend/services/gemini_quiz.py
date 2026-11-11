@@ -82,7 +82,7 @@ def _call_gemini(prompt: str, pdf_bytes: Optional[bytes] = None) -> dict:
     return asyncio.run(_call_gemini_async(prompt, pdf_bytes))
 
 
-def extract_quiz_from_pdf(pdf_bytes: bytes) -> dict:
+async def extract_quiz_from_pdf(pdf_bytes: bytes) -> dict:
     """
     Extrait les questions et réponses correctes d'un PDF de quiz.
 
@@ -137,7 +137,7 @@ IMPORTANT:
 - Chaque question doit avoir une réponse correcte
 - Pour les questions ouvertes, donne la réponse attendue la plus complète possible"""
 
-    return asyncio.run(_call_gemini_async(prompt, pdf_bytes))
+    return await _call_gemini_async(prompt, pdf_bytes)
 
 
 async def grade_submission_async(questions: list, answers: dict) -> dict:

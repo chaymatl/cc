@@ -127,7 +127,7 @@ async def create_quiz_from_pdf(
     try:
         from services.gemini_quiz import extract_quiz_from_pdf
 
-        result = extract_quiz_from_pdf(pdf_bytes)
+        result = await extract_quiz_from_pdf(pdf_bytes)
 
         questions = result.get("questions", [])
         quiz.title = title or result.get("title", quiz.title)
@@ -183,7 +183,7 @@ async def retry_quiz_extraction(
             pdf_bytes = f.read()
 
         from services.gemini_quiz import extract_quiz_from_pdf
-        result = extract_quiz_from_pdf(pdf_bytes)
+        result = await extract_quiz_from_pdf(pdf_bytes)
 
         questions = result.get("questions", [])
         quiz.title = result.get("title", quiz.title)
