@@ -33,6 +33,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
     ('admin', 'Admin', Icons.admin_panel_settings_rounded),
   ];
 
+  /// Filtre "Admin" visible seulement pour les superadmins (le backend
+  /// exclut les admins/superadmins de la liste pour les simples admins)
+  List<(String, String, IconData)> get _visibleRoleFilters {
+    final isSuperAdmin = AuthState.currentUser?.role == UserRole.superadmin;
+    if (isSuperAdmin) return _roleFilters;
+    return _roleFilters.where((f) => f.$1 != 'admin').toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -533,10 +541,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> with Ticker
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _roleFilters.length,
+                        itemCount: _visibleRoleFilters.length,
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemBuilder: (_, i) {
-                          final (role, label, icon) = _roleFilters[i];
+                          final (role, label, icon) = _visibleRoleFilters[i];
                           final count = _countByRole(role);
                           final isSelected = _selectedRole == role;
                           final color = role == 'tous' ? AppTheme.primaryGreen : _getRoleColor(role);
