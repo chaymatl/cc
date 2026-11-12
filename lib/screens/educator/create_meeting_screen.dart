@@ -77,8 +77,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     if (mounted) setState(() => _groups = data);
   }
 
-  Future<void> _loadCitizens() async {
-    if (_citizensLoaded) return;
+  Future<void> _loadCitizens({bool forceRefresh = false}) async {
+    // Recharger si forcé (refresh) ou si jamais chargé
+    if (_citizensLoaded && !forceRefresh) return;
     setState(() => _citizensLoading = true);
     final data = await MeetingsService.fetchCitizens();
     if (mounted) {
@@ -481,7 +482,19 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                 ],
 
                 // Barre de recherche
-                _Label('Rechercher un citoyen', dark: dark),
+                Row(
+                  children: [
+                    Expanded(child: _Label('Rechercher un citoyen', dark: dark)),
+                    // Bouton refresh : recharge la liste depuis le serveur
+                    IconButton(
+                      icon: _citizensLoading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: _kGreen))
+                          : const Icon(Icons.refresh_rounded, color: _kGreen, size: 20),
+                      tooltip: 'Actualiser la liste',
+                      onPressed: _citizensLoading ? null : () => _loadCitizens(forceRefresh: true),
+                    ),
+                  ],
+                ),
                 TextFormField(
                   controller: _searchCtrl,
                   style: GoogleFonts.inter(color: _textMain(dark), fontSize: 14),

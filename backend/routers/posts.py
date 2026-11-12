@@ -739,7 +739,7 @@ async def get_posts(skip: int = 0, limit: int = 50, db: Session = Depends(get_db
     body = _json.dumps(result, default=str)
     etag = hashlib.md5(body.encode()).hexdigest()
     return JSONResponse(content=result, headers={
-        "Cache-Control": "public, max-age=30, stale-while-revalidate=60",
+        "Cache-Control": "no-cache",   # pas de cache : les approuv. admin doivent apparaître immédiatement
         "ETag": f'"{etag}"',
     })
 
@@ -759,7 +759,7 @@ async def get_feed(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)
     body = _json.dumps(result, default=str)
     etag = hashlib.md5(body.encode()).hexdigest()
     return JSONResponse(content=result, headers={
-        "Cache-Control": "private, max-age=15, stale-while-revalidate=30",
+        "Cache-Control": "no-cache",   # pas de cache : les approuv. admin doivent apparaître immédiatement
         "ETag": f'"u{user_id}-{etag}"',
     })
 
